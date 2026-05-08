@@ -1,0 +1,27 @@
+Copyright (c) 2026 Claudio Brignole. All Rights Reserved.
+
+This source code and all associated files in this repository ("TagTales") are
+the exclusive intellectual property of Claudio Brignole ("the Author").
+
+This repository is made publicly visible for reference and portfolio purposes
+only. No license is granted — expressly or by implication — for any other use.
+
+The following are strictly prohibited without prior written authorization
+from the Author:
+
+  1. Copying, reproducing, or duplicating any part of this codebase
+  2. Modifying, adapting, or creating derivative works
+  3. Distributing, sublicensing, selling, or otherwise transferring
+     any portion of this software
+  4. Using this software, in whole or in part, in any commercial or
+     non-commercial product or service
+  5. Deploying or hosting this software on any server or platform
+
+Any fork of this repository is solely for technical platform purposes
+(e.g. GitHub interface) and confers no rights whatsoever.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+THE AUTHOR SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM OR IN CONNECTION WITH THIS SOFTWARE.
+
+For licensing inquiries: claudio@brignole.ch
