@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tagtales.gallery/sitemap.xml

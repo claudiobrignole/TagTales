@@ -1,0 +1,340 @@
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../contexts/I18nContext';
+import { calculateEarnings } from '../utils/earnings';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { TrendingUp, Palette, Receipt, ArrowRight, CreditCard, CheckCircle2, Circle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import ConnectionBanner from '../components/ConnectionBanner';
+import clsx from 'clsx';
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const { t } = useI18n();
+  const [stats, setStats] = useState({
+    totalArtworks: 0,
+    totalSales: 0,
+    pendingPayments: 0,
+    excludedSalesCount: 0,
+  });
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [onboarding, setOnboarding] = useState({
+    show: false,
+    profileComplete: false,
+    bankComplete: false,
+    contractComplete: false,
+    artworksConnected: false,
+    allCompletedAt: null as string | null,
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+      try {
+        // Fetch artworks count and data
+        const artworksQ = query(collection(db, 'opere'), where('artistaId', '==', user.uid));
+        const artworksSnapshot = await getDocs(artworksQ);
+        const totalArtworks = artworksSnapshot.size;
+        const artworksMap = new Map();
+        artworksSnapshot.forEach(doc => {
+          artworksMap.set(doc.data().ecwidId, doc.data());
+        });
+
+        // Get artist's ecwidProductIds from user profile
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data() || {};
+        const productIds = userData.ecwidProductIds || [];
+
+        // Check onboarding steps
+        const hasName = !!(userData.artistName || userData.fullName || userData.displayName || (userData.firstName && userData.lastName));
+        const hasBio = !!userData.bio;
+        const hasPhoto = !!userData.profilePictureUrl;
+        const profileComplete = hasName && hasBio && hasPhoto;
+
+        const bankComplete = !!(userData.bankIban && userData.bankBic);
+
+        const contractsQ = query(collection(db, 'contratti'), where('artistaId', '==', user.uid), where('stato', '==', 'approvato'));
+        const contractsSnapshot = await getDocs(contractsQ);
+        const contractComplete = !contractsSnapshot.empty;
+
+        const artworksConnected = productIds.length > 0;
+
+        let currentAllCompletedAt = userData.onboardingCompletedAt || null;
+        
+        if (profileComplete && bankComplete && contractComplete && artworksConnected && !currentAllCompletedAt) {
+          currentAllCompletedAt = new Date().toISOString();
+          try {
+            await updateDoc(doc(db, 'users', user.uid), {
+              onboardingCompletedAt: currentAllCompletedAt
+            });
+          } catch (e) {
+            console.error("Failed to update onboarding status", e);
+          }
+        }
+
+        let showOnboarding = true;
+        const isAdmin = userData.role === 'admin' || user.email?.toLowerCase() === 'claudio@brignole.ch';
+        
+        if (isAdmin) {
+          showOnboarding = false;
+        } else if (currentAllCompletedAt) {
+          const completedDate = new Date(currentAllCompletedAt);
+          const threeDaysAgo = new Date();
+          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+          if (completedDate < threeDaysAgo) {
+            showOnboarding = false;
+          }
+        }
+
+        setOnboarding({
+          show: showOnboarding,
+          profileComplete,
+          bankComplete,
+          contractComplete,
+          artworksConnected,
+          allCompletedAt: currentAllCompletedAt,
+        });
+
+        let totalSales = 0;
+        let excludedSalesCount = 0;
+        const recent: any[] = [];
+
+        if (productIds.length > 0) {
+          // Fetch sales from backend
+          const response = await fetch('/api/sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productIds })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const sales = data.sales || [];
+            
+            sales.forEach((sale: any) => {
+              const artwork = artworksMap.get(sale.ecwidProductId);
+              if (artwork && artwork.tipologia?.toLowerCase() !== 'original' && artwork.tipologia?.toLowerCase() !== 'originale') {
+                const earnings = calculateEarnings(sale, artwork);
+                if (earnings.hasMissingCosts) {
+                  excludedSalesCount++;
+                } else {
+                  totalSales += earnings.artistEarnings || 0;
+                }
+                
+                if (recent.length < 5) {
+                  recent.push({ ...sale, ...earnings, artworkTitle: artwork.titolo });
+                }
+              }
+            });
+          }
+        }
+
+        // Fetch all payments to calculate available balance
+        const paymentsQ = query(collection(db, 'payouts'), where('artistaId', '==', user.uid));
+        const paymentsSnapshot = await getDocs(paymentsQ);
+        let totalRequestedOrPaid = 0;
+        paymentsSnapshot.forEach(doc => {
+          const p = doc.data();
+          if (p.stato !== 'Rejected' && p.stato !== 'rifiutato' && p.stato !== 'rifiutata') {
+            totalRequestedOrPaid += p.ammontare || p.amount || 0;
+          }
+        });
+
+        const availableBalance = Math.max(0, totalSales - totalRequestedOrPaid);
+
+        setStats({ totalArtworks, totalSales, pendingPayments: availableBalance, excludedSalesCount });
+        setRecentSales(recent);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full">{t('common.loading')}</div>;
+  }
+
+  return (
+    <div className="space-y-8 font-['Karla']">
+      <ConnectionBanner />
+      <header className="mb-10">
+        <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">
+          {t('dashboard.welcome', { name: user?.email?.split('@')[0] })}
+        </h1>
+        <p className="text-[#59554E] text-lg">{t('dashboard.subtitle')}</p>
+      </header>
+
+      {onboarding.show && (
+        <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
+          {onboarding.allCompletedAt ? (
+              <div className="p-6 bg-green-50 border-b border-green-100 flex items-center gap-3">
+              <CheckCircle2 className="text-green-600" size={24} />
+              <h3 className="text-lg font-bold text-green-800">{t('dashboard.onboarding.allSet')}</h3>
+            </div>
+          ) : (
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-[#121212]">{t('dashboard.onboarding.welcome')}</h3>
+                <div className="text-sm font-bold text-[#59554E] bg-[#F2EEE8] px-3 py-1 rounded-full">
+                  {[onboarding.profileComplete, onboarding.bankComplete, onboarding.contractComplete, onboarding.artworksConnected].filter(Boolean).length}/4 {t('dashboard.onboarding.completed')}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  {onboarding.profileComplete ? <CheckCircle2 className="text-green-500 mt-0.5" size={20} /> : <Circle className="text-[#D8D0C5] mt-0.5" size={20} />}
+                  <div>
+                    <p className={clsx("font-semibold", onboarding.profileComplete ? "text-[#A39E93] line-through" : "text-[#121212]")}>{t('dashboard.onboarding.step1')}</p>
+                    {!onboarding.profileComplete && <p className="text-sm text-[#59554E]">{t('dashboard.onboarding.step1Desc')}</p>}
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  {onboarding.bankComplete ? <CheckCircle2 className="text-green-500 mt-0.5" size={20} /> : <Circle className="text-[#D8D0C5] mt-0.5" size={20} />}
+                  <div>
+                    <p className={clsx("font-semibold", onboarding.bankComplete ? "text-[#A39E93] line-through" : "text-[#121212]")}>{t('dashboard.onboarding.step2')}</p>
+                    {!onboarding.bankComplete && <p className="text-sm text-[#59554E]">{t('dashboard.onboarding.step2Desc')}</p>}
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  {onboarding.contractComplete ? <CheckCircle2 className="text-green-500 mt-0.5" size={20} /> : <Circle className="text-[#D8D0C5] mt-0.5" size={20} />}
+                  <div>
+                    <p className={clsx("font-semibold", onboarding.contractComplete ? "text-[#A39E93] line-through" : "text-[#121212]")}>{t('dashboard.onboarding.step3')}</p>
+                    {!onboarding.contractComplete && <p className="text-sm text-[#59554E]">{t('dashboard.onboarding.step3Desc')}</p>}
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  {onboarding.artworksConnected ? <CheckCircle2 className="text-green-500 mt-0.5" size={20} /> : <Circle className="text-[#D8D0C5] mt-0.5" size={20} />}
+                  <div>
+                    <p className={clsx("font-semibold", onboarding.artworksConnected ? "text-[#A39E93] line-through" : "text-[#121212]")}>{t('dashboard.onboarding.step4')}</p>
+                    {!onboarding.artworksConnected && <p className="text-sm text-[#59554E]">{t('dashboard.onboarding.step4Desc')}</p>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9] flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-[#F2EEE8] rounded-2xl text-[#FF4F00]">
+              <Palette size={24} />
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-[#59554E] uppercase tracking-widest mb-1">{t('dashboard.totalArtworks')}</p>
+            <h3 className="text-4xl font-black tracking-tighter text-[#121212]">{stats.totalArtworks}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9] flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-[#F2EEE8] rounded-2xl text-[#FF4F00]">
+              <TrendingUp size={24} />
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-[#59554E] uppercase tracking-widest mb-1">{t('sales.totalEarnings')}</p>
+            <h3 className="text-4xl font-black tracking-tighter text-[#121212]">{stats.totalSales.toLocaleString()} {t('dashboard.currency')}</h3>
+          </div>
+        </div>
+
+        <div className="bg-[#FF4F00] p-6 rounded-3xl shadow-lg shadow-[#FF4F00]/20 text-white flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-white/20 rounded-2xl text-white">
+              <CreditCard size={24} />
+            </div>
+            <Link to="/app/payments" className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <ArrowRight size={20} />
+            </Link>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">{t('payments.availableBalance')}</p>
+            <h3 className="text-4xl font-black tracking-tighter">{stats.pendingPayments.toLocaleString()} {t('dashboard.currency')}</h3>
+            {stats.excludedSalesCount > 0 && (
+              <p className="text-xs text-white/80 mt-2 font-medium">
+                {t('dashboard.salesExcluded', { count: stats.excludedSalesCount })}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+        <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
+          <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center">
+            <h2 className="text-xl font-bold tracking-tight text-[#121212]">{t('dashboard.recentSales')}</h2>
+            <Link to="/app/sales" className="text-sm font-bold text-[#FF4F00] hover:underline">{t('dashboard.viewAllSales')}</Link>
+          </div>
+          <div className="p-0">
+            {recentSales.length === 0 ? (
+              <div className="p-8 text-center text-[#59554E]">{t('dashboard.noRecentSales')}</div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#F2EEE8]/50 text-[10px] uppercase tracking-widest text-[#59554E]">
+                    <th className="p-4 font-bold border-b border-[#EAE3D9]">{t('sales.artwork')}</th>
+                    <th className="p-4 font-bold border-b border-[#EAE3D9]">{t('common.date')}</th>
+                    <th className="p-4 font-bold border-b border-[#EAE3D9] text-right">{t('common.amount')}</th>
+                    <th className="p-4 font-bold border-b border-[#EAE3D9] text-center">{t('common.status')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentSales.map((sale) => (
+                    <tr key={sale.id} className="hover:bg-[#F2EEE8]/30 transition-colors border-b border-[#EAE3D9] last:border-0">
+                      <td className="p-4 font-medium text-[#121212]">{sale.productName || sale.artworkTitle}</td>
+                      <td className="p-4 text-sm text-[#59554E]">{new Date(sale.date).toLocaleDateString()}</td>
+                      <td className="p-4 font-bold text-[#121212] text-right">{sale.artistShare?.toLocaleString()} {t('dashboard.currency')}</td>
+                      <td className="p-4 text-center">
+                        <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
+                          {sale.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-6">
+          <h2 className="text-xl font-bold tracking-tight text-[#121212] mb-6">{t('dashboard.quickActions')}</h2>
+          <div className="space-y-3">
+            <Link to="/app/artworks/upload" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
+                  <Palette size={20} />
+                </div>
+                <span className="font-bold text-[#121212]">{t('dashboard.uploadArtwork')}</span>
+              </div>
+              <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
+            </Link>
+            
+            <Link to="/app/payments" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
+                  <Receipt size={20} />
+                </div>
+                <span className="font-bold text-[#121212]">{t('dashboard.requestPayout')}</span>
+              </div>
+              <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

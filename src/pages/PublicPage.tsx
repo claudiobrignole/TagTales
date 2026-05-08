@@ -1,0 +1,330 @@
+import React, { useEffect, useState } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import PublicLayout from '../components/PublicLayout';
+import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'motion/react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import clsx from 'clsx';
+import VideoEmbed from '../components/VideoEmbed';
+import { getLocalizedField } from '../utils/localization';
+import { cleanHtml } from '../utils/cleanHtml';
+import SEO from '../components/SEO';
+
+interface PageData {
+  titolo: string;
+  contenuto?: string;
+  blocks?: any[];
+  [key: string]: any;
+}
+
+
+const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
+  const { i18n } = useTranslation();
+  const [formData, setFormData] = useState({ name: '', email: '', message: '', gdpr: false });
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.gdpr) {
+      alert("Devi accettare l'informativa sulla privacy.");
+      return;
+    }
+    
+    // Obfuscated email sending (using mailto for simplicity or a contact service logic)
+    // The user requested tagtales@brignole.ch
+    const to = atob("dGFndGFsZXNAYnJpZ25vbGUuY2g=");
+    const subject = `Nuovo messaggio da ${formData.name}`;
+    const body = `Nome: ${formData.name}\nEmail: ${formData.email}\n\nMessaggio:\n${formData.message}`;
+    
+    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSent(true);
+  };
+
+  return (
+    <section className={clsx("py-20 px-6", block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+      <div className="max-w-xl mx-auto bg-white/5 backdrop-blur-sm p-8 md:p-12 rounded-[40px] border border-white/10 shadow-2xl">
+        <h3 className="text-3xl md:text-5xl font-['Shamgod'] uppercase mb-4 md:mb-6 tracking-widest leading-none">
+          {getLocalizedField(block, 'title', i18n.language) || block.title || 'Inviaci un messaggio'}
+        </h3>
+        {((block.text && block.text !== '<p><br></p>') || (block.text_en && block.text_en !== '<p><br></p>')) && (
+          <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit mb-8" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', i18n.language) || block.text) }} />
+        )}
+        
+        {sent ? (
+          <div className="text-center py-12 space-y-4">
+             <div className="w-16 h-16 bg-[#FF4F00] rounded-full flex items-center justify-center mx-auto text-white">
+                <ChevronDown size={32} className="-rotate-90" />
+             </div>
+             <p className="font-['Karla'] text-xl font-bold uppercase">Messaggio inoltrato!</p>
+             <p className="opacity-60 text-sm">Il tuo client email è stato aperto con i dati inseriti.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Nome</label>
+              <input 
+                type="text" required 
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="w-full bg-[#121212]/5 border-b-2 border-[#121212]/10 focus:border-[#FF4F00] py-3 px-1 outline-none transition-all font-['Karla'] text-lg" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Email</label>
+              <input 
+                type="email" required 
+                value={formData.email}
+                onChange={e => setFormData({...formData, email: e.target.value})}
+                className="w-full bg-[#121212]/5 border-b-2 border-[#121212]/10 focus:border-[#FF4F00] py-3 px-1 outline-none transition-all font-['Karla'] text-lg" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Messaggio</label>
+              <textarea 
+                required rows={4}
+                value={formData.message}
+                onChange={e => setFormData({...formData, message: e.target.value})}
+                className="w-full bg-[#121212]/5 border-b-2 border-[#121212]/10 focus:border-[#FF4F00] py-3 px-1 outline-none transition-all font-['Karla'] text-lg resize-none" 
+              />
+            </div>
+            <div className="flex items-start gap-4">
+              <input 
+                type="checkbox" id="gdpr-p" required 
+                checked={formData.gdpr}
+                onChange={e => setFormData({...formData, gdpr: e.target.checked})}
+                className="mt-1 accent-[#FF4F00] w-5 h-5 cursor-pointer" 
+              />
+              <label htmlFor="gdpr-p" className="text-sm opacity-60 cursor-pointer">
+                Accetto che i miei dati vengano trattati per rispondere alla mia richiesta, in conformità con la Privacy Policy.
+              </label>
+            </div>
+            <button 
+              type="submit"
+              className="w-full bg-[#121212] hover:bg-[#FF4F00] text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-[#121212]/20"
+            >
+              Invia Messaggio
+            </button>
+          </form>
+        )}
+      </div>
+    </section>
+  );
+};
+
+import { useParams } from 'react-router-dom';
+
+export default function PublicPage({ id: propId }: { id?: string }) {
+  const { id: paramId } = useParams();
+  const id = propId === 'dynamic' ? paramId || '' : propId || paramId || '';
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language || 'it';
+
+  const [data, setData] = useState<PageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeQA, setActiveQA] = useState<any | null>(null);
+
+  useEffect(() => {
+    const fetchPage = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'pagine', id));
+        if (snap.exists()) {
+          const raw = snap.data();
+          const blocks = raw.blocks || null;
+          setData({ ...raw, blocks } as PageData);
+        } else {
+          setData(null);
+        }
+      } catch(err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPage();
+  }, [id, lang]);
+
+  const renderBlock = (block: any, idx: number) => {
+    const isFirst = idx === 0;
+    switch (block.type) {
+      case 'text':
+        return (
+          <section key={block.id} className={clsx(`flex justify-center text-center px-6 ${isFirst ? 'pb-20 md:pb-32' : 'py-20 md:py-32'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+            <div className="max-w-4xl w-full mx-auto min-w-0">
+              <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] italic text-3xl md:text-5xl leading-tight text-inherit" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+            </div>
+          </section>
+        );
+      case 'large_title':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-20 md:pb-32 pt-28' : 'py-20 md:py-32'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+             <h2 className="text-[18vw] sm:text-[15vw] md:text-[150px] lg:text-[200px] font-['Shamgod'] uppercase leading-[0.8] text-center w-full break-words">
+                {getLocalizedField(block, 'text', lang) || block.text}
+             </h2>
+          </section>
+        );
+      case 'paragraph':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+            <div className="max-w-4xl mx-auto w-full min-w-0">
+              <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] !text-xl leading-[1.35] text-inherit" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+            </div>
+          </section>
+        );
+      case 'text_with_image_half':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+            <div className={clsx("max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center", block.imagePosition === 'right' ? "md:flex-row-reverse" : "md:flex-row")}>
+              <div className="w-full md:w-1/2 space-y-6 min-w-0">
+                {(getLocalizedField(block, 'title', lang) || block.title) && (
+                  <h3 className="font-['Shamgod'] text-[40px] md:text-[60px] leading-[0.9] uppercase">
+                    {getLocalizedField(block, 'title', lang) || block.title}
+                  </h3>
+                )}
+                <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit !text-xl leading-[1.35]" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+              </div>
+              <div className="w-full md:w-1/2 min-w-0">
+                {block.images?.[0]?.url && (
+                  <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      case 'image_width_paragraph':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+            <div className="max-w-4xl mx-auto">
+              {block.images?.[0]?.url && (
+                <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+              )}
+            </div>
+          </section>
+        );
+      case 'image_fullscreen':
+        return (
+          <section key={block.id} className={clsx(`w-full overflow-hidden ${isFirst ? 'h-[calc(60vh-65px)] lg:h-[calc(80vh-75px)]' : 'h-[60vh] md:h-[80vh]'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
+            <img src={block.images?.[0]?.url} alt="" className="w-full h-full object-cover" />
+          </section>
+        );
+      case 'video_embed':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 pt-4' : 'py-12'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
+             <div className="max-w-7xl mx-auto">
+               <VideoEmbed url={block.videoUrl} />
+             </div>
+          </section>
+        );
+      case 'images_side_by_side_aligned':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 pt-4' : 'py-12'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+              {block.images?.map((img: any, idx: number) => (
+                <img key={idx} src={img.url} alt="" className="w-full aspect-[4/5] object-cover rounded-3xl" />
+              ))}
+            </div>
+          </section>
+        );
+      case 'qa_module':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-20 pt-4' : 'py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+            <div className="max-w-4xl mx-auto space-y-4">
+              {block.qa?.map((item: any, idx: number) => (
+                <div key={idx} className={clsx("border-b last:border-0 overflow-hidden", block.backgroundColor === 'black' ? "border-white/10" : "border-[#EAE3D9]")}>
+                  <button 
+                    onClick={() => setActiveQA(activeQA === idx ? null : idx)}
+                    className="w-full py-6 flex justify-between items-center text-left hover:text-[#FF4F00] transition-colors"
+                  >
+                    <span className="text-xl md:text-2xl font-bold font-['Karla'] leading-tight pr-8">{getLocalizedField(item, 'question', lang) || item.question}</span>
+                    {activeQA === idx ? <ChevronUp className="shrink-0" /> : <ChevronDown className="shrink-0" />}
+                  </button>
+                  <AnimatePresence>
+                    {activeQA === idx && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className={clsx("pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white/70" : "text-[#59554E]")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(item, 'answer', lang) || item.answer) }} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      case 'accordion':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-20 pt-4' : 'py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
+            <div className="max-w-4xl mx-auto space-y-4">
+              {block.accordionItems?.map((item: any, idx: number) => (
+                <div key={idx} className={clsx("border-b last:border-0 overflow-hidden", block.backgroundColor === 'black' ? "border-white/10" : "border-[#EAE3D9]")}>
+                  <button 
+                    onClick={() => setActiveQA(activeQA === `acc-${block.id}-${idx}` ? null : `acc-${block.id}-${idx}`)}
+                    className="w-full py-6 flex justify-between items-center text-left hover:text-[#FF4F00] transition-colors"
+                  >
+                    <span className="text-xl md:text-2xl font-bold font-['Karla'] leading-tight pr-8 uppercase tracking-widest">{getLocalizedField(item, 'title', lang) || item.title}</span>
+                    {activeQA === `acc-${block.id}-${idx}` ? <ChevronUp className="shrink-0" /> : <ChevronDown className="shrink-0" />}
+                  </button>
+                  <AnimatePresence>
+                    {activeQA === `acc-${block.id}-${idx}` && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className={clsx("pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white/70" : "text-[#59554E]")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(item, 'content', lang) || item.content) }} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      case 'contact_form':
+        return <ContactFormBlock key={block.id} block={block} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <PublicLayout>
+       <div className="min-h-screen bg-[#F2EEE8]">
+         <SEO title={data ? (getLocalizedField(data, 'titolo', lang) || data.title) : 'TagTales'} />
+         {loading ? (
+           <div className="pb-20 px-[25px]">
+             <div className="animate-pulse flex flex-col gap-4 max-w-4xl mx-auto mt-20">
+                 <div className="h-20 bg-gray-300 rounded w-1/2"></div>
+                 <div className="h-6 bg-gray-300 rounded w-full"></div>
+                 <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+             </div>
+           </div>
+         ) : data ? (
+            <div className="flex flex-col">
+                {data.blocks && data.blocks.length > 0 ? (
+                  <div className="flex flex-col">
+                    {data.blocks.map(renderBlock)}
+                  </div>
+                ) : (
+                  <div className="max-w-4xl mx-auto px-6 pb-32">
+                    <div className="prose max-w-4xl w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-[#121212]">
+                      {cleanHtml(getLocalizedField(data, 'contenuto', lang))}
+                    </div>
+                  </div>
+                )}
+            </div>
+         ) : (
+             <div className="max-w-4xl mx-auto pt-32 pb-20 px-6 text-center">
+                 <h1 className="text-4xl font-['Shamgod'] uppercase mb-4 text-[#121212]">Pagina non trovata</h1>
+                 <p className="font-['Karla'] text-lg">La risorsa richiesta non è disponibile.</p>
+             </div>
+         )}
+       </div>
+    </PublicLayout>
+  );
+}

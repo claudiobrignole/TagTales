@@ -1,0 +1,480 @@
+{
+  "entities": {
+    "Newsletter": {
+      "title": "Newsletter",
+      "description": "Newsletter subscriptions",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "language": { "type": "string" },
+        "subscribedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email"]
+    },
+    "Artista": {
+      "title": "Artista",
+      "description": "Artist profile and management",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "nickname": { "type": "string" },
+        "nomeReale": { "type": "string" },
+        "email": { "type": "string" },
+        "bioBreve": { "type": "string" },
+        "bioEstesa": { "type": "string" },
+        "fotoProfilo": { "type": "string" },
+        "bannerHero": { "type": "string" },
+        "crew": { "type": "string" },
+        "cittaOrigine": { "type": "string" },
+        "paese": { "type": "string" },
+        "annoInizio": { "type": "number" },
+        "social": {
+          "type": "object",
+          "properties": {
+            "instagram": { "type": "string" },
+            "youtube": { "type": "string" },
+            "sito": { "type": "string" },
+            "twitter": { "type": "string" },
+            "tiktok": { "type": "string" }
+          }
+        },
+        "tecniche": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "stato": {
+          "type": "string",
+          "enum": [
+            "candidatura_inviata",
+            "in_review",
+            "approvato",
+            "attivo",
+            "sospeso"
+          ]
+        },
+        "contrattoFirmato": { "type": "boolean" },
+        "dataFirmaContratto": { "type": "string", "format": "date-time" },
+        "urlContrattoPDF": { "type": "string" },
+        "commissioniPersonalizzate": {
+          "type": "object",
+          "properties": {
+            "originale": {
+              "type": "object",
+              "properties": {
+                "splitArtista": { "type": "number" },
+                "splitTagTales": { "type": "number" }
+              }
+            },
+            "edizione_limitata": {
+              "type": "object",
+              "properties": {
+                "splitArtista": { "type": "number" },
+                "splitTagTales": { "type": "number" }
+              }
+            },
+            "print_on_demand": {
+              "type": "object",
+              "properties": {
+                "splitArtista": { "type": "number" },
+                "splitTagTales": { "type": "number" }
+              }
+            }
+          }
+        },
+        "creditoMaturato": { "type": "number" },
+        "dataApprovazione": { "type": "string", "format": "date-time" },
+        "featured": { "type": "boolean" },
+        "notePrivateAdmin": { "type": "string" },
+        "order": { "type": "number", "description": "Manual display order" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "nickname", "email", "stato"]
+    },
+    "Opera": {
+      "title": "Opera",
+      "description": "Artwork entity",
+      "type": "object",
+      "properties": {
+        "titolo": { "type": "string" },
+        "slug": { "type": "string" },
+        "artistaId": { "type": "string" },
+        "tipologia": {
+          "type": "string",
+          "enum": ["originale", "edizione_limitata", "print_on_demand"]
+        },
+        "anno": { "type": "number" },
+        "tecnica": { "type": "string" },
+        "dimensioni": { "type": "string" },
+        "materiali": { "type": "string" },
+        "descrizioneCritica": { "type": "string" },
+        "storia": { "type": "string" },
+        "immagineHiRes": { "type": "string" },
+        "galleria": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "videoYoutube": { "type": "string" },
+        "mostraId": { "type": "string" },
+        "tassonomie": {
+          "type": "object",
+          "properties": {
+            "stili": { "type": "array", "items": { "type": "string" } },
+            "temi": { "type": "array", "items": { "type": "string" } },
+            "colori": { "type": "array", "items": { "type": "string" } },
+            "soggetti": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "matureContent": { "type": "boolean" },
+        "disponibile": { "type": "boolean" },
+        "statoVendita": {
+          "type": "string",
+          "enum": ["disponibile", "venduta", "esaurita", "non_in_vendita"]
+        },
+        "prezzo": { "type": "number" },
+        "valuta": { "type": "string" },
+        "ecwidProductId": { "type": "string" },
+        "ecwidBuyButtonEmbed": { "type": "string" },
+        "certificatoAutenticita": { "type": "boolean" },
+        "tiratura": {
+          "type": "object",
+          "properties": {
+            "numeroTotale": { "type": "number" },
+            "numeroVenduti": { "type": "number" }
+          }
+        },
+        "prodottiPodApplicati": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "featured": { "type": "boolean" },
+        "views": { "type": "number" },
+        "published": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["titolo", "artistaId", "tipologia", "published"]
+    },
+    "Mostra": {
+      "title": "Mostra",
+      "description": "Mini-exhibition",
+      "type": "object",
+      "properties": {
+        "titolo": { "type": "string" },
+        "slug": { "type": "string" },
+        "artistaPrincipaleId": { "type": "string" },
+        "artistiPartecipanti": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "mini_mostra_monografica",
+            "mostra_collettiva",
+            "capsule",
+            "gift_guide"
+          ]
+        },
+        "dataApertura": { "type": "string", "format": "date-time" },
+        "dataChiusura": { "type": "string", "format": "date-time" },
+        "chiusaManualmente": { "type": "boolean" },
+        "dataChiusuraEffettiva": { "type": "string", "format": "date-time" },
+        "bannerHero": { "type": "string" },
+        "galleria": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "videoEmbeds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "intro": { "type": "string" },
+        "curatore": { "type": "string" },
+        "opereIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "catalogoPDF": { "type": "string" },
+        "featured": { "type": "boolean" },
+        "published": { "type": "boolean" },
+        "order": { "type": "number", "description": "Manual display order" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["titolo", "artistaPrincipaleId", "dataApertura", "published"]
+    },
+    "Articolo": {
+      "title": "Articolo",
+      "description": "Magazine article",
+      "type": "object",
+      "properties": {
+        "titolo": { "type": "string" },
+        "slug": { "type": "string" },
+        "autore": { "type": "string" },
+        "autoreId": { "type": "string" },
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "intervista",
+            "recensione",
+            "racconto",
+            "editoriale",
+            "news",
+            "tutorial",
+            "report_evento"
+          ]
+        },
+        "excerpt": { "type": "string" },
+        "corpo": { "type": "string" },
+        "immagineCopertina": { "type": "string" },
+        "galleria": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "videoEmbeds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dataPubblicazione": { "type": "string", "format": "date-time" },
+        "categorie": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tag": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "artistiCollegati": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "mostreCollegate": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "opereCollegate": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "letturaMinuti": { "type": "number" },
+        "views": { "type": "number" },
+        "featured": { "type": "boolean" },
+        "lingua": { "type": "string", "enum": ["it", "en", "fr", "de"] },
+        "published": { "type": "boolean" },
+        "order": { "type": "number", "description": "Manual display order" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["titolo", "slug", "corpo", "published"]
+    },
+    "Prodotto": {
+      "title": "Prodotto",
+      "description": "POD product types",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string" },
+        "slug": { "type": "string" },
+        "categoria": {
+          "type": "string",
+          "enum": ["wall_art", "apparel", "home", "accessories", "phone_cases"]
+        },
+        "descrizioneTecnica": { "type": "string" },
+        "mockupVuoto": { "type": "string" },
+        "fornitorePOD": {
+          "type": "string",
+          "enum": ["printful", "printify", "gelato", "interno"]
+        },
+        "templateStampa": { "type": "string" },
+        "prezzoBase": { "type": "number" },
+        "varianti": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nome": { "type": "string" },
+              "taglia": { "type": "string" },
+              "colore": { "type": "string" },
+              "prezzo": { "type": "number" },
+              "ecwidVariantId": { "type": "string" }
+            }
+          }
+        },
+        "attivo": { "type": "boolean" }
+      },
+      "required": ["nome", "slug", "categoria", "attivo"]
+    },
+    "VenditaLog": {
+      "title": "VenditaLog",
+      "description": "Sale logs from Ecwid",
+      "type": "object",
+      "properties": {
+        "ecwidOrderId": { "type": "string" },
+        "dataOrdine": { "type": "string", "format": "date-time" },
+        "ecwidProductId": { "type": "string" },
+        "operaId": { "type": "string" },
+        "artistaId": { "type": "string" },
+        "tipologiaOpera": { "type": "string" },
+        "prezzoLordo": { "type": "number" },
+        "prezzoNetto": { "type": "number" },
+        "splitArtista": { "type": "number" },
+        "splitTagTales": { "type": "number" },
+        "creditoArtista": { "type": "number" },
+        "pagato": { "type": "boolean" },
+        "payoutId": { "type": "string" }
+      }
+    },
+    "Payout": {
+      "title": "Payout",
+      "description": "Payments to artists",
+      "type": "object",
+      "properties": {
+        "artistaId": { "type": "string" },
+        "dataRichiesta": { "type": "string", "format": "date-time" },
+        "dataEmissione": { "type": "string", "format": "date-time" },
+        "importo": { "type": "number" },
+        "vendite": { "type": "array", "items": { "type": "string" } },
+        "fatturaURL": { "type": "string" },
+        "stato": {
+          "type": "string",
+          "enum": ["richiesto", "in_lavorazione", "pagato", "errore"]
+        },
+        "noteAdmin": { "type": "string" }
+      }
+    },
+    "Contratto": {
+      "title": "Contratto",
+      "description": "Artist legal contracts",
+      "type": "object",
+      "properties": {
+        "artistaId": { "type": "string" },
+        "title": { "type": "string" },
+        "documentUrl": { "type": "string" },
+        "stato": {
+          "type": "string",
+          "enum": ["pending", "signed", "expired"]
+        },
+        "date": { "type": "string", "format": "date-time" },
+        "signedBy": { "type": "string" },
+        "signedEmail": { "type": "string" },
+        "signedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["artistaId", "title", "documentUrl", "stato", "date"]
+    },
+    "Candidatura": {
+      "title": "Candidatura",
+      "description": "Artist candidacy form",
+      "type": "object",
+      "properties": {
+        "nomeReale": { "type": "string" },
+        "nickname": { "type": "string" },
+        "email": { "type": "string" },
+        "crew": { "type": "string" },
+        "citta": { "type": "string" },
+        "paese": { "type": "string" },
+        "instagram": { "type": "string" },
+        "portfolioUrls": { "type": "array", "items": { "type": "string" } },
+        "bio": { "type": "string" },
+        "motivazione": { "type": "string" },
+        "dataInvio": { "type": "string", "format": "date-time" },
+        "stato": {
+          "type": "string",
+          "enum": ["nuova", "in_review", "approvata", "rifiutata"]
+        },
+        "noteAdmin": { "type": "string" }
+      }
+    },
+    "User": {
+      "title": "User",
+      "description": "Internal user roles mapping",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["admin", "artista", "redattore", "cliente"] },
+        "artistaId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" }
+      },
+      "required": ["role", "email"]
+    },
+    "AssistanceKB": {
+      "title": "AssistanceKB",
+      "description": "Knowledge base entries for AI Chatbot",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "isIcebreaker": { "type": "boolean" },
+        "icebreakerQuestion": { "type": "string" },
+        "language": { "type": "string", "enum": ["it", "en"] },
+        "order": { "type": "number", "description": "Manual display order" },
+        "attachments": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["title", "content"]
+    },
+    "ChatFile": {
+      "title": "ChatFile",
+      "description": "Files managed for the chatbox",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "url", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/assistance_kb/{kbId}": {
+      "schema": "AssistanceKB",
+      "description": "Knowledge base entries for AI Chatbot"
+    },
+    "/chat_files/{fileId}": {
+      "schema": "ChatFile",
+      "description": "Files managed for the chatbox"
+    },
+    "/artisti/{artistaId}": {
+      "schema": "Artista",
+      "description": "Artist profiles"
+    },
+    "/opere/{operaId}": {
+      "schema": "Opera",
+      "description": "Artworks"
+    },
+    "/mostre/{mostraId}": {
+      "schema": "Mostra",
+      "description": "Exhibitions"
+    },
+    "/articoli/{articoloId}": {
+      "schema": "Articolo",
+      "description": "Magazine articles"
+    },
+    "/prodotti/{prodottoId}": {
+      "schema": "Prodotto",
+      "description": "POD products"
+    },
+    "/vendite_log/{venditaId}": {
+      "schema": "VenditaLog",
+      "description": "Sales history"
+    },
+    "/payouts/{payoutId}": {
+      "schema": "Payout",
+      "description": "Payments history"
+    },
+    "/contratti/{contrattoId}": {
+      "schema": "Contratto",
+      "description": "Artist legal contracts"
+    },
+    "/candidature/{candidaturaId}": {
+      "schema": "Candidatura",
+      "description": "New artist applications"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Auth role mapping"
+    },
+    "/newsletter/{subscriberId}": {
+      "schema": "Newsletter",
+      "description": "Newsletter subscribers"
+    }
+  }
+}

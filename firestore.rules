@@ -1,0 +1,165 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Global safety net
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        ((request.auth.token.email == "claudio@brignole.ch") ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    function isArtist() {
+      return isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artista' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'writer'
+      );
+    }
+
+    function getArtistId() {
+      return request.auth.uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidNewsletter(data) {
+      return data.email is string && data.email.size() <= 256 &&
+             data.subscribedAt == request.time &&
+             data.keys().hasAll(['email', 'subscribedAt', 'language']) &&
+             data.keys().size() == 3;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /faqs/{faqId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /pagine/{pageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /newsletter/{subscriberId} {
+      allow create: if isValidNewsletter(incoming());
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create: if isAdmin() || isUser(userId);
+      allow update: if isAdmin() || (isUser(userId) && (!("role" in request.resource.data) || (request.resource.data.role == resource.data.get('role', request.resource.data.role) && request.resource.data.role != 'admin')));
+      allow delete: if isAdmin();
+    }
+
+    match /scrittori/{scrittoreId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isArtist() && getArtistId() == scrittoreId);
+      allow delete: if isAdmin();
+    }
+
+    match /opere/{operaId} {
+      allow read: if true;
+      allow create: if isAdmin() || isArtist();
+      allow update: if isAdmin() || (isArtist() && existing().artistaId == getArtistId());
+      allow delete: if isAdmin();
+    }
+
+    match /mostre/{mostraId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /articoli/{articoloId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /prodotti/{prodottoId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /vendite_log/{venditaId} {
+      allow list: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
+      allow get: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
+      allow create: if false; // Only via secure server/functions
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /payouts/{payoutId} {
+      allow list: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
+      allow get: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
+      allow create: if isArtist();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /contratti/{contrattoId} {
+      allow list: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
+      allow get: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId() && incoming().diff(resource.data).affectedKeys().hasOnly(['stato', 'signedBy', 'signedEmail', 'signedAt']));
+      allow delete: if isAdmin();
+    }
+
+    match /candidature/{candidaturaId} {
+      allow read: if isAdmin();
+      allow create: if true; // Public can apply
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /mail/{mailId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
+    match /chat_config/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin();
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

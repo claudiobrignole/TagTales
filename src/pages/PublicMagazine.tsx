@@ -1,0 +1,238 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { motion, useScroll, useMotionValueEvent } from "motion/react";
+import { Link } from "react-router-dom";
+import clsx from "clsx";
+import { useTranslation } from "react-i18next";
+import { useI18n } from "../contexts/I18nContext";
+import { db } from "../firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { getLocalizedField } from "../utils/localization";
+import { Grid3x3, Maximize } from "lucide-react";
+import { IMAGE_RADIUS } from "../constants/theme";
+
+import PublicLayout from "../components/PublicLayout";
+import SEO from "../components/SEO";
+
+export default function PublicMagazine() {
+  const { t, i18n } = useTranslation();
+  const { language: lang } = useI18n();
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const { scrollY } = useScroll();
+  const [hiddenFilterBar, setHiddenFilterBar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"fullscreen" | "grid">("fullscreen");
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() || 0;
+    if (latest > previous && latest > 150) {
+      setHiddenFilterBar(true);
+    } else {
+      setHiddenFilterBar(false);
+    }
+  });
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "articoli"));
+        const data = snapshot.docs
+          .map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              titolo: docData.titolo || docData.title || "ARTICOLO",
+              immagineCopertina: docData.immagineCopertina || docData.coverImageUrl
+            };
+          })
+          .filter((a: any) => a.published !== false && a.isPublished !== false)
+          .sort((a: any, b: any) => {
+            // Priority to manual order, fallback to createdAt
+            if (a.order !== undefined || b.order !== undefined) {
+              return (a.order ?? 999) - (b.order ?? 999);
+            }
+            return (
+              (b.createdAt?.toMillis?.() || 0) -
+              (a.createdAt?.toMillis?.() || 0)
+            );
+          });
+        setArticles(data);
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
+
+  const filteredArticles = useMemo(() => {
+    return articles.filter(
+      (a) =>
+        (getLocalizedField(a, 'titolo', lang) || a.titolo || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (a.autore || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.tag?.some((t: string) =>
+          t.toLowerCase().includes(searchQuery.toLowerCase()),
+        ),
+    );
+  }, [articles, searchQuery, lang]);
+
+  return (
+    <PublicLayout>
+      <SEO
+        title={t("nav.magazine", "MAGAZINE")}
+        description={t(
+          "seo.magazineDesc",
+          "Approfondimenti, interviste e storie dal mondo della graffiti culture su TagTales Magazine.",
+        )}
+      />
+
+      {/* Search Filter Strip */}
+      <motion.div
+        animate={{
+          opacity: hiddenFilterBar ? 0 : 1,
+          y: hiddenFilterBar ? -100 : 0,
+        }}
+        transition={{ duration: 0.2 }}
+        className="fixed top-[75px] w-full z-40 bg-[#121212] border-b border-white/10 px-4 py-3 md:px-8 shadow-xl"
+      >
+        {/* Mobile toggle */}
+        <div className="md:hidden flex justify-between items-center text-white">
+          <span className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none">
+            Magazine
+          </span>
+          <button
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
+          >
+            {isFilterOpen ? "Chiudi" : "Apri"}
+          </button>
+        </div>
+
+        {/* Filters Desktop & Mobile */}
+        <div
+          className={clsx(
+            "flex-col md:flex-row gap-4 mt-4 md:mt-0 transition-all text-white",
+            isFilterOpen ? "flex" : "hidden md:flex",
+            "items-center justify-between",
+          )}
+        >
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1 items-center">
+            <span className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
+              MAGAZINE
+            </span>
+            <input
+              type="text"
+              placeholder={t("search.articles", "Cerca articoli, tag, autori...")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm flex-1 max-w-[300px]"
+            />
+          </div>
+          <button
+            onClick={() =>
+              setViewMode((prev) => (prev === "fullscreen" ? "grid" : "fullscreen"))
+            }
+            className="text-white border border-white/30 hover:bg-white hover:text-[#121212] p-2 rounded-full transition-colors shrink-0 ml-4 hidden md:block"
+          >
+            {viewMode === "fullscreen" ? (
+              <Grid3x3 size={20} />
+            ) : (
+              <Maximize size={20} />
+            )}
+          </button>
+        </div>
+      </motion.div>
+
+      <div className="pt-[96px] px-[15px] md:px-[25px] pb-32 bg-[#121212] min-h-[100svh] text-white">
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="w-full mx-auto"
+        >
+          {loading ? (
+            <div className="flex justify-center items-center py-20 uppercase font-['Shamgod'] text-4xl">
+              {t("common.loading", "Caricamento...")}
+            </div>
+          ) : filteredArticles.length === 0 ? (
+            <p className="text-xl mt-12 uppercase">
+              {t("common.noResultsFound", "Nessun articolo trovato.")}
+            </p>
+          ) : (
+            <div className={clsx(
+              "w-full pb-32",
+              viewMode === "grid" 
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px]"
+                : "flex flex-col gap-16"
+            )}>
+              {filteredArticles.map((article) => {
+                const articleContent = (
+                  <>
+                    <div
+                      className={clsx(
+                        "overflow-hidden border-hidden",
+                        viewMode === "grid" ? `${IMAGE_RADIUS.MD} aspect-[4/3]` : `${IMAGE_RADIUS.LG} aspect-[2/1] w-full`
+                      )}
+                    >
+                      {article.immagineCopertina &&
+                      article.immagineCopertina.trim() !== "" ? (
+                        <img
+                          src={article.immagineCopertina}
+                          alt={getLocalizedField(article, 'titolo', lang) || article.titolo}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xl font-['Shamgod'] text-white/20">
+                          NO IMAGE
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={clsx("flex flex-col flex-1 px-2 md:px-0", viewMode === "fullscreen" && "max-w-4xl mx-auto w-full")}>
+                      {(getLocalizedField(article, 'preTitolo', lang) || article.preTitolo) && (
+                        <p className="font-['Karla'] font-bold text-[12px] md:text-[14px] uppercase tracking-widest text-[#FF4F00] mb-2 leading-none">
+                          {getLocalizedField(article, 'preTitolo', lang) || article.preTitolo}
+                        </p>
+                      )}
+
+                      <h2
+                        className={clsx(
+                          "font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9] mb-2 md:mb-4",
+                          viewMode === "grid" ? "text-[40px] md:text-[50px]" : "text-[50px] md:text-[80px]"
+                        )}>
+                        {getLocalizedField(article, 'titolo', lang) || article.titolo}
+                      </h2>
+
+                      {(getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo || article.sommario) && (
+                        <p
+                          className={clsx(
+                            "font-['Karla'] text-white/60 leading-[1.35] mb-6",
+                            viewMode === "grid" ? "text-lg line-clamp-3" : "text-xl md:text-2xl"
+                          )}>
+                          {getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo || article.sommario}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                );
+
+                return (
+                  <Link
+                    key={article.id}
+                    to={`/magazine/${article.id}`}
+                    className="group block transition-colors flex flex-col gap-4"
+                  >
+                    {articleContent}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </PublicLayout>
+  );
+}
