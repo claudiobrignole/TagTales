@@ -53,3 +53,21 @@ Regola 3: Divieto Assoluto di Hack CSS. È SEVERAMENTE VIETATO tentare di altera
 
 Regola 4: Contenitori Flessibili Sicuri. Qualsiasi contenitore genitore (Flexbox o Grid) che avvolge un articolo o una pagina di testo deve implementare min-w-0 per permettere ai figli di restringersi correttamente, evitando overflow orizzontali.
 
+## Gestione della Roadmap (ROADMAP.md)
+
+Quando l'utente chiede il passo successivo della roadmap, o cosa fare dopo, o qual è il task corrente:
+
+1. Leggi il file `/ROADMAP.md` dalla root del progetto.
+2. Analizza lo stato attuale: identifica quali task `[ ]` sono ancora aperti e quali `[x]` sono già completati.
+3. Presenta un riepilogo sintetico: quanti task completati, quanti aperti, qual è il blocco corrente.
+4. Suggerisci il prossimo task da affrontare rispettando l'ordine dei blocchi (Blocco 1 → Blocco 2 → Blocco 3 → Blocco 4 → Blocco 5). Non proporre task di un blocco successivo finché tutti i task del blocco corrente non sono completati o esplicitamente rimandati dall'utente.
+
+Quando completi un task durante la sessione:
+- Aggiorna immediatamente `/ROADMAP.md` cambiando `[ ]` in `[x]` per il task completato.
+- Comunica all'utente quale task è stato marcato come fatto e qual è il prossimo.
+
+Regole aggiuntive per la roadmap:
+- Non marcare un task come completato se non è stato testato e verificato nella sessione corrente.
+- Se un task è bloccato da una dipendenza esterna (es. risposta supporto Ecwid), segnalarlo esplicitamente e passare al task successivo disponibile nello stesso blocco o nel blocco successivo se possibile.
+- Se l'utente chiede di lavorare su qualcosa che non è nella roadmap, completare l'azione e poi proporre di aggiungere il nuovo task alla roadmap con il blocco e il numero appropriati.
+

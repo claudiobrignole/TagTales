@@ -58,7 +58,7 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 - [ ] **2.1** Verificare i flussi di registrazione e login artisti dall'interfaccia utente con Firebase Auth e custom claims.
 - [ ] **2.2** Testare la Dashboard Writer in produzione: dati vendita per prodotto, revenue, commissioni, accesso contratti, upload fatture, richiesta pagamento.
 - [ ] **2.3** Testare la Dashboard Admin in produzione: visualizzazione `pendingBalance` per artista, funzione `markArtistPaid` operativa.
-- [ ] **2.4** Pulizia repository: spostare o rimuovere gli script di sviluppo dalla root (`translate_locales_v*.cjs`, `update_grids.cjs`, `update_layout.cjs`, `apply_updates.cjs`, `replace.cjs`, `populateData.ts`, ecc.).
+- [x] **2.4** Pulizia repository: spostare o rimuovere gli script di sviluppo dalla root (`translate_locales_v*.cjs`, `update_grids.cjs`, `update_layout.cjs`, `apply_updates.cjs`, `replace.cjs`, `populateData.ts`, ecc.).
 
 
 ### Blocco 3 — Contenuto e Onboarding Artisti
@@ -70,8 +70,8 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 
 ### Blocco 4 — Sicurezza e Infrastruttura
 
-- [ ] **4.1** Revisione completa delle `firestore.rules` prima del go-live: `royalties` write-only per Cloud Functions, read-only per l'artista proprietario; nessun dato di altri artisti leggibile.
-- [ ] **4.2** Verificare che `keys.txt` in root non contenga chiavi o token esposti; se sì, rimuovere dalla storia git con `git filter-repo` e ruotare le chiavi.
+- [x] **4.1** Revisione completa delle `firestore.rules` prima del go-live: `royalties` write-only per Cloud Functions, read-only per l'artista proprietario; nessun dato di altri artisti leggibile.
+- [x] **4.2** Verificare che `keys.txt` in root non contenga chiavi o token esposti; se sì, rimuovere dalla storia git con `git filter-repo` e ruotare le chiavi.
 - [ ] **4.3** Attivare Google Cloud Monitoring per le metriche delle Cloud Functions e di Cloud Run.
 - [ ] **4.4** Configurare almeno 1 istanza minima attiva su Cloud Run per ridurre i cold start.
 
