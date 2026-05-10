@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build": "tsc server.ts --outDir . --module esnext --target es2020 --esModuleInterop --moduleResolution bundler --skipLibCheck && vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "start": "tsx server.ts"
+    "start": "node server.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

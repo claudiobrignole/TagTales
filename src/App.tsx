@@ -149,6 +149,9 @@ function PublicRouteWrapper({ children }: { children: React.ReactNode }) {
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#F2EEE8]">Loading...</div>;
   }
+  if (!user) {
+    return <Navigate to="/coming-soon" />;
+  }
   return <>{children}</>;
 }
 
@@ -232,8 +235,22 @@ export default function App() {
                 </PublicRouteWrapper>
               } 
             />
-            <Route path="/su-di-noi" element={<PublicPage id="su-di-noi" />} />
-            <Route path="/p/:id" element={<PublicPage id="dynamic" />} />
+            <Route 
+              path="/su-di-noi" 
+              element={
+                <PublicRouteWrapper>
+                  <PublicPage id="su-di-noi" />
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/p/:id" 
+              element={
+                <PublicRouteWrapper>
+                  <PublicPage id="dynamic" />
+                </PublicRouteWrapper>
+              } 
+            />
             <Route path="/populate" element={<Populate />} />
             <Route path="/login" element={<Login />} />
             <Route
