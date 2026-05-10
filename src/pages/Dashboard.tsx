@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
-import { calculateEarnings } from '../utils/earnings';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, orderBy, limit } from 'firebase/firestore';
 import { TrendingUp, Palette, Receipt, ArrowRight, CreditCard, CheckCircle2, Circle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ConnectionBanner from '../components/ConnectionBanner';
@@ -97,52 +96,27 @@ export default function Dashboard() {
           allCompletedAt: currentAllCompletedAt,
         });
 
-        let totalSales = 0;
+        // Fetch recent royalties
+        let totalSales = userData.totalEarned || 0;
+        let pendingBalance = userData.pendingBalance || 0;
         let excludedSalesCount = 0;
         const recent: any[] = [];
 
-        if (productIds.length > 0) {
-          // Fetch sales from backend
-          const response = await fetch('/api/sales', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productIds })
+        const royaltiesQ = query(collection(db, 'royalties'), where('artistId', '==', user.uid), orderBy('createdAt', 'desc'), limit(5));
+        const royaltiesSnap = await getDocs(royaltiesQ);
+        royaltiesSnap.forEach((royaltyDoc) => {
+          const sale = royaltyDoc.data();
+          recent.push({
+            id: royaltyDoc.id,
+            orderId: sale.orderId,
+            date: sale.createdAt?.toDate ? sale.createdAt.toDate().toISOString() : new Date().toISOString(),
+            artworkTitle: sale.productType ? sale.productType.replace(/_/g, ' ').toUpperCase() : 'Art',
+            artistShare: sale.feeAmount || 0,
+            status: sale.status || 'pending'
           });
-
-          if (response.ok) {
-            const data = await response.json();
-            const sales = data.sales || [];
-            
-            sales.forEach((sale: any) => {
-              const artwork = artworksMap.get(sale.ecwidProductId);
-              if (artwork && artwork.tipologia?.toLowerCase() !== 'original' && artwork.tipologia?.toLowerCase() !== 'originale') {
-                const earnings = calculateEarnings(sale, artwork);
-                if (earnings.hasMissingCosts) {
-                  excludedSalesCount++;
-                } else {
-                  totalSales += earnings.artistEarnings || 0;
-                }
-                
-                if (recent.length < 5) {
-                  recent.push({ ...sale, ...earnings, artworkTitle: artwork.titolo });
-                }
-              }
-            });
-          }
-        }
-
-        // Fetch all payments to calculate available balance
-        const paymentsQ = query(collection(db, 'payouts'), where('artistaId', '==', user.uid));
-        const paymentsSnapshot = await getDocs(paymentsQ);
-        let totalRequestedOrPaid = 0;
-        paymentsSnapshot.forEach(doc => {
-          const p = doc.data();
-          if (p.stato !== 'Rejected' && p.stato !== 'rifiutato' && p.stato !== 'rifiutata') {
-            totalRequestedOrPaid += p.ammontare || p.amount || 0;
-          }
         });
 
-        const availableBalance = Math.max(0, totalSales - totalRequestedOrPaid);
+        const availableBalance = pendingBalance;
 
         setStats({ totalArtworks, totalSales, pendingPayments: availableBalance, excludedSalesCount });
         setRecentSales(recent);

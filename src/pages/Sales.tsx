@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Download, Search, Calendar, AlertCircle } from 'lucide-react';
 import { format, subDays, startOfMonth, startOfYear, parseISO, subMonths } from 'date-fns';
 import { it, enUS } from 'date-fns/locale';
 import clsx from 'clsx';
 import ConnectionBanner from '../components/ConnectionBanner';
 import { useI18n } from '../contexts/I18nContext';
-import { calculateEarnings } from '../utils/earnings';
 
 
 export default function Sales() {
@@ -29,81 +28,52 @@ export default function Sales() {
       setLoading(true);
       setError('');
       try {
-        // 1. Get artist's ecwidProductIds from user profile
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        const productIds = userDoc.data()?.ecwidProductIds || [];
+        const royaltiesQ = query(collection(db, 'royalties'), where('artistId', '==', user.uid), orderBy('createdAt', 'desc'));
+        const royaltiesSnap = await getDocs(royaltiesQ);
+        
+        let allSales = royaltiesSnap.docs.map(doc => {
+          const data = doc.data();
+          const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
+          return {
+            id: doc.id,
+            orderId: data.orderId || '-',
+            date: createdAt.toISOString(),
+            artworkName: data.productType ? data.productType.replace(/_/g, ' ').toUpperCase() : 'ART',
+            format: data.productType || '-',
+            price: data.unitPrice || 0,
+            artistShare: data.feeAmount || 0,
+            status: data.status || 'pending',
+            hasMissingCosts: false
+          };
+        });
 
-        if (productIds.length === 0) {
-          setSales([]);
-          setLoading(false);
-          return;
-        }
-
-        // 2. Determine date range
-        let createdFrom = '';
-        let createdTo = '';
+        // 2. Filter by date range
         const now = new Date();
+        let fromDate: Date | null = null;
+        let toDate: Date | null = null;
 
         if (dateRange === 'this_month') {
-          createdFrom = Math.floor(startOfMonth(now).getTime() / 1000).toString();
+          fromDate = startOfMonth(now);
         } else if (dateRange === 'last_3_months') {
-          createdFrom = Math.floor(subMonths(now, 3).getTime() / 1000).toString();
+          fromDate = subMonths(now, 3);
         } else if (dateRange === 'this_year') {
-          createdFrom = Math.floor(startOfYear(now).getTime() / 1000).toString();
+          fromDate = startOfYear(now);
         } else if (dateRange === 'custom') {
-          if (customStartDate) {
-            createdFrom = Math.floor(new Date(customStartDate).getTime() / 1000).toString();
-          }
+          if (customStartDate) fromDate = new Date(customStartDate);
           if (customEndDate) {
-            // End of the day for the end date
-            const end = new Date(customEndDate);
-            end.setHours(23, 59, 59, 999);
-            createdTo = Math.floor(end.getTime() / 1000).toString();
+            toDate = new Date(customEndDate);
+            toDate.setHours(23, 59, 59, 999);
           }
         }
 
-        // 3. Fetch sales from backend
-        const response = await fetch('/api/sales', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            productIds,
-            createdFrom: createdFrom || undefined,
-            createdTo: createdTo || undefined
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch sales data');
+        if (fromDate) {
+           allSales = allSales.filter(s => new Date(s.date) >= fromDate!);
+        }
+        if (toDate) {
+           allSales = allSales.filter(s => new Date(s.date) <= toDate!);
         }
 
-        const data = await response.json();
-        
-        // 4. Fetch artist's artworks from Firestore to get production/shipping costs
-        const artworksQuery = query(collection(db, 'opere'), where('artistaId', '==', user.uid));
-        const artworksSnapshot = await getDocs(artworksQuery);
-        const artworksMap = new Map();
-        artworksSnapshot.forEach(doc => {
-          artworksMap.set(doc.data().ecwidId, doc.data());
-        });
-
-        // 5. Calculate earnings
-        const processedSales = (data.sales || []).map((sale: any) => {
-          const artwork = artworksMap.get(sale.ecwidProductId);
-          
-          // Filter out original artworks
-          if (!artwork || artwork.tipologia?.toLowerCase() === 'original' || artwork.tipologia?.toLowerCase() === 'originale') return null;
-
-          const earnings = calculateEarnings(sale, artwork);
-
-          return {
-            ...sale,
-            ...earnings,
-            format: artwork.tipologia // Ensure type is displayed correctly
-          };
-        }).filter(Boolean);
-
-        setSales(processedSales);
+        setSales(allSales);
       } catch (err: any) {
         console.error("Error fetching sales:", err);
         setError(err.message || 'Error fetching sales data');
@@ -131,9 +101,9 @@ export default function Sales() {
     const headers = ['Order ID', 'Date', 'Price', 'Status', 'Format'];
     const rows = filteredSales.map(sale => [
       sale.orderId || sale.id || '-',
-      sale.createDate ? format(parseISO(sale.createDate), 'dd MMM yyyy', { locale: dateLocale }) : sale.date || '-',
+      sale.date ? format(parseISO(sale.date), 'dd MMM yyyy', { locale: dateLocale }) : '-',
       sale.price || 0,
-      sale.paymentStatus || '-',
+      sale.status || '-',
       sale.format || '-'
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");

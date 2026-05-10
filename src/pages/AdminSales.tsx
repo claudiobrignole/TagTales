@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { Download, Filter, Search, Calendar, Receipt, AlertCircle } from 'lucide-react';
 import { format, subDays, startOfMonth, startOfYear, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { useI18n } from '../contexts/I18nContext';
-import { calculateEarnings } from '../utils/earnings';
 
 
 export default function AdminSales() {
@@ -57,47 +56,62 @@ export default function AdminSales() {
           }
         }
 
-        // 2. Fetch all sales from backend
-        const response = await fetch('/api/sales', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            productIds: 'all',
-            createdFrom: createdFrom || undefined,
-            createdTo: createdTo || undefined
-          })
+        // 2. Fetch all royalties and artists
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const usersMap = new Map();
+        usersSnapshot.forEach(userDoc => {
+          usersMap.set(userDoc.id, userDoc.data());
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch sales data');
-        }
-
-        const data = await response.json();
+        const royaltiesQ = query(collection(db, 'royalties'), orderBy('createdAt', 'desc'));
+        const royaltiesSnap = await getDocs(royaltiesQ);
         
-        // 3. Fetch artworks from Firestore to get production/shipping costs
-        const artworksSnapshot = await getDocs(collection(db, 'opere'));
-        const artworksMap = new Map();
-        artworksSnapshot.forEach(doc => {
-          artworksMap.set(doc.data().ecwidId, doc.data());
-        });
-
-        // 4. Calculate earnings
-        const processedSales = (data.sales || []).map((sale: any) => {
-          const artwork = artworksMap.get(sale.ecwidProductId);
-          
-          // Filter out original artworks
-          if (!artwork || artwork.tipo?.toLowerCase() === 'original' || artwork.tipo?.toLowerCase() === 'originale') return null;
-
-          const earnings = calculateEarnings(sale, artwork);
+        let allSales = royaltiesSnap.docs.map(doc => {
+          const data = doc.data();
+          const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
+          const artist = usersMap.get(data.artistId) || {};
+          const artistName = artist.artistName || artist.displayName || artist.email || 'Unknown Writer';
 
           return {
-            ...sale,
-            ...earnings,
-            format: artwork.tipo // Ensure type is displayed correctly
+            id: doc.id,
+            orderId: data.orderId || '-',
+            date: createdAt.toISOString(),
+            artworkName: data.productType ? data.productType.replace(/_/g, ' ').toUpperCase() : 'ART',
+            format: data.productType || '-',
+            price: data.unitPrice || 0,
+            artistEarnings: data.feeAmount || 0,
+            status: data.status || 'pending',
+            artistName: artistName,
+            hasMissingCosts: false
           };
-        }).filter(Boolean);
+        });
 
-        setSales(processedSales);
+        // 3. Filter by date range
+        let fromDate: Date | null = null;
+        let toDate: Date | null = null;
+
+        if (dateRange === 'this_month') {
+          fromDate = startOfMonth(now);
+        } else if (dateRange === 'last_3_months') {
+          fromDate = subMonths(now, 3);
+        } else if (dateRange === 'this_year') {
+          fromDate = startOfYear(now);
+        } else if (dateRange === 'custom') {
+          if (customStartDate) fromDate = new Date(customStartDate);
+          if (customEndDate) {
+            toDate = new Date(customEndDate);
+            toDate.setHours(23, 59, 59, 999);
+          }
+        }
+
+        if (fromDate) {
+           allSales = allSales.filter(s => new Date(s.date) >= fromDate!);
+        }
+        if (toDate) {
+           allSales = allSales.filter(s => new Date(s.date) <= toDate!);
+        }
+
+        setSales(allSales);
       } catch (err: any) {
         console.error("Error fetching sales:", err);
         setError(err.message || 'Error fetching sales data');
@@ -117,18 +131,14 @@ export default function AdminSales() {
 
   const handleExportCSV = () => {
     if (sales.length === 0) return;
-    const headers = ['ID Ordine', 'Data', 'Writer', 'Prezzo', 'Costo Produzione', 'Spedizione', 'Commissione CC', 'IVA', 'Ricavo Netto', 'Guadagni Writer', 'Formato'];
+    const headers = ['ID Ordine', 'Data', 'Writer', 'Prezzo di Vendita', 'Fee Writer', 'Trattenuta Piattaforma', 'Formato'];
     const rows = sales.map(sale => [
       sale.orderId || sale.id || '-',
-      sale.createDate ? format(parseISO(sale.createDate), 'dd MMM yyyy') : sale.date || '-',
+      sale.createDate ? format(parseISO(sale.createDate), 'dd MMM yyyy') : sale.date ? format(parseISO(sale.date), 'dd MMM yyyy') : '-',
       sale.artistName || '-',
       sale.price || 0,
-      sale.productionCost || 0,
-      sale.shippingCost || 0,
-      sale.ccFee || 0,
-      sale.vat || 0,
-      sale.netRevenue || 0,
       sale.artistEarnings || 0,
+      (sale.price - (sale.artistEarnings || 0)).toFixed(2),
       sale.format || '-'
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
@@ -232,12 +242,11 @@ export default function AdminSales() {
               <tr className="border-b border-[#EAE3D9] bg-[#F2EEE8]/50">
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.orderId')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('common.date')}</th>
-                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.productName')}</th>
+                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">Writer</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.type')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.grossSalePrice')}</th>
-                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.deductions')}</th>
-                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.netRevenue')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.yourShare')}</th>
+                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">Piattaforma</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.status')}</th>
               </tr>
             </thead>
@@ -247,27 +256,15 @@ export default function AdminSales() {
                   <td className="p-4 text-sm font-bold text-[#121212]">#{sale.orderId}</td>
                   <td className="p-4 text-sm font-medium text-[#59554E]">{format(parseISO(sale.date), 'MMM d, yyyy')}</td>
                   <td className="p-4 text-sm font-bold text-[#121212] flex items-center gap-2">
-                    {sale.productName || sale.artworkName}
-                    {sale.hasMissingCosts && (
-                      <span title="Missing production or shipping costs - Earnings are pending">
-                        <AlertCircle size={16} className="text-orange-500" />
-                      </span>
-                    )}
+                    {sale.artistName}
                   </td>
                   <td className="p-4 text-sm text-[#59554E]">{sale.format}</td>
                   <td className="p-4 text-sm font-bold text-[#121212] text-right">{Number(sale.price).toFixed(2)} {t('dashboard.currency')}</td>
-                  <td className="p-4 text-sm font-bold text-[#121212] text-right">
-                    {sale.hasMissingCosts ? '-' : `${(sale.vat + sale.productionCost + sale.shippingCost + sale.ccFee).toFixed(2)} ${t('dashboard.currency')}`}
-                  </td>
-                  <td className="p-4 text-sm font-bold text-[#121212] text-right">
-                    {sale.hasMissingCosts ? '-' : `${sale.netRevenue?.toFixed(2)} ${t('dashboard.currency')}`}
-                  </td>
                   <td className="p-4 text-sm font-bold text-[#FF4F00] text-right">
-                    {sale.hasMissingCosts ? (
-                      <span className="text-orange-500 text-xs font-medium">{t('sales.pendingCosts')}</span>
-                    ) : (
-                      `${sale.artistEarnings?.toFixed(2)} ${t('dashboard.currency')}`
-                    )}
+                      {sale.artistEarnings?.toFixed(2)} {t('dashboard.currency')}
+                  </td>
+                  <td className="p-4 text-sm font-bold text-[#121212] text-right">
+                    {(Number(sale.price) - Number(sale.artistEarnings)).toFixed(2)} {t('dashboard.currency')}
                   </td>
                   <td className="p-4">
                     <span className={clsx(

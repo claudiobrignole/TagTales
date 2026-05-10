@@ -21,10 +21,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() &&
-        ((request.auth.token.email == "claudio@brignole.ch") ||
-         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+      return isSignedIn() && (
+        (request.auth.token.email == "claudio@brignole.ch") ||
+        (request.auth.token.admin == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
     }
 
     function isArtist() {
@@ -113,14 +115,6 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    match /vendite_log/{venditaId} {
-      allow list: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
-      allow get: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
-      allow create: if false; // Only via secure server/functions
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-
     match /payouts/{payoutId} {
       allow list: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
       allow get: if isAdmin() || (isArtist() && resource.data.artistaId == getArtistId());
@@ -160,6 +154,14 @@ service cloud.firestore {
       allow create: if isAdmin();
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /royalties/{royaltyId} {
+      allow list: if isAdmin() || (isArtist() && resource.data.artistId == getArtistId());
+      allow get: if isAdmin() || (isArtist() && resource.data.artistId == getArtistId());
+      allow create: if false; // Only via secure server/functions
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
   }
 }

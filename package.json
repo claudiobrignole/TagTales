@@ -25,6 +25,8 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
+    "firebase-admin": "^13.9.0",
+    "firebase-functions": "^7.2.5",
     "i18next": "^25.10.4",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.546.0",

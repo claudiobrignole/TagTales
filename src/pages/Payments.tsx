@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db, storage } from '../firebase';
-import { collection, query, where, getDocs, orderBy, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, addDoc, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { CreditCard, FileText, Upload, Check, AlertCircle, Receipt, Wallet, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -9,7 +9,6 @@ import { it, enUS } from 'date-fns/locale';
 import clsx from 'clsx';
 import { sendEmailNotification } from '../utils/emailService';
 import { useI18n } from '../contexts/I18nContext';
-import { calculateEarnings } from '../utils/earnings';
 
 
 export default function Payments() {
@@ -18,6 +17,7 @@ export default function Payments() {
   const dateLocale = language === 'IT' ? it : enUS;
   const [payments, setPayments] = useState<any[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const [pendingBalance, setPendingBalance] = useState(0);
   const [excludedSalesCount, setExcludedSalesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
@@ -37,43 +37,12 @@ export default function Payments() {
       const paymentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setPayments(paymentsData);
 
-      // 2. Fetch artist's artworks to get ecwidProductIds and costs
-      const artworksQuery = query(collection(db, 'opere'), where('artistaId', '==', user.uid));
-      const artworksSnapshot = await getDocs(artworksQuery);
-      const artworksMap = new Map();
-      artworksSnapshot.forEach(doc => {
-        artworksMap.set(doc.data().ecwidId, doc.data());
-      });
-      const productIds = Array.from(artworksMap.keys());
-
-      if (productIds.length > 0) {
-        // 3. Fetch sales from backend
-        const response = await fetch('/api/sales', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productIds })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const sales = data.sales || [];
-          let excludedCount = 0;
-          const earnings = sales.reduce((sum: number, sale: any) => {
-            const artwork = artworksMap.get(sale.ecwidProductId);
-            if (artwork && artwork.tipologia?.toLowerCase() !== 'original' && artwork.tipologia?.toLowerCase() !== 'originale') {
-              const calc = calculateEarnings(sale, artwork);
-              if (calc.hasMissingCosts) {
-                excludedCount++;
-                return sum;
-              }
-              return sum + (calc.artistEarnings || 0);
-            }
-            return sum;
-          }, 0);
-          setTotalEarnings(earnings);
-          setExcludedSalesCount(excludedCount);
-        }
-      }
+      // 2. Fetch user's totalEarned from profile
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data() || {};
+      setTotalEarnings(userData.totalEarned || 0);
+      setPendingBalance(userData.pendingBalance || 0);
+      setExcludedSalesCount(0); // Deprecated in new fixed fee system
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -85,16 +54,7 @@ export default function Payments() {
     fetchPaymentsAndSales();
   }, [user]);
 
-  const totalRequestedOrPaid = payments.reduce((sum, p) => {
-    const status = p.stato || p.status;
-    const amountVal = p.ammontare || p.amount;
-    if (status !== 'Rejected' && status !== 'rejected' && status !== 'rifiutato' && status !== 'rifiutata') {
-      return sum + Number(amountVal || 0);
-    }
-    return sum;
-  }, 0);
-
-  const availableBalance = Math.max(0, totalEarnings - totalRequestedOrPaid);
+  const availableBalance = pendingBalance;
   const canRequest = availableBalance >= 500;
 
   const handleRequestPayout = async (e: React.FormEvent) => {
