@@ -1,6 +1,5 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { generateSlug } from '../src/utils/slugify.ts';
@@ -9,24 +8,14 @@ import { generateSlug } from '../src/utils/slugify.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Percorso al file serviceAccountKey.json 
-// Mettilo nella cartella root o in var/
-const serviceAccountPath = path.resolve(__dirname, '../serviceAccountKey.json');
-
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error(` ERRORE: File serviceAccountKey.json non trovato in ${serviceAccountPath}`);
-  console.error(" Scaricalo dalla Firebase Console e posizionalo nel percorso corretto.");
-  process.exit(1);
-}
-
-// Inizializza Firebase Admin
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
-
+// Inizializza Firebase Admin con Application Default Credentials (ADC)
 const app = initializeApp({
-  credential: cert(serviceAccount)
+  credential: applicationDefault(),
+  projectId: 'gen-lang-client-0591253558'
 });
 
-const db = getFirestore(app);
+const db = getFirestore(app, 'ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168');
+
 
 // Configurazione delle collection da migrare e il campo da cui generare lo slug
 const collectionsToMigrate = [
