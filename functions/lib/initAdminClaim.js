@@ -9,15 +9,20 @@ if (!admin.apps.length) {
 }
 exports.initAdminClaim = (0, https_1.onRequest)(async (req, res) => {
     const email = req.query.email;
-    if (!email || typeof email !== 'string') {
-        res.status(400).send("Please provide ?email= parameter");
+    const uid = req.query.uid;
+    if ((!email || typeof email !== 'string') && (!uid || typeof uid !== 'string')) {
+        res.status(400).send("Please provide ?email= or ?uid= parameter");
         return;
     }
     try {
-        const userRecord = await admin.auth().getUserByEmail(email);
-        await admin.auth().setCustomUserClaims(userRecord.uid, { admin: true });
-        logger.info(`Admin claim set for ${email} (UID: ${userRecord.uid})`);
-        res.status(200).send({ success: true, message: `Admin claim set for ${email}` });
+        let targetUid = uid;
+        if (!targetUid && email) {
+            const userRecord = await admin.auth().getUserByEmail(email);
+            targetUid = userRecord.uid;
+        }
+        await admin.auth().setCustomUserClaims(targetUid, { admin: true });
+        logger.info(`Admin claim set for UID: ${targetUid} (Email: ${email || 'unknown'})`);
+        res.status(200).send({ success: true, message: `Admin claim set for UID: ${targetUid}` });
     }
     catch (error) {
         logger.error('Error setting admin claim', error);
