@@ -32,6 +32,14 @@
 - Ottimizzazione Meta-Tag SEO (Title, Description, OpenGraph su tutte le pagine pubbliche).
 - Sitemap automatica (`/sitemap.xml`) e file `robots.txt` integrati nel backend Express.
 - Analisi incoerenze in naming e componenti (Artist → Writer completato).
+- **Internazionalizzazione URL (11 maggio 2026)**:
+  - Invertito l'ordine di `<BrowserRouter>` e `<I18nProvider>` in `App.tsx` per abilitare `useNavigate` e `useLocation` dentro il context.
+  - Creato `src/components/EnRouteWrapper.tsx`: forza la lingua EN su tutte le route `/en/*` tramite `setLanguage("EN", true)` senza scatenare loop di redirect.
+  - Aggiunta firma `skipRedirect?: boolean` a `setLanguage` in `I18nContext.tsx`.
+  - Duplicate tutte le route pubbliche con prefisso `/en/*` in `App.tsx` (home, writers, exhibitions, magazine con slug dinamici).
+  - Logica redirect automatico IT↔EN in `setLanguage`: naviga su `/en/[path]` scegliendo EN, rimuove il prefisso scegliendo IT. Guard attivo per escludere le route `/app/*` dal redirect.
+  - `LanguagePrompt` montato dentro `I18nProvider` in `App.tsx` (era importato ma non renderizzato).
+  - **SEO hreflang centralizzato** in `src/components/SEO.tsx`: genera automaticamente `<link rel="alternate" hrefLang="it">`, `<link rel="alternate" hrefLang="en">` e `<link rel="alternate" hrefLang="x-default">` per tutte le pagine pubbliche. Canonical URL pulito da trailing slash.
 
 
 ### 🚧 In Corso (Fase attuale)
@@ -59,6 +67,10 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 - [ ] **2.2** Testare la Dashboard Writer in produzione: dati vendita per prodotto, revenue, commissioni, accesso contratti, upload fatture, richiesta pagamento.
 - [ ] **2.3** Testare la Dashboard Admin in produzione: visualizzazione `pendingBalance` per artista, funzione `markArtistPaid` operativa.
 - [x] **2.4** Pulizia repository: spostare o rimuovere gli script di sviluppo dalla root (`translate_locales_v*.cjs`, `update_grids.cjs`, `update_layout.cjs`, `apply_updates.cjs`, `replace.cjs`, `populateData.ts`, ecc.).
+- [x] **2.5** Internazionalizzazione URL: route `/en/*` duplicate, `EnRouteWrapper`, redirect automatico IT↔EN, hreflang in `SEO.tsx` (completato 11 maggio 2026).
+- [ ] **2.6** Aggiungere le route `/en/assistenza` e `/en/su-di-noi` seguendo lo stesso pattern delle route `/en/*` già implementate.
+- [ ] **2.7** Testare il comportamento del `LanguagePrompt` dopo il login: verificare che il redirect verso `/en/` scatti correttamente quando l'utente accetta la lingua EN dal prompt.
+- [ ] **2.8** Aggiungere al footer (o header pubblico) un selettore lingua visibile anche nelle pagine pubbliche, che sfrutti `setLanguage` con redirect URL automatico.
 
 
 ### Blocco 3 — Contenuto e Onboarding Artisti
@@ -81,3 +93,4 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 - [ ] **5.1** Documentare internamente il processo di pagamento agli artisti (soglia €500, cadenza 30 giorni, verifica `pendingBalance`, richiesta fattura, esecuzione bonifico).
 - [ ] **5.2** Aggiornare Node.js da 20 a 22 nelle Cloud Functions (scadenza decommissioning: 30 ottobre 2026).
 - [ ] **5.3** Aggiornare `firebase-functions` SDK da 4.9.0 a >=5.1.0 (in branch separata, con attenzione ai breaking changes).
+- [ ] **5.4** Se in futuro si aggiunge una terza lingua, replicare il pattern di `EnRouteWrapper` con un nuovo prefisso URL (es. `/fr/*`) e aggiornare `SEO.tsx` per includere il nuovo hreflang.
