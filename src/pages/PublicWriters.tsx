@@ -15,6 +15,7 @@ import { IMAGE_RADIUS } from "../constants/theme";
 export default function PublicWriters() {
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === 'EN' ? '/en' : '';
 
   const [writers, setWriters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,7 +171,7 @@ export default function PublicWriters() {
                 return (
                   <Link
                     key={writer.id}
-                    to={`/writers/${writer.slug || writer.id}`}
+                    to={`${langPrefix}/writers/${writer.slug || writer.id}`}
                     className="group block"
                   >
                     <div

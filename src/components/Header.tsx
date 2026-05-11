@@ -178,7 +178,7 @@ export default function Header() {
             return (
               <Link
                 key={p.id}
-                to={`${langPrefix}/p/${p.id}`}
+                to={`${langPrefix}/info/${p.id}`}
                 className="hover:text-[#FF4F00] transition-colors"
               >
                 {p[`titolo_${l}`] || p.titolo}
@@ -300,7 +300,7 @@ export default function Header() {
                 return (
                   <Link
                     key={p.id}
-                    to={`${langPrefix}/p/${p.id}`}
+                    to={`${langPrefix}/info/${p.id}`}
                     onClick={() => setMobileMenuOpen(false)}
                     className="hover:text-[#FF4F00]"
                   >

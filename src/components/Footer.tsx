@@ -133,7 +133,7 @@ export default function Footer() {
                   const l = currentLang.toLowerCase();
                   return (
                     <li key={p.id}>
-                      <Link to={`${langPrefix}/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
+                      <Link to={`${langPrefix}/info/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
                         {p[`titolo_${l}`] || p.titolo}
                       </Link>
                     </li>
@@ -151,7 +151,7 @@ export default function Footer() {
                   const l = currentLang.toLowerCase();
                   return (
                     <li key={p.id}>
-                      <Link to={`${langPrefix}/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
+                      <Link to={`${langPrefix}/info/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
                         {p[`titolo_${l}`] || p.titolo}
                       </Link>
                     </li>

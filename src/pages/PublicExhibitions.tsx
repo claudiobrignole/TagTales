@@ -35,6 +35,7 @@ interface Exhibition {
 export default function PublicExhibitions() {
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === 'EN' ? '/en' : '';
   
   const [allExhibitions, setAllExhibitions] = useState<Exhibition[]>([]);
   const [filteredExhibitions, setFilteredExhibitions] = useState<Exhibition[]>(
@@ -369,7 +370,7 @@ export default function PublicExhibitions() {
                       className="flex flex-col items-start"
                     >
                       <Link
-                        to={`/exhibitions/${ex.slug || ex.id}`}
+                        to={`${langPrefix}/exhibitions/${ex.slug || ex.id}`}
                         className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
                       >
                         {t("home.visitExhibition", "VISITA LA MOSTRA")}
@@ -400,7 +401,7 @@ export default function PublicExhibitions() {
                 return (
                 <Link
                   key={ex.id}
-                  to={`/exhibitions/${ex.slug || ex.id}`}
+                  to={`${langPrefix}/exhibitions/${ex.slug || ex.id}`}
                   className="group cursor-pointer"
                 >
                   <div className="aspect-square bg-[#2A2A2A] rounded-2xl overflow-hidden relative">

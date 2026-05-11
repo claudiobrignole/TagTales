@@ -16,6 +16,7 @@ import SEO from "../components/SEO";
 export default function PublicMagazine() {
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === 'EN' ? '/en' : '';
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -255,7 +256,7 @@ export default function PublicMagazine() {
                 return (
                   <Link
                     key={article.id}
-                    to={`/magazine/${article.slug || article.id}`}
+                    to={`${langPrefix}/magazine/${article.slug || article.id}`}
                     className="group block transition-colors flex flex-col gap-4"
                   >
                     {articleContent}
