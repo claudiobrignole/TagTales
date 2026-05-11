@@ -22,6 +22,7 @@ export default function AdminPages() {
 
   const [formData, setFormData] = useState({
     id: '',
+    slug_en: '',
     titolo: '',
     blocks: [] as PageBlock[],
     published: true,
@@ -74,6 +75,7 @@ export default function AdminPages() {
 
       setFormData({
         id: page.id,
+        slug_en: page.slug_en || '',
         titolo: page.titolo || '',
         blocks: blocks,
         published: page.published !== false,
@@ -85,6 +87,7 @@ export default function AdminPages() {
       setEditingId(null);
       setFormData({
         id: '',
+        slug_en: '',
         titolo: '',
         blocks: [],
         published: true,
@@ -168,6 +171,7 @@ export default function AdminPages() {
         inHeader: formData.inHeader,
         inFooter1: formData.inFooter1,
         inFooter2: formData.inFooter2,
+        slug_en: formData.slug_en || formData.id,
         updatedAt: new Date().toISOString(),
       };
 
@@ -329,7 +333,7 @@ export default function AdminPages() {
               </div>
 
               <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-8 rounded-3xl border border-[#EAE3D9]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-white p-8 rounded-3xl border border-[#EAE3D9]">
                     <div className="space-y-4">
                         <label className="block text-xs font-bold text-[#59554E] uppercase tracking-[0.2em]">ID Pagina *</label>
                         <input 
@@ -353,8 +357,21 @@ export default function AdminPages() {
                             placeholder="es. Domande Frequenti"
                         />
                     </div>
+                    <div className="space-y-4">
+                      <label className="block text-xs font-bold text-[#59554E] uppercase tracking-[0.2em]">
+                        Slug URL Inglese (EN)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.slug_en}
+                        onChange={e => setFormData({ ...formData, slug_en: e.target.value })}
+                        className="w-full bg-[#F8F6F3] text-[#121212] p-4 rounded-xl border border-transparent focus:border-[#FF4F00] outline-none font-bold text-sm"
+                        placeholder="es. faq"
+                      />
+                      <p className="text-xs text-[#59554E]">Lascia vuoto per usare l'ID come slug anche in inglese.</p>
+                    </div>
                     
-                    <div className="md:col-span-2 flex flex-wrap gap-6 pt-4 border-t border-[#EAE3D9]">
+                    <div className="md:col-span-3 flex flex-wrap gap-6 pt-4 border-t border-[#EAE3D9]">
                         <label className="flex items-center gap-3 cursor-pointer">
                             <div className="relative">
                                 <input 

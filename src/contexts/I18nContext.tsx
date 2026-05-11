@@ -116,20 +116,87 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!skipRedirect) {
       const currentPath = location.pathname;
       const isAppRoute = currentPath.startsWith('/app');
+
       if (!isAppRoute) {
-        if (lang === 'EN' && !currentPath.startsWith('/en')) {
-          navigate(currentPath === '/' ? '/en' : '/en' + currentPath);
-        } else if (lang === 'IT' && currentPath.startsWith('/en')) {
-          navigate(currentPath.replace(/^\/en/, '') || '/');
+        // Pattern delle pagine di dettaglio con slug traducibile
+        const slugPatterns = [
+          { it: /^\/exhibitions\/([^/]+)$/, en: /^\/en\/exhibitions\/([^/]+)$/, collection: 'mostre', itPath: '/exhibitions/', enPath: '/en/exhibitions/' },
+          { it: /^\/magazine\/([^/]+)$/, en: /^\/en\/magazine\/([^/]+)$/, collection: 'articoli', itPath: '/magazine/', enPath: '/en/magazine/' },
+        ];
+
+        let redirected = false;
+
+        for (const pattern of slugPatterns) {
+          const matchIt = currentPath.match(pattern.it);
+          const matchEn = currentPath.match(pattern.en);
+          const match = matchIt || matchEn;
+
+          if (match) {
+            const currentSlug = match[1];
+            try {
+              const { collection: col, query: q, where, getDocs, limit, doc, getDoc } = await import('firebase/firestore');
+              const { db: firestoreDb } = await import('../firebase');
+
+              let targetSlug = currentSlug;
+
+              if (lang === 'EN' && matchIt) {
+                // Da IT a EN: cerca il documento per slug IT, prendi slug_en
+                const snap = await getDocs(q(col(firestoreDb, pattern.collection), where('slug', '==', currentSlug), limit(1)));
+                if (!snap.empty) {
+                  const data = snap.docs[0].data();
+                  targetSlug = data.slug_en || currentSlug;
+                }
+              } else if (lang === 'IT' && matchEn) {
+                // Da EN a IT: cerca per slug_en, prendi slug
+                const snap = await getDocs(q(col(firestoreDb, pattern.collection), where('slug_en', '==', currentSlug), limit(1)));
+                if (!snap.empty) {
+                  const data = snap.docs[0].data();
+                  targetSlug = data.slug || currentSlug;
+                }
+              }
+
+              const newPath = lang === 'EN'
+                ? pattern.enPath + targetSlug
+                : pattern.itPath + targetSlug;
+
+              navigate(newPath);
+              redirected = true;
+            } catch (err) {
+              console.error('[i18n] Slug translation failed, falling back:', err);
+            }
+            break;
+          }
+        }
+
+        if (!redirected) {
+          // Navigazione semplice per tutte le altre pagine
+          if (lang === 'EN' && !currentPath.startsWith('/en')) {
+            const pathMap: { [key: string]: string } = {
+              '/': '/en',
+              '/su-di-noi': '/en/about',
+              '/assistenza': '/en/support',
+            };
+            const targetPath = pathMap[currentPath] || '/en' + currentPath;
+            navigate(targetPath);
+          } else if (lang === 'IT' && currentPath.startsWith('/en')) {
+            const pathMap: { [key: string]: string } = {
+              '/en': '/',
+              '/en/about': '/su-di-noi',
+              '/en/support': '/assistenza',
+            };
+            const rawPath = currentPath.replace(/\/en(\/|$)/, '/$1');
+            const targetPath = pathMap[currentPath] || (rawPath === '//' ? '/' : rawPath.replace('//', '/'));
+            navigate(targetPath);
+          }
         }
       }
     }
-    
+
     if (user) {
       try {
         await updateDoc(doc(db, 'users', user.uid), { language: langLow });
       } catch (error) {
-        console.error("Error saving language preference:", error);
+        console.error('Error saving language preference:', error);
       }
     }
   };

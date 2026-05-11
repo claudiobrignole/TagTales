@@ -45,6 +45,7 @@ export default function AdminExhibitions() {
   const [formData, setFormData] = useState({
     titolo: "",
     slug: "",
+    slug_en: "",
     intro: "",
     testoCuratela: "",
     blocks: [] as any[],
@@ -117,6 +118,7 @@ export default function AdminExhibitions() {
       setFormData({
         titolo: exhibition.titolo || "",
         slug: exhibition.slug || "",
+        slug_en: exhibition.slug_en || "",
         intro: exhibition.intro || "",
         testoCuratela: exhibition.testoCuratela || "",
         blocks: exhibition.blocks || [],
@@ -134,6 +136,7 @@ export default function AdminExhibitions() {
       setFormData({
         titolo: "",
         slug: "",
+        slug_en: "",
         intro: "",
         testoCuratela: "",
         blocks: [],
@@ -208,6 +211,7 @@ export default function AdminExhibitions() {
 
       const payload = {
         ...translatedData,
+        slug_en: formData.slug_en || formData.slug,
         blocks: translatedBlocks,
         updatedAt: new Date().toISOString(),
       };
@@ -520,6 +524,19 @@ export default function AdminExhibitions() {
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                       placeholder="tag-tales"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">
+                      Slug URL Inglese (EN)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.slug_en}
+                      onChange={(e) => setFormData({ ...formData, slug_en: e.target.value })}
+                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                      placeholder="es. tag-tales-exhibition"
+                    />
+                    <p className="text-xs text-[#59554E] mt-1">Lascia vuoto per usare lo slug italiano anche in inglese.</p>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">

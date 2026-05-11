@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import PublicLayout from '../components/PublicLayout';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
@@ -127,8 +127,24 @@ export default function PublicPage({ id: propId }: { id?: string }) {
   useEffect(() => {
     const fetchPage = async () => {
       try {
-        const snap = await getDoc(doc(db, 'pagine', id));
-        if (snap.exists()) {
+        let snap: any = null;
+
+        if (lang === 'EN' || lang === 'en') {
+          const qEn = query(collection(db, 'pagine'), where('slug_en', '==', id), limit(1));
+          const snapEn = await getDocs(qEn);
+          if (!snapEn.empty) {
+            snap = snapEn.docs[0];
+          }
+        }
+
+        if (!snap) {
+          const idSnap = await getDoc(doc(db, 'pagine', id));
+          if (idSnap.exists()) {
+            snap = idSnap;
+          }
+        }
+
+        if (snap) {
           const raw = snap.data();
           const blocks = raw.blocks || null;
           setData({ ...raw, blocks } as PageData);

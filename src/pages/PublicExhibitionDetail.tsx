@@ -31,19 +31,29 @@ export default function PublicExhibitionDetail() {
         
         let docSnap: any = null;
         
-        // 1. Prova a cercare per slug
-        const q = query(collection(db, "mostre"), where("slug", "==", slug), limit(1));
-        const slugSnap = await getDocs(q);
-        
-        if (!slugSnap.empty) {
-          docSnap = slugSnap.docs[0];
-        } else {
-          // 2. Fallback all'ID diretto
+        // 1. Se lingua EN, cerca prima per slug_en
+        if (lang === 'EN' || lang === 'en') {
+          const qEn = query(collection(db, "mostre"), where("slug_en", "==", slug), limit(1));
+          const snapEn = await getDocs(qEn);
+          if (!snapEn.empty) {
+            docSnap = snapEn.docs[0];
+          }
+        }
+
+        // 2. Fallback: cerca per slug italiano
+        if (!docSnap) {
+          const q = query(collection(db, "mostre"), where("slug", "==", slug), limit(1));
+          const slugSnap = await getDocs(q);
+          if (!slugSnap.empty) {
+            docSnap = slugSnap.docs[0];
+          }
+        }
+
+        // 3. Ultimo fallback: cerca per ID diretto
+        if (!docSnap) {
           const docRef = doc(db, "mostre", slug);
           const idSnap = await getDoc(docRef);
-          if (idSnap.exists()) {
-            docSnap = idSnap;
-          }
+          if (idSnap.exists()) docSnap = idSnap;
         }
         
         if (docSnap) {
@@ -73,7 +83,7 @@ export default function PublicExhibitionDetail() {
       }
     };
     fetchExhibitionAndArtworks();
-  }, [slug]);
+  }, [slug, lang]);
 
   const exhibition = rawExhibitionData ? {
     ...rawExhibitionData,

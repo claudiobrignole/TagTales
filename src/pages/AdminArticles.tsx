@@ -42,6 +42,7 @@ export default function AdminArticles() {
     titolo: "",
     sottotitolo: "",
     slug: "",
+    slug_en: "",
     contenuto: "",
     autore: "",
     immagineCopertina: "",
@@ -104,6 +105,7 @@ export default function AdminArticles() {
         titolo: article.titolo || "",
         sottotitolo: article.sottotitolo || "",
         slug: article.slug || "",
+        slug_en: article.slug_en || "",
         contenuto: article.contenuto || "",
         autore: article.autore || "",
         immagineCopertina: article.immagineCopertina || "",
@@ -119,6 +121,7 @@ export default function AdminArticles() {
         titolo: "",
         sottotitolo: "",
         slug: "",
+        slug_en: "",
         contenuto: "",
         autore: "",
         immagineCopertina: "",
@@ -193,6 +196,7 @@ export default function AdminArticles() {
 
       const payload = {
         ...translatedData,
+        slug_en: formData.slug_en || formData.slug,
         updatedAt: new Date().toISOString(),
       };
 
@@ -478,7 +482,7 @@ export default function AdminArticles() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
                       Titolo *
@@ -506,6 +510,19 @@ export default function AdminArticles() {
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                       placeholder="slug-articolo"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">
+                      Slug URL Inglese (EN)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.slug_en}
+                      onChange={(e) => setFormData({ ...formData, slug_en: e.target.value })}
+                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                      placeholder="slug-article-en"
+                    />
+                    <p className="text-xs text-[#59554E] mt-1">Lascia vuoto per usare lo slug italiano anche in inglese.</p>
                   </div>
                 </div>
 

@@ -29,19 +29,29 @@ export default function PublicArticleDetail() {
         
         let articleDoc: any = null;
         
-        // 1. Prova a cercare per slug
-        const q = query(collection(db, "articoli"), where("slug", "==", slug), limit(1));
-        const slugSnap = await getDocs(q);
-        
-        if (!slugSnap.empty) {
-          articleDoc = slugSnap.docs[0];
-        } else {
-          // 2. Fallback all'ID diretto
+        // 1. Se lingua EN, cerca prima per slug_en
+        if (lang === 'EN' || lang === 'en') {
+          const qEn = query(collection(db, "articoli"), where("slug_en", "==", slug), limit(1));
+          const snapEn = await getDocs(qEn);
+          if (!snapEn.empty) {
+            articleDoc = snapEn.docs[0];
+          }
+        }
+
+        // 2. Fallback: cerca per slug italiano
+        if (!articleDoc) {
+          const q = query(collection(db, "articoli"), where("slug", "==", slug), limit(1));
+          const slugSnap = await getDocs(q);
+          if (!slugSnap.empty) {
+            articleDoc = slugSnap.docs[0];
+          }
+        }
+
+        // 3. Ultimo fallback: cerca per ID diretto
+        if (!articleDoc) {
           const docRef = doc(db, "articoli", slug);
           const idSnap = await getDoc(docRef);
-          if (idSnap.exists()) {
-            articleDoc = idSnap;
-          }
+          if (idSnap.exists()) articleDoc = idSnap;
         }
 
         if (articleDoc) {
@@ -55,7 +65,7 @@ export default function PublicArticleDetail() {
       }
     };
     fetchArticle();
-  }, [slug]);
+  }, [slug, lang]);
 
   const article = rawData ? {
     ...rawData,
