@@ -69,7 +69,7 @@ export default function Header() {
             (data.titolo?.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (data.titolo_en?.toLowerCase().includes(searchQuery.toLowerCase()))
           ) {
-            results.push({ id: doc.id, title: localizedTitle, type: "Mostra", image: data.bannerHero, link: `/mostre/${doc.id}` });
+            results.push({ id: doc.id, title: localizedTitle, type: "Mostra", image: data.bannerHero, link: `/exhibitions/${data.slug || doc.id}` });
           }
         });
 

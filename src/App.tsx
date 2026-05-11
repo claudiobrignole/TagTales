@@ -188,7 +188,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/writers/:id" 
+              path="/writers/:slug" 
               element={
                 <PublicRouteWrapper>
                   <PublicWriterDetail />
@@ -196,7 +196,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/mostre" 
+              path="/exhibitions" 
               element={
                 <PublicRouteWrapper>
                   <PublicExhibitions />
@@ -204,7 +204,7 @@ export default function App() {
               } 
             />
             <Route
-              path="/mostre/:id"
+              path="/exhibitions/:slug"
               element={
                 <PublicRouteWrapper>
                   <PublicExhibitionDetail />

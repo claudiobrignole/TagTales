@@ -4,7 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { Film } from "lucide-react";
 import EcwidBuyButton from "../components/EcwidBuyButton";
 import VideoEmbed from "../components/VideoEmbed";
@@ -16,7 +16,7 @@ import SEO from "../components/SEO";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 
 export default function PublicExhibitionDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
 
@@ -27,11 +27,26 @@ export default function PublicExhibitionDetail() {
   useEffect(() => {
     const fetchExhibitionAndArtworks = async () => {
       try {
-        if (!id) return;
-        const docRef = doc(db, "mostre", id);
-        const docSnap = await getDoc(docRef);
+        if (!slug) return;
         
-        if (docSnap.exists()) {
+        let docSnap: any = null;
+        
+        // 1. Prova a cercare per slug
+        const q = query(collection(db, "mostre"), where("slug", "==", slug), limit(1));
+        const slugSnap = await getDocs(q);
+        
+        if (!slugSnap.empty) {
+          docSnap = slugSnap.docs[0];
+        } else {
+          // 2. Fallback all'ID diretto
+          const docRef = doc(db, "mostre", slug);
+          const idSnap = await getDoc(docRef);
+          if (idSnap.exists()) {
+            docSnap = idSnap;
+          }
+        }
+        
+        if (docSnap) {
           const data = docSnap.data() as any;
           const exDataRaw = { id: docSnap.id, ...data };
           setRawExhibitionData(exDataRaw);

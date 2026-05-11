@@ -4,7 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
 import VideoEmbed from "../components/VideoEmbed";
 import DOMPurify from "dompurify";
 import { getLocalizedField } from "../utils/localization";
@@ -15,7 +15,7 @@ import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 
 export default function PublicArticleDetail() {
-  const { slug } = useParams(); // Using ID directly for now until we query by slug
+  const { slug } = useParams();
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
 
@@ -26,10 +26,26 @@ export default function PublicArticleDetail() {
     const fetchArticle = async () => {
       try {
         if (!slug) return;
-        const docRef = doc(db, "articoli", slug);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() as any };
+        
+        let articleDoc: any = null;
+        
+        // 1. Prova a cercare per slug
+        const q = query(collection(db, "articoli"), where("slug", "==", slug), limit(1));
+        const slugSnap = await getDocs(q);
+        
+        if (!slugSnap.empty) {
+          articleDoc = slugSnap.docs[0];
+        } else {
+          // 2. Fallback all'ID diretto
+          const docRef = doc(db, "articoli", slug);
+          const idSnap = await getDoc(docRef);
+          if (idSnap.exists()) {
+            articleDoc = idSnap;
+          }
+        }
+
+        if (articleDoc) {
+          const data = { id: articleDoc.id, ...articleDoc.data() as any };
           setRawData(data);
         }
       } catch (error) {

@@ -4,7 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { Film, Mail } from "lucide-react";
 import EcwidBuyButton from "../components/EcwidBuyButton";
 import { getLocalizedField } from "../utils/localization";
@@ -16,7 +16,7 @@ import SEO from "../components/SEO";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 
 export default function PublicWriterDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
 
@@ -28,10 +28,26 @@ export default function PublicWriterDetail() {
   useEffect(() => {
     const fetchWriterData = async () => {
       try {
-        if (!id) return;
-        const docRef = doc(db, "scrittori", id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
+        if (!slug) return;
+        
+        let docSnap: any = null;
+        
+        // 1. Prova a cercare per slug
+        const q = query(collection(db, "scrittori"), where("slug", "==", slug), limit(1));
+        const slugSnap = await getDocs(q);
+        
+        if (!slugSnap.empty) {
+          docSnap = slugSnap.docs[0];
+        } else {
+          // 2. Fallback all'ID diretto
+          const docRef = doc(db, "scrittori", slug);
+          const idSnap = await getDoc(docRef);
+          if (idSnap.exists()) {
+            docSnap = idSnap;
+          }
+        }
+        
+        if (docSnap) {
           const data = docSnap.data();
           setRawWriterData({ id: docSnap.id, ...data });
 
@@ -202,7 +218,7 @@ export default function PublicWriterDetail() {
                 {exhibitions.map((ex) => (
                   <Link
                     key={ex.id}
-                    to={`/mostre/${ex.id}`}
+                    to={`/exhibitions/${ex.slug || ex.id}`}
                     className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group"
                   >
                     <div className="aspect-video bg-[#F2EEE8] relative overflow-hidden">

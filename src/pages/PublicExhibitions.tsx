@@ -368,7 +368,7 @@ export default function PublicExhibitions() {
                       className="flex flex-col items-start"
                     >
                       <Link
-                        to={`/mostre/${ex.id}`}
+                        to={`/exhibitions/${ex.slug || ex.id}`}
                         className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
                       >
                         {t("home.visitExhibition", "VISITA LA MOSTRA")}
@@ -399,7 +399,7 @@ export default function PublicExhibitions() {
                 return (
                 <Link
                   key={ex.id}
-                  to={`/mostre/${ex.id}`}
+                  to={`/exhibitions/${ex.slug || ex.id}`}
                   className="group cursor-pointer"
                 >
                   <div className="aspect-square bg-[#2A2A2A] rounded-2xl overflow-hidden relative">

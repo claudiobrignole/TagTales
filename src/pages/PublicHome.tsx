@@ -68,7 +68,7 @@ const mockFeaturedExhibitions = [
     subtitle: "Every writer's story begins with a tag.",
     description:
       "ShaOne, primo writer italiano dal 1983 ritorna su Aelle - Tag Tales con la sua prima opera apparsa nel 1993 sulle pagine della rivista.",
-    link: "/mostre/shaone",
+    link: "/exhibitions/shaone",
     buttonText: "VISITA LA MOSTRA",
     owner: "SHAONE"
   },
@@ -233,7 +233,7 @@ export default function PublicHome() {
               img: data.bannerHero || data.coverImageUrl,
               title: data.titolo || data.title,
               owner: artistaId ? (writersMap[artistaId] || "MOSTRA") : "MOSTRA",
-              link: `/mostre/${doc.id}`,
+              link: `/exhibitions/${data.slug || doc.id}`,
               buttonText: "VISITA LA MOSTRA" // handled via getLoc or translation
             };
           })
@@ -356,7 +356,7 @@ export default function PublicHome() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px]">
               {mostre.map((item: any, i) => (
-                <Link key={i} to={`/mostre/${item.id}`} className="group cursor-pointer">
+                <Link key={i} to={`/exhibitions/${item.slug || item.id}`} className="group cursor-pointer">
                   <div className="aspect-square bg-[#2A2A2A] rounded-2xl overflow-hidden relative">
                     {item.img && <img src={item.img} alt={item.title} className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-80" />
