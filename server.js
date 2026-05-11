@@ -351,9 +351,19 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
     }
     else {
         const distPath = path.join(process.cwd(), 'dist');
-        app.use(express.static(distPath));
+        app.use(express.static(distPath, {
+          setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.html')) {
+              res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            }
+          }
+        }));
         app.get('*', (req, res) => {
-            res.sendFile(path.join(distPath, 'index.html'));
+          if (req.path.startsWith('/api/')) {
+            return res.status(404).json({ error: 'API route not found' });
+          }
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.sendFile(path.join(distPath, 'index.html'));
         });
     }
     app.listen(PORT, "0.0.0.0", () => {
