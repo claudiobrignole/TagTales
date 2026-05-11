@@ -242,6 +242,36 @@ export default function App() {
                 </PublicRouteWrapper>
               } 
             />
+            <Route
+              path="/en/support"
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicAssistance />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              }
+            />
+            <Route
+              path="/en/about"
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicPage id="su-di-noi" />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              }
+            />
+            <Route
+              path="/en/info/:id"
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicPage id="dynamic" />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              }
+            />
             <Route 
               path="/" 
               element={
@@ -315,7 +345,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/p/:id" 
+              path="/info/:id" 
               element={
                 <PublicRouteWrapper>
                   <PublicPage id="dynamic" />
