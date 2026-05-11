@@ -26,6 +26,10 @@ export default function Header() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [dynamicPages, setDynamicPages] = useState<any[]>([]);
 
+  const langPrefix = currentLang === "EN" ? "/en" : "";
+  const localizedPath = (itPath: string, enPath?: string) =>
+    currentLang === "EN" ? `/en${enPath ?? itPath}` : itPath;
+
   useEffect(() => {
     const fetchPages = async () => {
       try {
@@ -148,23 +152,23 @@ export default function Header() {
           <Link to="/" className="hover:text-[#FF4F00] transition-colors">
             {t("nav.home", "HOME")}
           </Link>
-          <Link to="/exhibitions" className="hover:text-[#FF4F00] transition-colors">
+          <Link to={localizedPath('/exhibitions')} className="hover:text-[#FF4F00] transition-colors">
             {t("nav.mostre", "MOSTRE")}
           </Link>
           <Link
-            to="/writers"
+            to={localizedPath('/writers')}
             className="hover:text-[#FF4F00] transition-colors"
           >
             {t("nav.writers", "WRITERS")}
           </Link>
           <Link
-            to="/magazine"
+            to={localizedPath('/magazine')}
             className="hover:text-[#FF4F00] transition-colors"
           >
             {t("nav.magazine", "MAGAZINE")}
           </Link>
           <Link
-            to="/assistenza"
+            to={localizedPath('/assistenza', '/support')}
             className="hover:text-[#FF4F00] transition-colors"
           >
             {t("nav.assistenza", "ASSISTENZA")}
@@ -174,7 +178,7 @@ export default function Header() {
             return (
               <Link
                 key={p.id}
-                to={`/p/${p.id}`}
+                to={`${langPrefix}/p/${p.id}`}
                 className="hover:text-[#FF4F00] transition-colors"
               >
                 {p[`titolo_${l}`] || p.titolo}
@@ -264,28 +268,28 @@ export default function Header() {
                 {t("nav.home", "HOME")}
               </Link>
               <Link
-                to="/exhibitions"
+                to={localizedPath('/exhibitions')}
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-[#FF4F00]"
               >
                 {t("nav.mostre", "MOSTRE")}
               </Link>
               <Link
-                to="/writers"
+                to={localizedPath('/writers')}
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-[#FF4F00]"
               >
                 {t("nav.writers", "WRITERS")}
               </Link>
               <Link
-                to="/magazine"
+                to={localizedPath('/magazine')}
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-[#FF4F00]"
               >
                 {t("nav.magazine", "MAGAZINE")}
               </Link>
               <Link
-                to="/assistenza"
+                to={localizedPath('/assistenza', '/support')}
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-[#FF4F00]"
               >
@@ -296,7 +300,7 @@ export default function Header() {
                 return (
                   <Link
                     key={p.id}
-                    to={`/p/${p.id}`}
+                    to={`${langPrefix}/p/${p.id}`}
                     onClick={() => setMobileMenuOpen(false)}
                     className="hover:text-[#FF4F00]"
                   >

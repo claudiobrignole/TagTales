@@ -14,6 +14,10 @@ export default function Footer() {
   const [dynamicPages, setDynamicPages] = useState<any[]>([]);
   const languages = ["IT", "EN"];
 
+  const langPrefix = currentLang === "EN" ? "/en" : "";
+  const localizedPath = (itPath: string, enPath?: string) =>
+    currentLang === "EN" ? `/en${enPath ?? itPath}` : itPath;
+
   useEffect(() => {
     const fetchPages = async () => {
       try {
@@ -96,27 +100,27 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/exhibitions" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to={localizedPath('/exhibitions')} className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.mostre", "MOSTRE")}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/writers" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to={localizedPath('/writers')} className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.writers", "WRITERS")}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/magazine" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to={localizedPath('/magazine')} className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.magazine", "MAGAZINE")}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/assistenza" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to={localizedPath('/assistenza', '/support')} className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.assistenza", "ASSISTENZA")}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/su-di-noi" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to={localizedPath('/su-di-noi', '/about')} className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.about", "SU DI NOI")}
                   </Link>
                 </li>
@@ -129,7 +133,7 @@ export default function Footer() {
                   const l = currentLang.toLowerCase();
                   return (
                     <li key={p.id}>
-                      <Link to={`/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
+                      <Link to={`${langPrefix}/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
                         {p[`titolo_${l}`] || p.titolo}
                       </Link>
                     </li>
@@ -147,7 +151,7 @@ export default function Footer() {
                   const l = currentLang.toLowerCase();
                   return (
                     <li key={p.id}>
-                      <Link to={`/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
+                      <Link to={`${langPrefix}/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors uppercase">
                         {p[`titolo_${l}`] || p.titolo}
                       </Link>
                     </li>
