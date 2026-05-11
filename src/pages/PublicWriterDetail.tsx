@@ -75,7 +75,7 @@ export default function PublicWriterDetail() {
       }
     };
     fetchWriterData();
-  }, [id]);
+  }, [slug]);
 
   const writer = rawWriterData ? {
     ...rawWriterData,

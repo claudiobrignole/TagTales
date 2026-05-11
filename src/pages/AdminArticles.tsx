@@ -27,6 +27,8 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { translateDirtyFields } from "../utils/translate";
 
+import { generateSlug } from "../utils/slugify";
+
 export default function AdminArticles() {
   const { user } = useAuth();
   const [articles, setArticles] = useState<any[]>([]);
@@ -133,15 +135,6 @@ export default function AdminArticles() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-  };
-
-  const generateSlug = (text: string) => {
-    return text
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replace(/[\s\W-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

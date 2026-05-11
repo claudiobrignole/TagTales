@@ -73,7 +73,7 @@ export default function PublicExhibitionDetail() {
       }
     };
     fetchExhibitionAndArtworks();
-  }, [id]);
+  }, [slug]);
 
   const exhibition = rawExhibitionData ? {
     ...rawExhibitionData,

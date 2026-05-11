@@ -37,7 +37,7 @@ async function setAdminClaim() {
     
     process.exit(0);
   } catch (error) {
-    console.error('Errore durante l\\'impostazione del custom claim:', error);
+    console.error("Errore durante l'impostazione del custom claim:", error);
     process.exit(1);
   }
 }

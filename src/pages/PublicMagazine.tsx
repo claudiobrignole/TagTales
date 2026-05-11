@@ -45,7 +45,8 @@ export default function PublicMagazine() {
               id: doc.id,
               ...docData,
               titolo: docData.titolo || docData.title || "ARTICOLO",
-              immagineCopertina: docData.immagineCopertina || docData.coverImageUrl
+              immagineCopertina:
+                docData.immagineCopertina || docData.coverImageUrl,
             };
           })
           .filter((a: any) => a.published !== false && a.isPublished !== false)
@@ -72,7 +73,9 @@ export default function PublicMagazine() {
   const filteredArticles = useMemo(() => {
     return articles.filter(
       (a) =>
-        (getLocalizedField(a, 'titolo', lang) || a.titolo || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (getLocalizedField(a, "titolo", lang) || a.titolo || "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         (a.autore || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         a.tag?.some((t: string) =>
           t.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -126,7 +129,10 @@ export default function PublicMagazine() {
             </span>
             <input
               type="text"
-              placeholder={t("search.articles", "Cerca articoli, tag, autori...")}
+              placeholder={t(
+                "search.articles",
+                "Cerca articoli, tag, autori...",
+              )}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm flex-1 max-w-[300px]"
@@ -134,7 +140,9 @@ export default function PublicMagazine() {
           </div>
           <button
             onClick={() =>
-              setViewMode((prev) => (prev === "fullscreen" ? "grid" : "fullscreen"))
+              setViewMode((prev) =>
+                prev === "fullscreen" ? "grid" : "fullscreen",
+              )
             }
             className="text-white border border-white/30 hover:bg-white hover:text-[#121212] p-2 rounded-full transition-colors shrink-0 ml-4 hidden md:block"
           >
@@ -149,9 +157,9 @@ export default function PublicMagazine() {
 
       <div className="pt-[96px] px-[15px] md:px-[25px] pb-32 bg-[#121212] min-h-[100svh] text-white">
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="w-full mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mx-auto"
         >
           {loading ? (
             <div className="flex justify-center items-center py-20 uppercase font-['Shamgod'] text-4xl">
@@ -162,26 +170,33 @@ export default function PublicMagazine() {
               {t("common.noResultsFound", "Nessun articolo trovato.")}
             </p>
           ) : (
-            <div className={clsx(
-              "w-full pb-32",
-              viewMode === "grid" 
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px]"
-                : "flex flex-col gap-16"
-            )}>
+            <div
+              className={clsx(
+                "w-full pb-32",
+                viewMode === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px]"
+                  : "flex flex-col gap-16",
+              )}
+            >
               {filteredArticles.map((article) => {
                 const articleContent = (
                   <>
                     <div
                       className={clsx(
                         "overflow-hidden border-hidden",
-                        viewMode === "grid" ? `${IMAGE_RADIUS.MD} aspect-[4/3]` : `${IMAGE_RADIUS.LG} aspect-[2/1] w-full`
+                        viewMode === "grid"
+                          ? `${IMAGE_RADIUS.MD} aspect-[4/3]`
+                          : `${IMAGE_RADIUS.LG} aspect-[2/1] w-full`,
                       )}
                     >
                       {article.immagineCopertina &&
                       article.immagineCopertina.trim() !== "" ? (
                         <img
                           src={article.immagineCopertina}
-                          alt={getLocalizedField(article, 'titolo', lang) || article.titolo}
+                          alt={
+                            getLocalizedField(article, "titolo", lang) ||
+                            article.titolo
+                          }
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (
@@ -191,28 +206,46 @@ export default function PublicMagazine() {
                       )}
                     </div>
 
-                    <div className={clsx("flex flex-col flex-1 px-2 md:px-0", viewMode === "fullscreen" && "max-w-4xl mx-auto w-full")}>
-                      {(getLocalizedField(article, 'preTitolo', lang) || article.preTitolo) && (
+                    <div
+                      className={clsx(
+                        "flex flex-col flex-1 px-2 md:px-0",
+                        viewMode === "fullscreen" && "max-w-4xl mx-auto w-full",
+                      )}
+                    >
+                      {(getLocalizedField(article, "preTitolo", lang) ||
+                        article.preTitolo) && (
                         <p className="font-['Karla'] font-bold text-[12px] md:text-[14px] uppercase tracking-widest text-[#FF4F00] mb-2 leading-none">
-                          {getLocalizedField(article, 'preTitolo', lang) || article.preTitolo}
+                          {getLocalizedField(article, "preTitolo", lang) ||
+                            article.preTitolo}
                         </p>
                       )}
 
                       <h2
                         className={clsx(
                           "font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9] mb-2 md:mb-4",
-                          viewMode === "grid" ? "text-[40px] md:text-[50px]" : "text-[50px] md:text-[80px]"
-                        )}>
-                        {getLocalizedField(article, 'titolo', lang) || article.titolo}
+                          viewMode === "grid"
+                            ? "text-[40px] md:text-[50px]"
+                            : "text-[50px] md:text-[80px]",
+                        )}
+                      >
+                        {getLocalizedField(article, "titolo", lang) ||
+                          article.titolo}
                       </h2>
 
-                      {(getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo || article.sommario) && (
+                      {(getLocalizedField(article, "sottotitolo", lang) ||
+                        article.sottotitolo ||
+                        article.sommario) && (
                         <p
                           className={clsx(
                             "font-['Karla'] text-white/60 leading-[1.35] mb-6",
-                            viewMode === "grid" ? "text-lg line-clamp-3" : "text-xl md:text-2xl"
-                          )}>
-                          {getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo || article.sommario}
+                            viewMode === "grid"
+                              ? "text-lg line-clamp-3"
+                              : "text-xl md:text-2xl",
+                          )}
+                        >
+                          {getLocalizedField(article, "sottotitolo", lang) ||
+                            article.sottotitolo ||
+                            article.sommario}
                         </p>
                       )}
                     </div>
@@ -222,7 +255,7 @@ export default function PublicMagazine() {
                 return (
                   <Link
                     key={article.id}
-                    to={`/magazine/${article.id}`}
+                    to={`/magazine/${article.slug || article.id}`}
                     className="group block transition-colors flex flex-col gap-4"
                   >
                     {articleContent}

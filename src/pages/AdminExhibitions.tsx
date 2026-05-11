@@ -32,6 +32,7 @@ import ImageUpload from "../components/ImageUpload";
 import MultiImageUpload from "../components/MultiImageUpload";
 import AdminExhibitionBlocksEditor from "../components/AdminExhibitionBlocksEditor";
 import { translateDirtyFields, translateText } from "../utils/translate";
+import { generateSlug } from "../utils/slugify";
 
 export default function AdminExhibitions() {
   const { user } = useAuth();
@@ -43,6 +44,7 @@ export default function AdminExhibitions() {
 
   const [formData, setFormData] = useState({
     titolo: "",
+    slug: "",
     intro: "",
     testoCuratela: "",
     blocks: [] as any[],
@@ -114,6 +116,7 @@ export default function AdminExhibitions() {
       setEditingId(exhibition.id);
       setFormData({
         titolo: exhibition.titolo || "",
+        slug: exhibition.slug || "",
         intro: exhibition.intro || "",
         testoCuratela: exhibition.testoCuratela || "",
         blocks: exhibition.blocks || [],
@@ -130,6 +133,7 @@ export default function AdminExhibitions() {
       setEditingId(null);
       setFormData({
         titolo: "",
+        slug: "",
         intro: "",
         testoCuratela: "",
         blocks: [],
@@ -154,6 +158,18 @@ export default function AdminExhibitions() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
   const [saveStatus, setSaveStatus] = useState("");
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const titolo = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      titolo,
+      slug:
+        prev.slug === generateSlug(prev.titolo) || prev.slug === ""
+          ? generateSlug(titolo)
+          : prev.slug,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -487,11 +503,22 @@ export default function AdminExhibitions() {
                       type="text"
                       required
                       value={formData.titolo}
-                      onChange={(e) =>
-                        setFormData({ ...formData, titolo: e.target.value })
-                      }
+                      onChange={handleTitleChange}
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                       placeholder="es. TAG TALES"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">
+                       Slug URL *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                      placeholder="tag-tales"
                     />
                   </div>
                   <div>

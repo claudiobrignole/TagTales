@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, Globe, Menu, X, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useMotionValueEvent,
+} from "motion/react";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
@@ -24,10 +29,16 @@ export default function Header() {
   useEffect(() => {
     const fetchPages = async () => {
       try {
-        const snap = await getDocs(query(collection(db, 'pagine'), where('published', '==', true), where('inHeader', '==', true)));
-        const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const snap = await getDocs(
+          query(
+            collection(db, "pagine"),
+            where("published", "==", true),
+            where("inHeader", "==", true),
+          ),
+        );
+        const docs = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setDynamicPages(docs);
-      } catch(err) {
+      } catch (err) {
         console.error(err);
       }
     };
@@ -54,22 +65,29 @@ export default function Header() {
       }
       try {
         const results: any[] = [];
-        
+
         // Search Exhibitions
         const qEx = query(
           collection(db, "mostre"),
           where("published", "==", true),
-          limit(5)
+          limit(5),
         );
         const snapEx = await getDocs(qEx);
-        snapEx.docs.forEach(doc => {
+        snapEx.docs.forEach((doc) => {
           const data = doc.data();
-          const localizedTitle = getLocalizedField(data, 'titolo', currentLang) || data.titolo;
+          const localizedTitle =
+            getLocalizedField(data, "titolo", currentLang) || data.titolo;
           if (
-            (data.titolo?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (data.titolo_en?.toLowerCase().includes(searchQuery.toLowerCase()))
+            data.titolo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            data.titolo_en?.toLowerCase().includes(searchQuery.toLowerCase())
           ) {
-            results.push({ id: doc.id, title: localizedTitle, type: "Mostra", image: data.bannerHero, link: `/exhibitions/${data.slug || doc.id}` });
+            results.push({
+              id: doc.id,
+              title: localizedTitle,
+              type: "Mostra",
+              image: data.bannerHero,
+              link: `/exhibitions/${data.slug || doc.id}`,
+            });
           }
         });
 
@@ -77,17 +95,24 @@ export default function Header() {
         const qWr = query(
           collection(db, "scrittori"),
           where("stato", "==", "attivo"),
-          limit(5)
+          limit(5),
         );
         const snapWr = await getDocs(qWr);
-        snapWr.docs.forEach(doc => {
+        snapWr.docs.forEach((doc) => {
           const data = doc.data();
-          const localizedNickname = getLocalizedField(data, 'nickname', currentLang) || data.nickname;
+          const localizedNickname =
+            getLocalizedField(data, "nickname", currentLang) || data.nickname;
           if (
-            (data.nickname?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (data.nickname_en?.toLowerCase().includes(searchQuery.toLowerCase()))
+            data.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            data.nickname_en?.toLowerCase().includes(searchQuery.toLowerCase())
           ) {
-            results.push({ id: doc.id, title: localizedNickname, type: t("common.writer", "Writer"), image: data.fotoProfilo, link: `/writers/${doc.id}` });
+            results.push({
+              id: doc.id,
+              title: localizedNickname,
+              type: t("common.writer", "Writer"),
+              image: data.fotoProfilo,
+              link: `/writers/${data.slug || doc.id}`,
+            });
           }
         });
 
@@ -126,19 +151,32 @@ export default function Header() {
           <Link to="/mostre" className="hover:text-[#FF4F00] transition-colors">
             {t("nav.mostre", "MOSTRE")}
           </Link>
-          <Link to="/writers" className="hover:text-[#FF4F00] transition-colors">
+          <Link
+            to="/writers"
+            className="hover:text-[#FF4F00] transition-colors"
+          >
             {t("nav.writers", "WRITERS")}
           </Link>
-          <Link to="/magazine" className="hover:text-[#FF4F00] transition-colors">
+          <Link
+            to="/magazine"
+            className="hover:text-[#FF4F00] transition-colors"
+          >
             {t("nav.magazine", "MAGAZINE")}
           </Link>
-          <Link to="/assistenza" className="hover:text-[#FF4F00] transition-colors">
+          <Link
+            to="/assistenza"
+            className="hover:text-[#FF4F00] transition-colors"
+          >
             {t("nav.assistenza", "ASSISTENZA")}
           </Link>
-          {dynamicPages.map(p => {
+          {dynamicPages.map((p) => {
             const l = currentLang.toLowerCase();
             return (
-              <Link key={p.id} to={`/p/${p.id}`} className="hover:text-[#FF4F00] transition-colors">
+              <Link
+                key={p.id}
+                to={`/p/${p.id}`}
+                className="hover:text-[#FF4F00] transition-colors"
+              >
                 {p[`titolo_${l}`] || p.titolo}
               </Link>
             );
@@ -164,7 +202,7 @@ export default function Header() {
                     <button
                       key={lang}
                       onClick={() => {
-                        setLanguage(lang as 'IT' | 'EN');
+                        setLanguage(lang as "IT" | "EN");
                         setLangDropdownOpen(false);
                       }}
                       className={clsx(
@@ -253,7 +291,7 @@ export default function Header() {
               >
                 {t("nav.assistenza", "ASSISTENZA")}
               </Link>
-              {dynamicPages.map(p => {
+              {dynamicPages.map((p) => {
                 const l = currentLang.toLowerCase();
                 return (
                   <Link
@@ -276,7 +314,7 @@ export default function Header() {
                     <button
                       key={lang}
                       onClick={() => {
-                        setLanguage(lang as 'IT' | 'EN');
+                        setLanguage(lang as "IT" | "EN");
                         setMobileMenuOpen(false);
                       }}
                       className={clsx(
@@ -316,7 +354,10 @@ export default function Header() {
                 <input
                   type="text"
                   autoFocus
-                  placeholder={t("common.searchPlaceholder", "Cerca mostre, writer, articoli...")}
+                  placeholder={t(
+                    "common.searchPlaceholder",
+                    "Cerca mostre, writer, articoli...",
+                  )}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent border-none outline-none text-2xl font-bold font-['Karla'] text-[#121212] placeholder:text-[#121212]/30"
@@ -363,7 +404,11 @@ export default function Header() {
                       ))}
                       {searchResults.length === 0 && (
                         <div className="col-span-full py-12 text-center text-[#59554E] font-medium text-lg">
-                          {t("common.noResultsFound", "Nessun risultato trovato per")} "{searchQuery}".
+                          {t(
+                            "common.noResultsFound",
+                            "Nessun risultato trovato per",
+                          )}{" "}
+                          "{searchQuery}".
                         </div>
                       )}
                     </div>
@@ -371,7 +416,10 @@ export default function Header() {
                 ) : (
                   <div className="text-center py-16">
                     <p className="text-[#59554E] font-medium text-xl">
-                      {t("common.startTyping", "Inizia a digitare per cercare...")}
+                      {t(
+                        "common.startTyping",
+                        "Inizia a digitare per cercare...",
+                      )}
                     </p>
                   </div>
                 )}

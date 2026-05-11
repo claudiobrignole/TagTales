@@ -22,6 +22,7 @@ import { useAuth } from "../contexts/AuthContext";
 import ImageUpload from "../components/ImageUpload";
 import AdminExhibitionBlocksEditor from "../components/AdminExhibitionBlocksEditor";
 import { translateDirtyFields, translateText } from "../utils/translate";
+import { generateSlug } from "../utils/slugify";
 
 export default function AdminWriters() {
   const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function AdminWriters() {
 
   const [formData, setFormData] = useState({
     nickname: "",
+    slug: "",
     bioBreve: "",
     paese: "",
     citta: "",
@@ -108,6 +110,7 @@ export default function AdminWriters() {
       setEditingId(writer.id);
       setFormData({
         nickname: writer.nickname || "",
+        slug: writer.slug || "",
         bioBreve: writer.bioBreve || "",
         paese: writer.paese || "",
         citta: writer.citta || "",
@@ -125,6 +128,7 @@ export default function AdminWriters() {
       setEditingId(null);
       setFormData({
         nickname: "",
+        slug: "",
         bioBreve: "",
         paese: "",
         citta: "",
@@ -148,6 +152,18 @@ export default function AdminWriters() {
   };
 
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nickname = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      nickname,
+      slug:
+        prev.slug === generateSlug(prev.nickname) || prev.slug === ""
+          ? generateSlug(nickname)
+          : prev.slug,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -448,11 +464,22 @@ export default function AdminWriters() {
                       type="text"
                       required
                       value={formData.nickname}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nickname: e.target.value })
-                      }
+                      onChange={handleNicknameChange}
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                       placeholder="es. ShaOne"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">
+                       Slug URL *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                      placeholder="shaone"
                     />
                   </div>
                   {isAdmin && (

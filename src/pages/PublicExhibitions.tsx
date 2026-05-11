@@ -26,6 +26,7 @@ interface Exhibition {
   bannerHero?: string;
   dataApertura?: string;
   artistaIds?: string[];
+  slug?: string;
   artistNames?: string[];
   year?: string;
   order?: number;

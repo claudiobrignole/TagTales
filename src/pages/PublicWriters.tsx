@@ -43,7 +43,7 @@ export default function PublicWriters() {
             return {
               id: doc.id,
               ...data,
-              fotoProfilo: data.fotoProfilo || data.profileImageUrl
+              fotoProfilo: data.fotoProfilo || data.profileImageUrl,
             };
           })
           .filter((w: any) => w.published !== false && w.isPublished !== false)
@@ -61,16 +61,25 @@ export default function PublicWriters() {
   }, []);
 
   const filteredWriters = useMemo(() => {
-    return writers.filter(
-      (w) => {
-        const nickname = getLocalizedField(w, 'nickname', lang) || getLocalizedField(w, 'artistName', lang) || "Writer";
-        const citta = getLocalizedField(w, 'citta', lang) || getLocalizedField(w, 'city', lang) || "";
-        const paese = getLocalizedField(w, 'paese', lang) || getLocalizedField(w, 'country', lang) || "";
-        return nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          citta.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          paese.toLowerCase().includes(searchQuery.toLowerCase());
-      }
-    );
+    return writers.filter((w) => {
+      const nickname =
+        getLocalizedField(w, "nickname", lang) ||
+        getLocalizedField(w, "artistName", lang) ||
+        "Writer";
+      const citta =
+        getLocalizedField(w, "citta", lang) ||
+        getLocalizedField(w, "city", lang) ||
+        "";
+      const paese =
+        getLocalizedField(w, "paese", lang) ||
+        getLocalizedField(w, "country", lang) ||
+        "";
+      return (
+        nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        citta.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        paese.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
   }, [writers, searchQuery, lang]);
 
   return (
@@ -130,9 +139,9 @@ export default function PublicWriters() {
 
       <div className="pt-[96px] px-[15px] md:px-[25px] pb-32 bg-[#121212] min-h-[100svh] text-white">
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="w-full mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mx-auto"
         >
           {loading ? (
             <div className="flex justify-center items-center py-20 uppercase font-['Shamgod'] text-4xl">
@@ -144,41 +153,57 @@ export default function PublicWriters() {
             </p>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[15px] md:gap-[25px]">
-               {filteredWriters.map((writer) => {
-                 const nickname = getLocalizedField(writer, 'nickname', lang) || getLocalizedField(writer, 'artistName', lang) || "Writer";
-                 const citta = getLocalizedField(writer, 'citta', lang) || getLocalizedField(writer, 'city', lang) || "";
-                 const paese = getLocalizedField(writer, 'paese', lang) || getLocalizedField(writer, 'country', lang) || "";
-                 
-                 return (
-                <Link
-                  key={writer.id}
-                  to={`/writers/${writer.id}`}
-                  className="group block"
-                >
-                  <div className={clsx("aspect-square bg-white overflow-hidden mb-4 relative group-hover:scale-[1.02] transition-transform duration-500", IMAGE_RADIUS.MD)}>
-                    {writer.fotoProfilo && writer.fotoProfilo.trim() !== "" ? (
-                      <>
-                        <img
-                          src={writer.fotoProfilo}
-                          alt={nickname}
-                          className="w-full h-full object-cover opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl font-['Shamgod'] text-[#121212]/20">
-                        ?
-                      </div>
-                    )}
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9]">
-                    {nickname}
-                  </h2>
-                  <p className="text-white/60 font-bold mt-1 uppercase tracking-wider text-[10px] md:text-sm">
-                    {citta} {paese}
-                  </p>
-                </Link>
-              )})}
+              {filteredWriters.map((writer) => {
+                const nickname =
+                  getLocalizedField(writer, "nickname", lang) ||
+                  getLocalizedField(writer, "artistName", lang) ||
+                  "Writer";
+                const citta =
+                  getLocalizedField(writer, "citta", lang) ||
+                  getLocalizedField(writer, "city", lang) ||
+                  "";
+                const paese =
+                  getLocalizedField(writer, "paese", lang) ||
+                  getLocalizedField(writer, "country", lang) ||
+                  "";
+
+                return (
+                  <Link
+                    key={writer.id}
+                    to={`/writers/${writer.slug || writer.id}`}
+                    className="group block"
+                  >
+                    <div
+                      className={clsx(
+                        "aspect-square bg-white overflow-hidden mb-4 relative group-hover:scale-[1.02] transition-transform duration-500",
+                        IMAGE_RADIUS.MD,
+                      )}
+                    >
+                      {writer.fotoProfilo &&
+                      writer.fotoProfilo.trim() !== "" ? (
+                        <>
+                          <img
+                            src={writer.fotoProfilo}
+                            alt={nickname}
+                            className="w-full h-full object-cover opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl font-['Shamgod'] text-[#121212]/20">
+                          ?
+                        </div>
+                      )}
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9]">
+                      {nickname}
+                    </h2>
+                    <p className="text-white/60 font-bold mt-1 uppercase tracking-wider text-[10px] md:text-sm">
+                      {citta} {paese}
+                    </p>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </motion.div>
