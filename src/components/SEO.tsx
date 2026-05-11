@@ -17,6 +17,11 @@ const SEO: React.FC<SEOProps> = ({ title, description, image, article }) => {
   const baseUrl = window.location.origin;
   const defaultImage = `${baseUrl}/pwa-192x192.png`; // Fallback to PWA icon
   
+  const pathname = window.location.pathname;
+  const canonicalPath = pathname.startsWith('/en/') ? pathname.substring(3) : (pathname === '/en' ? '/' : pathname);
+  const itUrl = `${baseUrl}${canonicalPath}`;
+  const enUrl = `${baseUrl}/en${canonicalPath === '/' ? '' : canonicalPath}`;
+
   const seo = {
     title: title ? `${title} | ${siteName}` : siteName,
     description: description || defaultDescription,
@@ -31,6 +36,10 @@ const SEO: React.FC<SEOProps> = ({ title, description, image, article }) => {
       <meta name="description" content={seo.description} />
       <meta name="image" content={seo.image} />
       
+      <link rel="alternate" hrefLang="it" href={itUrl} />
+      <link rel="alternate" hrefLang="en" href={enUrl} />
+      <link rel="alternate" hrefLang="x-default" href={itUrl} />
+
       {/* Open Graph / Facebook */}
       <meta property="og:url" content={seo.url} />
       {article ? <meta property="og:type" content="article" /> : <meta property="og:type" content="website" />}
@@ -45,7 +54,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, image, article }) => {
       <meta name="twitter:image" content={seo.image} />
       
       {/* Standard SEO */}
-      <link rel="canonical" href={seo.url} />
+      <link rel="canonical" href={`${baseUrl}${pathname.replace(/\/$/, '') || '/'}`} />
     </Helmet>
   );
 };

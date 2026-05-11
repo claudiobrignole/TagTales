@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 type Language = 'EN' | 'IT';
 
 interface I18nContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language, skipRedirect?: boolean) => void;
   t: (key: string, options?: any) => string;
   showLanguagePrompt: boolean;
   setShowLanguagePrompt: (show: boolean) => void;
@@ -32,6 +33,9 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [language, setLanguageState] = useState<Language>('IT');
   const [showLanguagePrompt, setShowLanguagePrompt] = useState(false);
   const [proposedLang, setProposedLang] = useState('EN');
+  
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Update HTML lang attribute for SEO
@@ -103,11 +107,23 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserLanguage();
   }, [user]);
 
-  const setLanguage = async (lang: Language) => {
+  const setLanguage = async (lang: Language, skipRedirect?: boolean) => {
     setLanguageState(lang);
     const langLow = lang.toLowerCase();
     i18n.changeLanguage(langLow);
     localStorage.setItem('app_language', langLow);
+
+    if (!skipRedirect) {
+      const currentPath = location.pathname;
+      const isAppRoute = currentPath.startsWith('/app');
+      if (!isAppRoute) {
+        if (lang === 'EN' && !currentPath.startsWith('/en')) {
+          navigate(currentPath === '/' ? '/en' : '/en' + currentPath);
+        } else if (lang === 'IT' && currentPath.startsWith('/en')) {
+          navigate(currentPath.replace(/^\/en/, '') || '/');
+        }
+      }
+    }
     
     if (user) {
       try {

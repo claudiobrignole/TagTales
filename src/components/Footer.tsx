@@ -96,7 +96,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/mostre" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to="/exhibitions" className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.mostre", "MOSTRE")}
                   </Link>
                 </li>

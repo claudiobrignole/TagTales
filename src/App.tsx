@@ -41,7 +41,7 @@ import AdminArticles from "./pages/AdminArticles";
 import AdminPages from "./pages/AdminPages";
 import NotFound from "./pages/NotFound";
 import ComingSoon from "./pages/ComingSoon";
-
+import EnRouteWrapper from "./components/EnRouteWrapper";
 
 import LanguagePrompt from "./components/LanguagePrompt";
 
@@ -167,10 +167,81 @@ export default function App() {
   }, []);
   return (
     <AuthProvider>
-      <I18nProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <I18nProvider>
+          <LanguagePrompt />
           <Routes>
             <Route path="/coming-soon" element={<ComingSoon />} />
+            <Route 
+              path="/en" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicHome />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/en/writers" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicWriters />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/en/writers/:slug" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicWriterDetail />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/en/exhibitions" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicExhibitions />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/en/exhibitions/:slug" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicExhibitionDetail />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/en/magazine" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicMagazine />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
+            <Route 
+              path="/en/magazine/:slug" 
+              element={
+                <PublicRouteWrapper>
+                  <EnRouteWrapper>
+                    <PublicArticleDetail />
+                  </EnRouteWrapper>
+                </PublicRouteWrapper>
+              } 
+            />
             <Route 
               path="/" 
               element={
@@ -285,8 +356,8 @@ export default function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </I18nProvider>
+        </I18nProvider>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

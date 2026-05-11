@@ -148,7 +148,7 @@ export default function Header() {
           <Link to="/" className="hover:text-[#FF4F00] transition-colors">
             {t("nav.home", "HOME")}
           </Link>
-          <Link to="/mostre" className="hover:text-[#FF4F00] transition-colors">
+          <Link to="/exhibitions" className="hover:text-[#FF4F00] transition-colors">
             {t("nav.mostre", "MOSTRE")}
           </Link>
           <Link
@@ -264,7 +264,7 @@ export default function Header() {
                 {t("nav.home", "HOME")}
               </Link>
               <Link
-                to="/mostre"
+                to="/exhibitions"
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-[#FF4F00]"
               >
