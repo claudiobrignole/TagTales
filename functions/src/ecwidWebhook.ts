@@ -48,7 +48,7 @@ export const ecwidWebhook = onRequest(
     }
 
     const eventType = req.body.eventType;
-    if (eventType !== "order.paid") {
+    if (eventType !== "order.created") {
       res.status(200).send("Event ignored");
       return;
     }
@@ -87,6 +87,13 @@ export const ecwidWebhook = onRequest(
       }
 
       const orderData = await orderRes.json();
+      
+      if (orderData.paymentStatus !== "PAID") {
+        logger.info(`Order ${orderId} ignored: paymentStatus=${orderData.paymentStatus}`);
+        res.status(200).send("Order not paid, ignored");
+        return;
+      }
+
       const items = orderData.items || [];
 
       const batch = db.batch();
