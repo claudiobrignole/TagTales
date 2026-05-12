@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 export default function ComingSoon() {
+  useEffect(() => {
+    if (typeof (window as any).gtag === 'function') {
+      (window as any).gtag('event', 'page_view', { page_path: '/coming-soon' });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F2EEE8]">
       <div className="flex flex-col items-center">

@@ -248,7 +248,7 @@ export default function PublicExhibitions() {
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="bg-white/10 text-white px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm [&>option]:bg-[#121212] flex-1 max-w-[200px] mr-12"
+              className="bg-white/10 text-white px-4 pr-10 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm [&>option]:bg-[#121212] flex-1 max-w-[200px] mr-12"
             >
               <option value="">{t("search.allYears", "Tutti gli anni")}</option>
               {availableYears.map((year) => (

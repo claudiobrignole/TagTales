@@ -28,6 +28,27 @@ Ogni prodotto TagTales su Ecwid può avere i seguenti attributi personalizzati (
 - Per `stampa_limitata` senza fee_override: fee = prezzo_vendita - 90.00
 - `feeAmount` è sempre >= 0 (Math.max applicato)
 
+### Procedura aggiunta attributi a un nuovo prodotto (via pannello Ecwid)
+
+Usare ogni volta che si crea un nuovo prodotto TagTales su Ecwid.
+
+**Step 1** — Creare il prodotto normalmente dal pannello: Catalog → Products → Add New Product. Inserire nome, foto, prezzo, varianti. Salvare.
+
+**Step 2** — Aprire la scheda **Attributes** del prodotto appena creato.
+
+**Step 3** — Compilare i campi (ignorare UPC, Brand e i campi `[English]`):
+
+- `artist_id` → UID Firebase del writer (Firebase Console → Authentication → cerca per email → copia l'UID). Se prodotto interno, lasciare vuoto.
+- `product_type` → uno di questi valori esatti: `tshirt`, `felpa`, `poster_a2`, `poster_a1`, `tela_12x18`, `tela_16x24`, `tela_20x30`, `tela_40x60`, `stampa_limitata`
+- `promo_active` → `true` se in promozione, `false` o vuoto altrimenti
+- `fee_override` → lasciare vuoto per fee standard. Scrivere `0` per prodotti interni senza royalty. Scrivere un numero (es. `120`) per fee fissa personalizzata.
+
+**Step 4** — Salvare con il pulsante Save.
+
+**Prodotti interni** (es. t-shirt TagTales logo): `artist_id` vuoto, `product_type` compilato, `fee_override` a `0`.
+
+**Prodotti di un writer**: `artist_id` con UID Firebase, `product_type` compilato, `promo_active` e `fee_override` solo se necessario.
+
 
 ## 📝 Registro delle Azioni (Changelog)
 
@@ -115,3 +136,107 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 - [ ] **5.2** Aggiornare Node.js da 20 a 22 nelle Cloud Functions (scadenza decommissioning: 30 ottobre 2026).
 - [ ] **5.3** Aggiornare `firebase-functions` SDK da 4.9.0 a >=5.1.0 (in branch separata, con attenzione ai breaking changes).
 - [ ] **5.4** Se in futuro si aggiunge una terza lingua, replicare il pattern di `EnRouteWrapper` con un nuovo prefisso URL (es. `/fr/*`) e aggiornare `SEO.tsx` per includere il nuovo hreflang.
+
+
+## 🔍 Blocco 6 — SEO, Analytics & Advertising
+
+Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, con tracciamento analytics, integrazione pixel Meta e predisposizione per campagne Google Ads e Meta Ads.
+
+***
+
+### Fase 6.1 — Google Analytics 4 (GA4) base
+
+- [ ] **6.1.1** Aggiungere snippet `gtag.js` (GA4) nel template HTML principale (`index.html`).
+- [ ] **6.1.2** Integrare `react-ga4` nel progetto e agganciarlo al router: ogni cambio di route deve triggerare un evento `pageview`.
+- [ ] **6.1.3** Definire e tracciare eventi personalizzati: `view_artist`, `view_artwork`, `ecwid_product_click`, `checkout_initiated`.
+- [ ] **6.1.4** Verificare l'attivazione su Google Analytics e collegare la property a Google Search Console.
+
+**File coinvolti:** `index.html`, `src/App.tsx`, nuovo `src/utils/analytics.ts`
+
+***
+
+### Fase 6.2 — Google Search Console + Sitemap bilingue
+
+- [ ] **6.2.1** Verificare il dominio `tagtalesgallery.com` su Google Search Console (metodo DNS o file HTML).
+- [ ] **6.2.2** Controllare che la sitemap dinamica (`/sitemap.xml`) generata da Express includa tutte le route `/en/*` create con l'internazionalizzazione (completata l'11 maggio 2026).
+- [ ] **6.2.3** Inviare la sitemap a Google Search Console e monitorare l'indicizzazione.
+
+**File coinvolti:** `server.ts` (funzione sitemap), verifica manuale su Search Console.
+
+***
+
+### Fase 6.3 — Meta Pixel (base + Conversions API)
+
+- [ ] **6.3.1** Aggiungere lo snippet Meta Pixel nel template HTML principale con il Pixel ID corretto.
+- [ ] **6.3.2** Tracciare gli eventi standard client-side: `ViewContent` su pagine artista/opera, `InitiateCheckout` su click Ecwid.
+- [ ] **6.3.3** Implementare la **Meta Conversions API** server-side nella Cloud Function `ecwidWebhook` esistente: inviare l'evento `Purchase` a Meta quando un ordine Ecwid risulta `PAID`, usando l'Access Token del Pixel. Questo garantisce il tracciamento anche con adblocker attivi.
+
+**File coinvolti:** `index.html`, `src/App.tsx`, `functions/src/ecwidWebhook.ts`
+
+***
+
+### Fase 6.4 — SEO Manager nel pannello Admin
+
+Questa è la funzionalità principale: un'interfaccia nel pannello Admin per gestire i meta-tag SEO di ogni pagina statica pubblica (Home, Magazine, Writers, Mostre).
+
+**Struttura dati Firestore — nuova collection `seoConfig/{pageId}`:**
+```
+{
+  titleIT: string,
+  titleEN: string,
+  descriptionIT: string,
+  descriptionEN: string,
+  keywordsIT: string[],
+  keywordsEN: string[],
+  ogImageUrl: string,
+  ogImageAlt: string,
+  updatedAt: timestamp
+}
+```
+
+**Pagine gestite:** `home`, `magazine`, `writers`, `exhibitions`
+
+- [ ] **6.4.1** Creare la collection Firestore `seoConfig` con i 4 documenti iniziali.
+- [ ] **6.4.2** Creare la pagina `SEOManager` nel pannello Admin con form per ogni pagina: titolo IT/EN, description IT/EN, upload immagine OG (→ Firebase Storage `og-images/{pageId}`), bottone "Suggerisci keywords con Gemini".
+- [ ] **6.4.3** Implementare la Cloud Function `generateSEOKeywords` (callable): riceve il contenuto testuale della pagina e la lingua, chiama Gemini API, restituisce un array di 8-10 keywords consigliate.
+- [ ] **6.4.4** Aggiornare il middleware Express (`server.ts`) per leggere `seoConfig/{pageId}` da Firestore e iniettare i meta-tag corretti nell'HTML prima di servire ogni pagina pubblica, in modo che i crawler (Google, Facebook, WhatsApp) ricevano i tag aggiornati anche se la SPA non è ancora idratata.
+
+**File coinvolti:** `server.ts`, `src/pages/admin/SEOManager.tsx` (nuovo), `functions/src/generateSEOKeywords.ts` (nuovo), `firestore.rules` (aggiornare permessi).
+
+***
+
+### Fase 6.5 — Widget Analytics nel pannello Admin
+
+- [ ] **6.5.1** Integrare la **Google Analytics Data API v1** tramite Service Account per mostrare nel pannello Admin i dati principali: sessioni, utenti attivi, pageview per pagina, fonti di traffico (ultimi 30 giorni).
+- [ ] **6.5.2** Aggiungere un widget "Traffico per pagina" nella Dashboard Admin che mostri le 10 pagine più visitate.
+- [ ] **6.5.3** Valutare l'integrazione dell'**Insights API Meta** per visualizzare le performance del Pixel (impression, reach, eventi tracciati) nel pannello Admin.
+
+**Note:** Richiede un Service Account Google Cloud con permesso `roles/analyticsdata.viewer` sulla property GA4. Le credenziali vanno salvate come environment variable su Hostinger, mai nel repository.
+
+**File coinvolti:** `server.ts` (nuovo endpoint `/api/admin/analytics`), `src/pages/admin/AnalyticsDashboard.tsx` (nuovo).
+
+***
+
+### Fase 6.6 — Collegamento Google Ads e Meta Ads
+
+- [ ] **6.6.1** Collegare la property GA4 all'account Google Ads tramite la console Google Analytics (operazione manuale, nessun codice richiesto).
+- [ ] **6.6.2** Importare le conversioni GA4 in Google Ads per il retargeting e l'ottimizzazione delle campagne.
+- [ ] **6.6.3** Nel pannello Admin aggiungere link diretti a Google Ads Dashboard e Meta Business Manager per accesso rapido alle campagne senza implementazione API completa.
+- [ ] **6.6.4** Con Meta Pixel attivo (Fase 6.3), creare Audience Personalizzate su Meta: visitatori pagine artisti, visitatori pagine opere, chi ha avviato checkout ma non acquistato.
+
+**Note:** Il collegamento Google Ads non richiede codice aggiuntivo se GA4 è configurato correttamente. Meta Ads usa automaticamente i dati del Pixel attivato nella Fase 6.3.
+
+***
+
+### Ordine di esecuzione consigliato
+
+| Step | Fase | Complessità | Note |
+|------|------|-------------|------|
+| 1 | 6.1 GA4 base | Bassa | Un solo prompt |
+| 2 | 6.2 Search Console | Bassa | Manuale + verifica sitemap |
+| 3 | 6.3 Meta Pixel base | Bassa | Un solo prompt |
+| 4 | 6.4 SEO Manager Admin | Alta | 3-4 prompt separati |
+| 5 | 6.3.3 Conversions API | Media | Estende webhook esistente |
+| 6 | 6.5 Widget Analytics | Alta | Richiede Service Account |
+| 7 | 6.6 Ads collegamento | Media | In parte manuale |
+

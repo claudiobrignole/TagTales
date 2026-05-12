@@ -58,7 +58,7 @@ async function startServer() {
 
       for (const lang of targetLanguages) {
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.1-flash-lite",
           config: {
               temperature: 0.2
           },
@@ -294,7 +294,7 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.1-flash-lite",
         contents: formattedContents,
         config: {
           systemInstruction: systemInstruction,
@@ -313,7 +313,7 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
     try {
       const ai = getAi();
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.1-flash-lite",
         contents: "Hello, world!"
       });
       res.json({ success: true, text: response.text });
