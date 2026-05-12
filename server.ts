@@ -356,33 +356,37 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
 
-      const addUrl = (pathIt: string, pathEn: string, priority: string = "0.8") => {
+      const addUrl = (pathIt: string, pathEn: string, priority: string = "0.8", changefreq: string = "weekly") => {
+        const lastmod = new Date().toISOString().split('T')[0];
         xml += `  <url>\n`;
         xml += `    <loc>${baseUrl}${pathIt}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
-        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <changefreq>${changefreq}</changefreq>\n`;
         xml += `    <priority>${priority}</priority>\n`;
         xml += `  </url>\n`;
         xml += `  <url>\n`;
         xml += `    <loc>${baseUrl}${pathEn}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
-        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <changefreq>${changefreq}</changefreq>\n`;
         xml += `    <priority>${priority}</priority>\n`;
         xml += `  </url>\n`;
       };
 
       // Static routes
-      addUrl("/", "/en", "1.0");
-      addUrl("/writers", "/en/writers", "0.9");
-      addUrl("/exhibitions", "/en/exhibitions", "0.9");
-      addUrl("/magazine", "/en/magazine", "0.9");
-      addUrl("/privacy", "/en/privacy", "0.5");
-      addUrl("/terms", "/en/terms", "0.5");
-      addUrl("/cookies", "/en/cookies", "0.5");
+      addUrl("/", "/en", "1.0", "weekly");
+      addUrl("/writers", "/en/writers", "0.9", "weekly");
+      addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly");
+      addUrl("/magazine", "/en/magazine", "0.9", "weekly");
+      addUrl("/privacy", "/en/privacy", "0.5", "monthly");
+      addUrl("/terms", "/en/terms", "0.5", "monthly");
+      addUrl("/cookies", "/en/cookies", "0.5", "monthly");
+      addUrl("/assistance", "/en/assistance", "0.5", "monthly");
 
       // Dynamic routes
       writers.forEach((id: string) => addUrl(`/writer/${id}`, `/en/writer/${id}`, "0.8"));
@@ -398,6 +402,15 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
       console.error("Sitemap error:", error);
       res.status(500).send("Error generating sitemap");
     }
+  });
+
+  app.get("/robots.txt", (req, res) => {
+    res.header("Content-Type", "text/plain");
+    res.send(`User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Sitemap: https://tagtalesgallery.com/sitemap.xml`);
   });
 
   // Vite middleware for development
