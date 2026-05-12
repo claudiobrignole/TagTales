@@ -146,8 +146,8 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 
 ### Fase 6.1 — Google Analytics 4 (GA4) base
 
-- [ ] **6.1.1** Aggiungere snippet `gtag.js` (GA4) nel template HTML principale (`index.html`).
-- [ ] **6.1.2** Integrare `react-ga4` nel progetto e agganciarlo al router: ogni cambio di route deve triggerare un evento `pageview`.
+- [x] **6.1.1** Aggiungere snippet `gtag.js` (GA4) nel template HTML principale (`index.html`).
+- [x] **6.1.2** Integrare `react-ga4` nel progetto e agganciarlo al router: ogni cambio di route deve triggerare un evento `pageview`.
 - [ ] **6.1.3** Definire e tracciare eventi personalizzati: `view_artist`, `view_artwork`, `ecwid_product_click`, `checkout_initiated`.
 - [ ] **6.1.4** Verificare l'attivazione su Google Analytics e collegare la property a Google Search Console.
 
@@ -158,7 +158,7 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 ### Fase 6.2 — Google Search Console + Sitemap bilingue
 
 - [ ] **6.2.1** Verificare il dominio `tagtalesgallery.com` su Google Search Console (metodo DNS o file HTML).
-- [ ] **6.2.2** Controllare che la sitemap dinamica (`/sitemap.xml`) generata da Express includa tutte le route `/en/*` create con l'internazionalizzazione (completata l'11 maggio 2026).
+- [x] **6.2.2** Controllare che la sitemap dinamica (`/sitemap.xml`) generata da Express includa tutte le route `/en/*` create con l'internazionalizzazione (completata l'11 maggio 2026).
 - [ ] **6.2.3** Inviare la sitemap a Google Search Console e monitorare l'indicizzazione.
 
 **File coinvolti:** `server.ts` (funzione sitemap), verifica manuale su Search Console.
@@ -167,7 +167,7 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 
 ### Fase 6.3 — Meta Pixel (base + Conversions API)
 
-- [ ] **6.3.1** Aggiungere lo snippet Meta Pixel nel template HTML principale con il Pixel ID corretto.
+- [x] **6.3.1** Aggiungere lo snippet Meta Pixel nel template HTML principale con il Pixel ID corretto.
 - [ ] **6.3.2** Tracciare gli eventi standard client-side: `ViewContent` su pagine artista/opera, `InitiateCheckout` su click Ecwid.
 - [ ] **6.3.3** Implementare la **Meta Conversions API** server-side nella Cloud Function `ecwidWebhook` esistente: inviare l'evento `Purchase` a Meta quando un ordine Ecwid risulta `PAID`, usando l'Access Token del Pixel. Questo garantisce il tracciamento anche con adblocker attivi.
 
