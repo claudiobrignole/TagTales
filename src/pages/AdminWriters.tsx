@@ -41,6 +41,7 @@ export default function AdminWriters() {
     fotoProfilo: "",
     bannerSocial: "",
     linkInstagram: "",
+    linkInstagram_en: "",
     emailContatto: "",
     videoEmbeds: [] as string[],
     blocks: [] as any[],
@@ -117,6 +118,7 @@ export default function AdminWriters() {
         fotoProfilo: writer.fotoProfilo || "",
         bannerSocial: writer.bannerSocial || "",
         linkInstagram: writer.linkInstagram || "",
+        linkInstagram_en: writer.linkInstagram_en || "",
         emailContatto: writer.emailContatto || "",
         videoEmbeds: writer.videoEmbeds || [],
         blocks: writer.blocks || [],
@@ -135,6 +137,7 @@ export default function AdminWriters() {
         fotoProfilo: "",
         bannerSocial: "",
         linkInstagram: "",
+        linkInstagram_en: "",
         emailContatto: "",
         videoEmbeds: [],
         blocks: [],
@@ -573,6 +576,23 @@ export default function AdminWriters() {
                         setFormData({
                           ...formData,
                           linkInstagram: e.target.value,
+                        })
+                      }
+                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                      placeholder="https://instagram.com/..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">
+                      Link Instagram (EN)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.linkInstagram_en}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          linkInstagram_en: e.target.value,
                         })
                       }
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"

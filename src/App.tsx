@@ -4,10 +4,11 @@
  */
 
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
 import Layout from "./components/Layout";
+import { trackPageView } from "./utils/analytics";
 import PublicHome from "./pages/PublicHome";
 import PublicWriters from "./pages/PublicWriters";
 import PublicWriterDetail from "./pages/PublicWriterDetail";
@@ -155,6 +156,14 @@ function PublicRouteWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RouteTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location]);
+  return null;
+}
+
 export default function App() {
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
@@ -170,6 +179,7 @@ export default function App() {
       <BrowserRouter>
         <I18nProvider>
           <LanguagePrompt />
+          <RouteTracker />
           <Routes>
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route 

@@ -90,7 +90,7 @@ export default function AdminHelp() {
 
   const [writersData, setWritersData] = useState({
     knowledgeBase: '',
-    actionButtons: [] as { id: string, it: string, en: string, url: string }[],
+    actionButtons: [] as { id: string, it: string, en: string, url: string, url_en: string }[],
     icebreakers: [] as { id: string, it: string, en: string }[]
   });
 
@@ -171,11 +171,11 @@ export default function AdminHelp() {
   const addActionButton = () => {
     setWritersData(prev => ({
       ...prev,
-      actionButtons: [...prev.actionButtons, { id: Date.now().toString(), it: '', en: '', url: '' }]
+      actionButtons: [...prev.actionButtons, { id: Date.now().toString(), it: '', en: '', url: '', url_en: '' }]
     }));
   };
 
-  const updateActionButton = (id: string, field: 'it' | 'en' | 'url', value: string) => {
+  const updateActionButton = (id: string, field: 'it' | 'en' | 'url' | 'url_en', value: string) => {
     setWritersData(prev => ({
       ...prev,
       actionButtons: prev.actionButtons.map(ab => ab.id === id ? { ...ab, [field]: value } : ab)
@@ -333,6 +333,16 @@ export default function AdminHelp() {
                         type="url"
                         value={ab.url}
                         onChange={(e) => updateActionButton(ab.id, 'url', e.target.value)}
+                        className="w-full bg-white border border-[#EAE3D9] rounded-lg px-3 py-2 font-['Karla'] text-sm focus:border-[#FF4F00] outline-none"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">URL / Link (EN)</label>
+                      <input
+                        type="url"
+                        value={ab.url_en}
+                        onChange={(e) => updateActionButton(ab.id, 'url_en', e.target.value)}
                         className="w-full bg-white border border-[#EAE3D9] rounded-lg px-3 py-2 font-['Karla'] text-sm focus:border-[#FF4F00] outline-none"
                         placeholder="https://..."
                       />

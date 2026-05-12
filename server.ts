@@ -330,7 +330,7 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
     try {
       const projectId = "gen-lang-client-0591253558";
       const databaseId = "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168";
-      const baseUrl = "https://tagtales.gallery";
+      const baseUrl = "https://tagtalesgallery.com";
       
       const fetchIds = async (collection: string) => {
         const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/${collection}?pageSize=1000`;
@@ -354,25 +354,40 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
         fetchIds("pagine"),
       ]);
 
-      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
 
-      const addUrl = (path: string, priority: string = "0.8") => {
-        xml += `  <url>\n    <loc>${baseUrl}${path}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+      const addUrl = (path: string, priority: string = "0.8", pathEn?: string) => {
+        const itUrl = `${baseUrl}${path}`;
+        const enUrl = pathEn ? `${baseUrl}${pathEn}` : null;
+        
+        xml += `  <url>\n    <loc>${itUrl}</loc>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${itUrl}"/>\n`;
+        if (enUrl) xml += `    <xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${itUrl}"/>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+
+        if (enUrl) {
+            xml += `  <url>\n    <loc>${enUrl}</loc>\n`;
+            xml += `    <xhtml:link rel="alternate" hreflang="it" href="${itUrl}"/>\n`;
+            xml += `    <xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/>\n`;
+            xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${itUrl}"/>\n`;
+            xml += `    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+        }
       };
 
       // Static routes
-      addUrl("/", "1.0");
-      addUrl("/writers", "0.9");
-      addUrl("/exhibitions", "0.9");
-      addUrl("/magazine", "0.9");
+      addUrl("/", "1.0", "/en");
+      addUrl("/writers", "0.9", "/en/writers");
+      addUrl("/exhibitions", "0.9", "/en/exhibitions");
+      addUrl("/magazine", "0.9", "/en/magazine");
       addUrl("/privacy", "0.5");
       addUrl("/terms", "0.5");
       addUrl("/cookies", "0.5");
 
       // Dynamic routes
-      writers.forEach((id: string) => addUrl(`/writer/${id}`, "0.8"));
-      exhibitions.forEach((id: string) => addUrl(`/exhibition/${id}`, "0.8"));
-      articles.forEach((id: string) => addUrl(`/magazine/${id}`, "0.8"));
+      writers.forEach((id: string) => addUrl(`/writer/${id}`, "0.8", `/en/writers/${id}`));
+      exhibitions.forEach((id: string) => addUrl(`/exhibition/${id}`, "0.8", `/en/exhibitions/${id}`));
+      articles.forEach((id: string) => addUrl(`/magazine/${id}`, "0.8", `/en/magazine/${id}`));
       pages.forEach((id: string) => addUrl(`/page/${id}`, "0.7"));
 
       xml += `</urlset>`;

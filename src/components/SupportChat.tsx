@@ -48,7 +48,7 @@ export default function SupportChat({ mode = 'public' }: SupportChatProps) {
             const buttons = data.actionButtons.map(ab => ({
               id: ab.id,
               text: langCode === 'en' ? ab.en : ab.it,
-              url: ab.url
+              url: langCode === 'en' ? (ab.url_en || ab.url) : ab.url
             })).filter(ab => !!ab.text && !!ab.url);
             setActionButtons(buttons);
           }
