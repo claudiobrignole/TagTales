@@ -52,6 +52,9 @@ export default function PublicWriterDetail() {
           const data = docSnap.data();
           setRawWriterData({ id: docSnap.id, ...data });
           trackViewArtist(docSnap.id);
+          if (typeof (window as any).fbq === 'function') {
+            (window as any).fbq('track', 'ViewContent', { content_type: 'writer', content_ids: [docSnap.id] });
+          }
 
           // Fetch artworks
           const artworksSnap = await getDocs(collection(db, "opere"));

@@ -174,6 +174,52 @@ export const ecwidWebhook = onRequest(
 
       await batch.commit();
 
+      try {
+        const pixelId = '1331292394239342';
+        const accessToken = process.env.META_PIXEL_ACCESS_TOKEN;
+
+        if (accessToken) {
+          const eventTime = Math.floor(Date.now() / 1000);
+
+          const purchasePayload = {
+            data: [{
+              event_name: 'Purchase',
+              event_time: eventTime,
+              action_source: 'website',
+              custom_data: {
+                currency: orderData.currency || 'EUR',
+                value: orderData.total || 0,
+                order_id: String(orderId),
+                contents: items.map((item: any) => ({
+                  id: String(item.productId),
+                  quantity: item.quantity,
+                  item_price: item.price
+                }))
+              }
+            }]
+          };
+
+          const metaRes = await fetch(
+            `https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(purchasePayload)
+            }
+          );
+
+          if (!metaRes.ok) {
+            logger.warn('Meta Conversions API call failed', await metaRes.text());
+          } else {
+            logger.info('Meta Purchase event sent successfully');
+          }
+        } else {
+          logger.warn('META_PIXEL_ACCESS_TOKEN not set, skipping Meta event');
+        }
+      } catch (metaError) {
+        logger.warn('Meta Conversions API error (non-blocking)', metaError);
+      }
+
       res.status(200).send("Webhook processed successfully");
 
     } catch (error) {

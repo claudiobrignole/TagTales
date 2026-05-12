@@ -62,6 +62,9 @@ export default function PublicExhibitionDetail() {
           const exDataRaw = { id: docSnap.id, ...data };
           setRawExhibitionData(exDataRaw);
           trackViewArtwork(docSnap.id);
+          if (typeof (window as any).fbq === 'function') {
+            (window as any).fbq('track', 'ViewContent', { content_type: 'exhibition', content_ids: [docSnap.id] });
+          }
 
           const artistIds = exDataRaw.artistaIds || exDataRaw.writerIds || (exDataRaw.artistaPrincipaleId ? [exDataRaw.artistaPrincipaleId] : []);
 

@@ -168,8 +168,8 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 ### Fase 6.3 — Meta Pixel (base + Conversions API)
 
 - [x] **6.3.1** Aggiungere lo snippet Meta Pixel nel template HTML principale con il Pixel ID corretto.
-- [ ] **6.3.2** Tracciare gli eventi standard client-side: `ViewContent` su pagine artista/opera, `InitiateCheckout` su click Ecwid.
-- [ ] **6.3.3** Implementare la **Meta Conversions API** server-side nella Cloud Function `ecwidWebhook` esistente: inviare l'evento `Purchase` a Meta quando un ordine Ecwid risulta `PAID`, usando l'Access Token del Pixel. Questo garantisce il tracciamento anche con adblocker attivi.
+- [x] **6.3.2** Tracciare gli eventi standard client-side: `ViewContent` su pagine artista/opera, `InitiateCheckout` su click Ecwid.
+- [x] **6.3.3** Implementare la **Meta Conversions API** server-side nella Cloud Function `ecwidWebhook` esistente: inviare l'evento `Purchase` a Meta quando un ordine Ecwid risulta `PAID`, usando l'Access Token del Pixel. Questo garantisce il tracciamento anche con adblocker attivi.
 
 **File coinvolti:** `index.html`, `src/App.tsx`, `functions/src/ecwidWebhook.ts`
 

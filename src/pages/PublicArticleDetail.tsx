@@ -59,6 +59,9 @@ export default function PublicArticleDetail() {
           const data = { id: articleDoc.id, ...articleDoc.data() as any };
           setRawData(data);
           trackViewArtwork(articleDoc.id);
+          if (typeof (window as any).fbq === 'function') {
+            (window as any).fbq('track', 'ViewContent', { content_type: 'article', content_ids: [articleDoc.id] });
+          }
         }
       } catch (error) {
         console.error("Error fetching article:", error);

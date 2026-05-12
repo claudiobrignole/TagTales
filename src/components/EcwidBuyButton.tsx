@@ -53,6 +53,9 @@ export default function EcwidBuyButton({ productId }: EcwidBuyButtonProps) {
   const handleWrapperClick = () => {
     trackEcwidProductClick(productId);
     trackCheckoutInitiated();
+    if (typeof (window as any).fbq === 'function') {
+      (window as any).fbq('track', 'InitiateCheckout', { content_ids: [productId] });
+    }
   };
 
   // The Ecwid widget div
