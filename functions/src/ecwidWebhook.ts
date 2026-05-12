@@ -103,9 +103,15 @@ export const ecwidWebhook = onRequest(
         let productType = getAttribute(item, 'product_type');
         const artistId = getAttribute(item, 'artist_id');
         const promoActiveStr = getAttribute(item, 'promo_active');
+        const feeOverrideStr = getAttribute(item, 'fee_override');
+        const feeOverride = feeOverrideStr !== undefined ? parseFloat(feeOverrideStr) : null;
         
-        if (!artistId || !productType) {
-          logger.warn(`Missing artist_id or product_type for item ${item.id}`);
+        if (!productType) {
+          logger.warn(`Missing product_type for item ${item.id}`);
+          continue;
+        }
+        if (!artistId) {
+          logger.info(`Item ${item.id} has no artist_id (internal product), skipping royalty.`);
           continue;
         }
 
@@ -117,9 +123,10 @@ export const ecwidWebhook = onRequest(
                         String(promoActiveStr).toLowerCase() === 'yes';
 
         let feePerUnit = 0;
-        
-        if (productType === 'stampa_limitata') {
-          // Prezzo di vendita dell'item - 90.00
+
+        if (feeOverride !== null && !isNaN(feeOverride)) {
+          feePerUnit = feeOverride;
+        } else if (productType === 'stampa_limitata') {
           feePerUnit = item.price - 90.00;
         } else if (FEE_TABLE[productType]) {
           feePerUnit = isPromo ? FEE_TABLE[productType]!.promo : FEE_TABLE[productType]!.full;
@@ -128,7 +135,7 @@ export const ecwidWebhook = onRequest(
           continue;
         }
 
-        feePerUnit = Math.max(0, feePerUnit); // Ensure non-negative? Wait, if price is < 90 it could be negative
+        feePerUnit = Math.max(0, feePerUnit);
         
         const totalFeeObj = feePerUnit * item.quantity;
         const feeAmount = Math.round(totalFeeObj * 100) / 100;

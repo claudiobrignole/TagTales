@@ -8,6 +8,27 @@
 - **Frontend Pubblico (Nuovo Focus)**: Creazione di un sito vetrina completo (Artisti, Mostre, Catalogo) con UI/UX dedicata, agganciato a Ecwid per il checkout.
 
 
+## 🔧 Logica Attributi Ecwid
+
+Ogni prodotto TagTales su Ecwid può avere i seguenti attributi personalizzati (tutti con `show: NOTSHOW`):
+
+| Attributo      | Obbligatorio | Esempio              | Note                                              |
+|----------------|--------------|----------------------|---------------------------------------------------|
+| `product_type` | Sì           | `tshirt`, `felpa`, `poster_a2`, `poster_a1`, `tela_12x18`, `tela_16x24`, `tela_20x30`, `tela_40x60`, `stampa_limitata` | Determina la fee dalla FEE_TABLE |
+| `artist_id`    | No           | UID Firebase artista | Se assente: nessuna royalty calcolata (prodotto interno) |
+| `promo_active` | No           | `true` / `false`     | Default false se assente. Usa la colonna promo della FEE_TABLE |
+| `fee_override` | No           | `0`, `120`, `200`    | Se presente, sovrascrive qualsiasi calcolo FEE_TABLE |
+
+### Comportamento webhook (ecwidWebhook.ts)
+- Evento accettato: `order.created` (unico evento disponibile in Ecwid)
+- Condizione di processamento: `paymentStatus === "PAID"`
+- Se `product_type` mancante: item skippato con warning
+- Se `artist_id` mancante: item skippato silenziosamente (prodotto interno, nessuna royalty)
+- Se `fee_override` presente: usa quel valore fisso ignorando FEE_TABLE e promo_active
+- Per `stampa_limitata` senza fee_override: fee = prezzo_vendita - 90.00
+- `feeAmount` è sempre >= 0 (Math.max applicato)
+
+
 ## 📝 Registro delle Azioni (Changelog)
 
 
