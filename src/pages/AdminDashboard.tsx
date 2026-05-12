@@ -254,6 +254,22 @@ export default function AdminDashboard() {
             </div>
           </Link>
         ))}
+        <a 
+          href="https://analytics.google.com/analytics/web/#/a385395910p537337606/reports/intelligenthome"
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9] flex items-center gap-4 hover:shadow-md transition-shadow"
+        >
+          <div className="p-4 rounded-2xl bg-amber-50 text-amber-600">
+            <Globe size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-[#59554E] font-medium uppercase tracking-wider">Google Analytics</p>
+            <p className="text-sm font-bold text-[#121212] flex items-center gap-1">
+              Apri dashboard ↗
+            </p>
+          </div>
+        </a>
       </div>
 
       <div className="mt-8 bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9]">
