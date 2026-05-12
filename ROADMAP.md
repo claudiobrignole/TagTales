@@ -76,10 +76,10 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 
 ### Blocco 1 — Integrazione Ecwid (sblocca tutto il resto)
 
-- [ ] **1.1** Completare la registrazione del webhook Ecwid e verificare la risposta del supporto.
+- [x] **1.1** Completare la registrazione del webhook Ecwid e verificare la risposta del supporto.
 - [ ] **1.2** Verificare i nomi esatti degli attributi degli item (`artist_id`, `product_type`, `promo_active`) su un ordine reale via API Ecwid.
 - [ ] **1.3** Test end-to-end con un ordine reale (importo minimo): verificare la scrittura corretta su Firestore nelle collection `royalties` e `users/{artistId}`.
-- [ ] **1.4** Configurare ogni prodotto Ecwid dello store con gli attributi personalizzati `artist_id` e `product_type`; impostare `promo_active: true` sui prodotti in promozione.
+- [x] **1.4** Configurare ogni prodotto Ecwid dello store con gli attributi personalizzati. Attributi aggiunti al product type 0: `artist_id`, `product_type`, `promo_active`, `fee_override`. I 4 prodotti TagTales (t-shirt interne, IDs: 801191401, 801191674, 801191735, 801196475) configurati con `product_type: tshirt` senza artist_id (prodotti interni, nessuna royalty).
 
 
 ### Blocco 2 — Frontend e Autenticazione
