@@ -9,6 +9,7 @@ import VideoEmbed from "../components/VideoEmbed";
 import DOMPurify from "dompurify";
 import { getLocalizedField } from "../utils/localization";
 import { cleanHtml } from "../utils/cleanHtml";
+import { trackViewArtwork } from "../utils/analytics";
 
 import clsx from "clsx";
 import PublicLayout from "../components/PublicLayout";
@@ -57,6 +58,7 @@ export default function PublicArticleDetail() {
         if (articleDoc) {
           const data = { id: articleDoc.id, ...articleDoc.data() as any };
           setRawData(data);
+          trackViewArtwork(articleDoc.id);
         }
       } catch (error) {
         console.error("Error fetching article:", error);

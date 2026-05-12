@@ -148,7 +148,7 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 
 - [x] **6.1.1** Aggiungere snippet `gtag.js` (GA4) nel template HTML principale (`index.html`).
 - [x] **6.1.2** Integrare `react-ga4` nel progetto e agganciarlo al router: ogni cambio di route deve triggerare un evento `pageview`.
-- [ ] **6.1.3** Definire e tracciare eventi personalizzati: `view_artist`, `view_artwork`, `ecwid_product_click`, `checkout_initiated`.
+- [x] **6.1.3** Definire e tracciare eventi personalizzati: `view_artist`, `view_artwork`, `ecwid_product_click`, `checkout_initiated`.
 - [ ] **6.1.4** Verificare l'attivazione su Google Analytics e collegare la property a Google Search Console.
 
 **File coinvolti:** `index.html`, `src/App.tsx`, nuovo `src/utils/analytics.ts`

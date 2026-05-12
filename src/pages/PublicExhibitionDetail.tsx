@@ -10,6 +10,7 @@ import EcwidBuyButton from "../components/EcwidBuyButton";
 import VideoEmbed from "../components/VideoEmbed";
 import { getLocalizedField } from "../utils/localization";
 import { cleanHtml } from "../utils/cleanHtml";
+import { trackViewArtwork } from "../utils/analytics";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
@@ -60,6 +61,7 @@ export default function PublicExhibitionDetail() {
           const data = docSnap.data() as any;
           const exDataRaw = { id: docSnap.id, ...data };
           setRawExhibitionData(exDataRaw);
+          trackViewArtwork(docSnap.id);
 
           const artistIds = exDataRaw.artistaIds || exDataRaw.writerIds || (exDataRaw.artistaPrincipaleId ? [exDataRaw.artistaPrincipaleId] : []);
 

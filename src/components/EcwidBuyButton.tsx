@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { trackEcwidProductClick, trackCheckoutInitiated } from '../utils/analytics';
 
 interface EcwidBuyButtonProps {
   productId: string;
@@ -49,6 +50,11 @@ export default function EcwidBuyButton({ productId }: EcwidBuyButtonProps) {
     );
   }
 
+  const handleWrapperClick = () => {
+    trackEcwidProductClick(productId);
+    trackCheckoutInitiated();
+  };
+
   // The Ecwid widget div
   return (
     <div 
@@ -56,6 +62,7 @@ export default function EcwidBuyButton({ productId }: EcwidBuyButtonProps) {
       itemScope 
       itemType="http://schema.org/Product" 
       data-single-product-id={productId}
+      onClickCapture={handleWrapperClick}
     >
       <div 
         itemProp="offers" 

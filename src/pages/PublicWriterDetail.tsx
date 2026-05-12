@@ -10,6 +10,7 @@ import EcwidBuyButton from "../components/EcwidBuyButton";
 import { getLocalizedField } from "../utils/localization";
 import VideoEmbed from "../components/VideoEmbed";
 import { cleanHtml } from "../utils/cleanHtml";
+import { trackViewArtist } from "../utils/analytics";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
@@ -50,6 +51,7 @@ export default function PublicWriterDetail() {
         if (docSnap) {
           const data = docSnap.data();
           setRawWriterData({ id: docSnap.id, ...data });
+          trackViewArtist(docSnap.id);
 
           // Fetch artworks
           const artworksSnap = await getDocs(collection(db, "opere"));
