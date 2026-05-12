@@ -292,7 +292,7 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
         try {
             const projectId = "gen-lang-client-0591253558";
             const databaseId = "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168";
-            const baseUrl = "https://tagtales.gallery";
+            const baseUrl = "https://tagtalesgallery.com";
             const fetchIds = async (collection) => {
                 const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/${collection}?pageSize=1000`;
                 try {
@@ -340,6 +340,11 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
             console.error("Sitemap error:", error);
             res.status(500).send("Error generating sitemap");
         }
+    });
+    
+    app.get("/robots.txt", (req, res) => {
+        res.header("Content-Type", "text/plain");
+        res.send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: https://tagtalesgallery.com/sitemap.xml`);
     });
     // Vite middleware for development
     if (process.env.NODE_ENV !== "production") {
