@@ -4,7 +4,63 @@ import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+
 dotenv.config();
+
+if (!getApps().length) {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    initializeApp({
+      credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY))
+    });
+  } else {
+    initializeApp();
+  }
+}
+const db = getFirestore();
+
+async function getSeoConfig(pageId) {
+  try {
+    const docRef = db.collection('seoConfig').doc(pageId);
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      return docSnap.data();
+    }
+  } catch(e) {
+    console.error("Error fetching SEO Config", e);
+  }
+  return null;
+}
+
+function injectMetaTags(html, seoData, lang) {
+  let title = "TagTales Gallery";
+  let description = "";
+  let keywords = "";
+  let ogImageUrl = "";
+  let ogImageAlt = "";
+
+  if (seoData) {
+    title = (lang === "en" ? seoData.titleEN : seoData.titleIT) || title;
+    description = (lang === "en" ? seoData.descriptionEN : seoData.descriptionIT) || "";
+    keywords = ((lang === "en" ? seoData.keywordsEN : seoData.keywordsIT) || []).join(", ");
+    ogImageUrl = seoData.ogImageUrl || "";
+    ogImageAlt = seoData.ogImageAlt || "";
+  }
+
+  let titleTag = title ? `<title>${title}</title>\n    <meta property="og:title" content="${title}">` : '<title>TagTales Gallery</title>';
+  let descTag = description ? `<meta name="description" content="${description}">\n    <meta property="og:description" content="${description}">` : '';
+  let keyTag = keywords ? `<meta name="keywords" content="${keywords}">` : '';
+  let ogImgTag = ogImageUrl ? `<meta property="og:image" content="${ogImageUrl}">\n    <meta property="og:image:alt" content="${ogImageAlt}">` : '';
+
+  html = html.replace('<!--META_TITLE-->', titleTag);
+  html = html.replace('<!--META_DESCRIPTION-->', descTag);
+  html = html.replace('<!--META_KEYWORDS-->', keyTag);
+  html = html.replace('<!--META_OG_IMAGE-->', ogImgTag);
+
+  return html;
+}
+
 // Attempt to inject latest keys from AI Studio container
 try {
     const devEnvPath = path.resolve(process.cwd(), '../.dev.env.json');
@@ -363,12 +419,47 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
             }
           }
         }));
-        app.get('*', (req, res) => {
+        app.get('*', async (req, res) => {
           if (req.path.startsWith('/api/')) {
             return res.status(404).json({ error: 'API route not found' });
           }
           res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-          res.sendFile(path.join(distPath, 'index.html'));
+
+          try {
+            let html = await fs.promises.readFile(path.join(distPath, 'index.html'), 'utf8');
+            let lang = req.path.startsWith('/en/') || req.path === '/en' ? 'en' : 'it';
+            
+            let pageId = null;
+            if (req.path === '/' || req.path === '/en/' || req.path === '/en') pageId = 'home';
+            else if (req.path === '/writers' || req.path === '/en/writers') pageId = 'writers';
+            else if (req.path === '/exhibitions' || req.path === '/en/exhibitions') pageId = 'exhibitions';
+            else if (req.path === '/magazine' || req.path === '/en/magazine') pageId = 'magazine';
+            else {
+              const writerMatch = req.path.match(/^\/(?:en\/)?writer\/([^/]+)$/);
+              if (writerMatch) pageId = `writer_${writerMatch[1]}`;
+              else {
+                const exhibitionMatch = req.path.match(/^\/(?:en\/)?exhibition\/([^/]+)$/);
+                if (exhibitionMatch) pageId = `exhibition_${exhibitionMatch[1]}`;
+                else {
+                  const articleMatch = req.path.match(/^\/(?:en\/)?magazine\/([^/]+)$/);
+                  if (articleMatch) pageId = `article_${articleMatch[1]}`;
+                }
+              }
+            }
+
+            if (pageId) {
+              const seoData = await getSeoConfig(pageId);
+              html = injectMetaTags(html, seoData, lang);
+            } else {
+              html = injectMetaTags(html, null, lang); // cleanup placeholders
+            }
+
+            res.setHeader('Content-Type', 'text/html');
+            res.send(html);
+          } catch(e) {
+            console.error("Error serving page with SEO", e);
+            res.sendFile(path.join(distPath, 'index.html'));
+          }
         });
     }
     app.listen(PORT, "0.0.0.0", () => {
