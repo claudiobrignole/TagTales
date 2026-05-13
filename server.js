@@ -10,9 +10,15 @@ import { getFirestore } from "firebase-admin/firestore";
 dotenv.config();
 
 if (!getApps().length) {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (b64) {
     initializeApp({
-      credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY))
+      credential: cert(JSON.parse(Buffer.from(b64, 'base64').toString('utf8')))
+    });
+  } else if (raw) {
+    initializeApp({
+      credential: cert(JSON.parse(raw))
     });
   } else {
     initializeApp();
