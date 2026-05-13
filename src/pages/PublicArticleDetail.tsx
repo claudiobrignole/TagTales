@@ -31,7 +31,7 @@ export default function PublicArticleDetail() {
         let articleDoc: any = null;
         
         // 1. Se lingua EN, cerca prima per slug_en
-        if (lang === 'EN' || lang === 'en') {
+        if (lang === 'EN') {
           const qEn = query(collection(db, "articoli"), where("slug_en", "==", slug), limit(1));
           const snapEn = await getDocs(qEn);
           if (!snapEn.empty) {

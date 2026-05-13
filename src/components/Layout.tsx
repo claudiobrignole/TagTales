@@ -89,7 +89,6 @@ export default function Layout() {
     { to: "/app/admin/contracts", icon: FileText, label: "manageContracts" },
     { to: "/app/admin/users", icon: User, label: "manageUsers" },
     { to: "/app/admin/videos", icon: Film, label: "videoLibrary" },
-    { to: "/app/admin/notify", icon: Bell, label: "sendNotification" },
     { to: "/app/admin/pages", icon: FileText, label: "managePages" },
     { to: "/app/admin/seo", icon: Globe, label: "manageSEO" },
     { to: "/app/admin/faq", icon: HelpCircle, label: "helpFaq" },

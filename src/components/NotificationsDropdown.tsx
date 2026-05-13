@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Trash2, X } from 'lucide-react';
-import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { Mail, Trash2, X, Send } from 'lucide-react';
+import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc, writeBatch, addDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,8 @@ export default function NotificationsDropdown() {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [newMessageText, setNewMessageText] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -101,7 +103,7 @@ export default function NotificationsDropdown() {
           onClick={() => setIsOpen(!isOpen)}
           className="relative p-2 text-[#59554E] hover:bg-[#EAE3D9] rounded-full transition-all"
         >
-          <Bell size={20} />
+          <Mail size={20} />
           {unreadCount > 0 && (
             <span className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-[#FF4F00] rounded-full ring-2 ring-[#F2EEE8]">
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -178,6 +180,52 @@ export default function NotificationsDropdown() {
                   ))}
                 </div>
               )}
+            </div>
+            
+            {/* Writer Reply/Message Input */}
+            <div className="p-3 border-t border-[#EAE3D9] bg-[#F2EEE8]/30">
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newMessageText.trim() || !user) return;
+                  setIsSendingMessage(true);
+                  try {
+                    await addDoc(collection(db, 'notifications'), {
+                      userId: user.uid,
+                      senderId: user.uid,
+                      isFromUser: true,
+                      title: 'Messaggio da ' + (user.email || 'Utente'),
+                      message: newMessageText.trim(),
+                      type: 'Message',
+                      link: '#',
+                      read: false,
+                      createdAt: new Date().toISOString()
+                    });
+                    setNewMessageText('');
+                  } catch (error) {
+                    console.error("Error sending message to admin", error);
+                  } finally {
+                    setIsSendingMessage(false);
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <input 
+                  type="text" 
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
+                  placeholder="Scrivi all'amministrazione..."
+                  maxLength={150}
+                  className="flex-1 bg-white border border-[#EAE3D9] rounded-full px-3 py-2 text-xs focus:outline-none focus:border-[#FF4F00] transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={isSendingMessage || !newMessageText.trim()}
+                  className="w-8 h-8 rounded-full bg-[#121212] text-white flex justify-center items-center hover:bg-black disabled:opacity-50 transition-colors flex-shrink-0"
+                >
+                  <Send size={12} />
+                </button>
+              </form>
             </div>
           </div>
         )}

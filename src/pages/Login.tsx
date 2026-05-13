@@ -28,7 +28,13 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+        const userData = userDoc.data();
+        if (!userDoc.exists() || (userData && (userData.status === 'suspended' || userData.isDeleted))) {
+          await signOut(auth);
+          throw new Error('Account non trovato, eliminato o sospeso.');
+        }
         navigate('/app');
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -92,6 +98,12 @@ export default function Login() {
           language: language.toLowerCase()
         });
         await sendEmailNotification(user.email!, 'welcome', { userId: user.uid }, language.toLowerCase());
+      } else {
+        const userData = userDoc.data();
+        if (userData && (userData.status === 'suspended' || userData.isDeleted)) {
+          await signOut(auth);
+          throw new Error(userData.isDeleted ? 'Account non trovato o eliminato.' : 'Questo account è stato sospeso.');
+        }
       }
       navigate('/app');
     } catch (err: any) {

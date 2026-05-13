@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import { User, onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth, db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -16,8 +17,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (userObj) => {
+      if (userObj) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', userObj.uid));
+          const userData = userDoc.data();
+          if (userData && (userData.status === 'suspended' || userData.isDeleted)) {
+            await signOut(auth);
+            setUser(null);
+          } else {
+            setUser(userObj);
+          }
+        } catch (e) {
+          console.error("Error fetching user status", e);
+          setUser(userObj);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe;

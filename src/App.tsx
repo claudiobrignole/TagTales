@@ -33,7 +33,6 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminPayments from "./pages/AdminPayments";
 import AdminSales from "./pages/AdminSales";
 import AdminVideos from "./pages/AdminVideos";
-import AdminNotify from "./pages/AdminNotify";
 import Help from "./pages/Help";
 import AdminHelp from "./pages/AdminHelp";
 import AdminWriters from "./pages/AdminWriters";
@@ -386,7 +385,6 @@ export default function App() {
               <Route path="admin/sales" element={<AdminSales />} />
               <Route path="admin/contracts" element={<AdminContracts />} />
               <Route path="admin/videos" element={<AdminVideos />} />
-              <Route path="admin/notify" element={<AdminNotify />} />
               <Route path="admin/writers" element={<AdminWriters />} />
               <Route path="admin/exhibitions" element={<AdminExhibitions />} />
               <Route path="admin/articles" element={<AdminArticles />} />
