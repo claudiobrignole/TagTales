@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, getDocs, doc, updateDoc, getDoc, deleteDoc, addDoc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { User, Shield, ShieldAlert, Check, X, Link as LinkIcon, Bell, Search, ArrowLeft, Save, ShoppingBag, Send, MessagesSquare, Trash2, Ban } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
@@ -82,16 +82,9 @@ export default function AdminUsers() {
   const deleteUserRecord = async (userId: string) => {
     if (!window.confirm(t('adminUsers.crm.deleteConfirm') || "Sei sicuro di voler eliminare questo utente?")) return;
     try {
-      // 1. Delete from users collection
-      await deleteDoc(doc(db, 'users', userId));
-      
-      // 2. See if there is a 'scrittori' doc
-      const qScrittori = query(collection(db, 'scrittori'), where('uid', '==', userId));
-      const snScrittori = await getDocs(qScrittori);
-      snScrittori.forEach(async (d) => {
-         await deleteDoc(doc(db, 'scrittori', d.id));
-      });
-
+      const response = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || "Errore durante l'eliminazione");
       setUsers(prev => prev.filter(u => u.id !== userId));
       if (selectedUserId === userId) setSelectedUserId(null);
       setMessage({ type: 'success', text: 'Utente eliminato con successo' });

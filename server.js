@@ -350,6 +350,25 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
     app.get("/api/check-key", (req, res) => {
         res.json(process.env);
     });
+    app.delete("/api/users/:uid", async (req, res) => {
+        try {
+            const { uid } = req.params;
+            const { getAuth } = await import("firebase-admin/auth");
+
+            await getAuth().deleteUser(uid);
+            await db.collection("users").doc(uid).delete();
+
+            const scrittoriQuery = await db.collection("scrittori").where("uid", "==", uid).get();
+            const deletePromises = scrittoriQuery.docs.map(doc => doc.ref.delete());
+            await Promise.all(deletePromises);
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Delete user error:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     app.get("/sitemap.xml", async (req, res) => {
         try {
             const projectId = "gen-lang-client-0591253558";

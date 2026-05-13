@@ -82,6 +82,13 @@ Usare ogni volta che si crea un nuovo prodotto TagTales su Ecwid.
   - Logica redirect automatico IT↔EN in `setLanguage`: naviga su `/en/[path]` scegliendo EN, rimuove il prefisso scegliendo IT. Guard attivo per escludere le route `/app/*` dal redirect.
   - `LanguagePrompt` montato dentro `I18nProvider` in `App.tsx` (era importato ma non renderizzato).
   - **SEO hreflang centralizzato** in `src/components/SEO.tsx`: genera automaticamente `<link rel="alternate" hrefLang="it">`, `<link rel="alternate" hrefLang="en">` e `<link rel="alternate" hrefLang="x-default">` per tutte le pagine pubbliche. Canonical URL pulito da trailing slash.
+- **Aggiornamenti Backend e Admin (13 maggio 2026)**:
+  - `express.static` ora funziona con `index: false` per impedire che l'HTML statico bypassi il percorso catch-all.
+  - Inserimento dei meta tag SEO lato server pienamente operativo: titolo, descrizione, parole chiave, og:title, og:description inseriti dinamicamente da Firestore per tutte le pagine principali (home, scrittori, mostre, rivista) e i percorsi dinamici (`writer/:id`, `exhibition/:id`, `magazine/:id`).
+  - Firebase Admin SDK inizializzato con la chiave dell'account di servizio codificata in Base64 (`FIREBASE_SERVICE_ACCOUNT_BASE64`) che punta al database Firestore corretto (`ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168`).
+  - Percorso `/sitemap.xml` attivo e generazione di una sitemap XML dinamica che include pagine statiche e URL dinamici di autore/mostra/articolo.
+  - Percorso `/robots.txt` attivo.
+  - Integrazione chat diretta: i writer possono interagire con l'amministrazione tramite il componente DirectChat, e l'amministratore riceve notifiche email via campanella con redirect ottimizzato al tab di chat dell'utente specifico (`/app/admin/users?chat={userId}`).
 
 
 ### 🚧 In Corso (Fase attuale)
@@ -199,7 +206,7 @@ Questa è la funzionalità principale: un'interfaccia nel pannello Admin per ges
 - [ ] **6.4.1** Creare la collection Firestore `seoConfig` con i 4 documenti iniziali.
 - [ ] **6.4.2** Creare la pagina `SEOManager` nel pannello Admin con form per ogni pagina: titolo IT/EN, description IT/EN, upload immagine OG (→ Firebase Storage `og-images/{pageId}`), bottone "Suggerisci keywords con Gemini".
 - [x] **6.4.3** Implementare la Cloud Function `generateSEOKeywords` (callable): riceve il contenuto testuale della pagina e la lingua, chiama Gemini API, restituisce un array di 8-10 keywords consigliate.
-- [ ] **6.4.4** Aggiornare il middleware Express (`server.ts`) per leggere `seoConfig/{pageId}` da Firestore e iniettare i meta-tag corretti nell'HTML prima di servire ogni pagina pubblica, in modo che i crawler (Google, Facebook, WhatsApp) ricevano i tag aggiornati anche se la SPA non è ancora idratata.
+- [x] **6.4.4** Aggiornare il middleware Express (`server.ts`) per leggere `seoConfig/{pageId}` da Firestore e iniettare i meta-tag corretti nell'HTML prima di servire ogni pagina pubblica, in modo che i crawler (Google, Facebook, WhatsApp) ricevano i tag aggiornati anche se la SPA non è ancora idratata.
 
 **File coinvolti:** `server.ts`, `src/pages/admin/SEOManager.tsx` (nuovo), `functions/src/generateSEOKeywords.ts` (nuovo), `firestore.rules` (aggiornare permessi).
 
