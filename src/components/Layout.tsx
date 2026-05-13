@@ -21,6 +21,7 @@ import {
   Bell,
   HelpCircle,
   Languages,
+  Globe,
 } from "lucide-react";
 import clsx from "clsx";
 import NotificationsDropdown from "./NotificationsDropdown";
@@ -90,6 +91,7 @@ export default function Layout() {
     { to: "/app/admin/videos", icon: Film, label: "videoLibrary" },
     { to: "/app/admin/notify", icon: Bell, label: "sendNotification" },
     { to: "/app/admin/pages", icon: FileText, label: "managePages" },
+    { to: "/app/admin/seo", icon: Globe, label: "manageSEO" },
     { to: "/app/admin/faq", icon: HelpCircle, label: "helpFaq" },
     { to: "/app/admin/writers", icon: User, label: "manageWriters" },
     { to: "/app/admin/exhibitions", icon: LayoutDashboard, label: "manageExhibitions" },

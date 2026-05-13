@@ -40,6 +40,7 @@ import AdminWriters from "./pages/AdminWriters";
 import AdminExhibitions from "./pages/AdminExhibitions";
 import AdminArticles from "./pages/AdminArticles";
 import AdminPages from "./pages/AdminPages";
+import AdminSEO from "./pages/admin/SEOManager";
 import NotFound from "./pages/NotFound";
 import ComingSoon from "./pages/ComingSoon";
 import EnRouteWrapper from "./components/EnRouteWrapper";
@@ -390,6 +391,7 @@ export default function App() {
               <Route path="admin/exhibitions" element={<AdminExhibitions />} />
               <Route path="admin/articles" element={<AdminArticles />} />
               <Route path="admin/pages" element={<AdminPages />} />
+              <Route path="admin/seo" element={<AdminSEO />} />
               <Route path="admin/faq" element={<AdminHelp />} />
               <Route path="profile" element={<Profile />} />
               <Route path="help" element={<Help />} />
