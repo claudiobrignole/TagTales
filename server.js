@@ -413,6 +413,7 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
     else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath, {
+          index: false,
           setHeaders: (res, filePath) => {
             if (filePath.endsWith('.html')) {
               res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
