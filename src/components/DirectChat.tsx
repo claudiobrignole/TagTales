@@ -80,17 +80,49 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
 
     setSending(true);
     try {
+      const now = new Date().toISOString();
+      const messageText = input.trim();
+      
+      // The core chat document
       await addDoc(collection(db, 'notifications'), {
         userId: userId, // Always the writer's ID to keep the chat scoped
         senderId: currentUserId,
         isFromUser: !isAdmin,
         title: isAdmin ? 'Messaggio da Amministrazione' : 'Messaggio da ' + (recipientName || 'Writer'),
-        message: input.trim(),
+        message: messageText,
         type: 'Message',
-        link: '#',
-        read: false,
-        createdAt: new Date().toISOString()
+        link: isAdmin ? '#' : '/app/dashboard', // Writer sees a link to dashboard for the chat
+        read: false, // Who should read this? This should probably only trigger visual "unread" state in Writer's dropdown if admin sent it
+        createdAt: now
       });
+
+      // If a writer is sending this, create an alert for admins
+      if (!isAdmin) {
+        // Here we notify the main admin or any admin
+        // For simplicity, we add it to a generic 'admin' userId
+        // Or we notify claudio@brignole.ch
+        import('firebase/firestore').then(async ({ getDocs, query, collection, where }) => {
+          const adminsSnapshot = await getDocs(query(collection(db, 'users'), where('role', '==', 'admin')));
+          const claudioSnapshot = await getDocs(query(collection(db, 'users'), where('email', '==', 'claudio@brignole.ch')));
+          
+          const adminIds = new Set<string>();
+          adminsSnapshot.forEach(doc => adminIds.add(doc.id));
+          claudioSnapshot.forEach(doc => adminIds.add(doc.id));
+
+          adminIds.forEach(adminId => {
+             addDoc(collection(db, 'notifications'), {
+               userId: adminId, // Target this to the admin's dropdown
+               title: 'Nuovo messaggio in chat da ' + (recipientName || 'Writer'),
+               message: messageText,
+               type: 'MessageAlert', // Different type so it doesn't show in the admin's own DirectChat window
+               link: `/app/admin/users?chat=${userId}`, // Link to admin users panel highlighting specific writer
+               read: false,
+               createdAt: now
+             });
+          });
+        });
+      }
+
       setInput('');
     } catch (err) {
       console.error('Error sending message:', err);

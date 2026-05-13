@@ -181,52 +181,6 @@ export default function NotificationsDropdown() {
                 </div>
               )}
             </div>
-            
-            {/* Writer Reply/Message Input */}
-            <div className="p-3 border-t border-[#EAE3D9] bg-[#F2EEE8]/30">
-              <form 
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newMessageText.trim() || !user) return;
-                  setIsSendingMessage(true);
-                  try {
-                    await addDoc(collection(db, 'notifications'), {
-                      userId: user.uid,
-                      senderId: user.uid,
-                      isFromUser: true,
-                      title: 'Messaggio da ' + (user.email || 'Utente'),
-                      message: newMessageText.trim(),
-                      type: 'Message',
-                      link: '#',
-                      read: false,
-                      createdAt: new Date().toISOString()
-                    });
-                    setNewMessageText('');
-                  } catch (error) {
-                    console.error("Error sending message to admin", error);
-                  } finally {
-                    setIsSendingMessage(false);
-                  }
-                }}
-                className="flex items-center gap-2"
-              >
-                <input 
-                  type="text" 
-                  value={newMessageText}
-                  onChange={(e) => setNewMessageText(e.target.value)}
-                  placeholder="Scrivi all'amministrazione..."
-                  maxLength={150}
-                  className="flex-1 bg-white border border-[#EAE3D9] rounded-full px-3 py-2 text-xs focus:outline-none focus:border-[#FF4F00] transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={isSendingMessage || !newMessageText.trim()}
-                  className="w-8 h-8 rounded-full bg-[#121212] text-white flex justify-center items-center hover:bg-black disabled:opacity-50 transition-colors flex-shrink-0"
-                >
-                  <Send size={12} />
-                </button>
-              </form>
-            </div>
           </div>
         )}
       </div>

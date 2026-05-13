@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, getDocs, doc, updateDoc, getDoc, deleteDoc, addDoc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { User, Shield, ShieldAlert, Check, X, Link as LinkIcon, Bell, Search, ArrowLeft, Save, ShoppingBag, Send, MessagesSquare, Trash2, Ban } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
 import EcwidConnectionModal from '../components/EcwidConnectionModal';
 import { useI18n } from '../contexts/I18nContext';
@@ -14,6 +14,7 @@ export default function AdminUsers() {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -21,8 +22,8 @@ export default function AdminUsers() {
 
   // Layout State
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [showMobileList, setShowMobileList] = useState(true);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(searchParams.get('chat'));
+  const [showMobileList, setShowMobileList] = useState(!searchParams.get('chat'));
 
   // Notes state
   const [adminNotes, setAdminNotes] = useState("");
