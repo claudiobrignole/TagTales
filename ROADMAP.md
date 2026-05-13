@@ -198,7 +198,7 @@ Questa è la funzionalità principale: un'interfaccia nel pannello Admin per ges
 
 - [ ] **6.4.1** Creare la collection Firestore `seoConfig` con i 4 documenti iniziali.
 - [ ] **6.4.2** Creare la pagina `SEOManager` nel pannello Admin con form per ogni pagina: titolo IT/EN, description IT/EN, upload immagine OG (→ Firebase Storage `og-images/{pageId}`), bottone "Suggerisci keywords con Gemini".
-- [ ] **6.4.3** Implementare la Cloud Function `generateSEOKeywords` (callable): riceve il contenuto testuale della pagina e la lingua, chiama Gemini API, restituisce un array di 8-10 keywords consigliate.
+- [x] **6.4.3** Implementare la Cloud Function `generateSEOKeywords` (callable): riceve il contenuto testuale della pagina e la lingua, chiama Gemini API, restituisce un array di 8-10 keywords consigliate.
 - [ ] **6.4.4** Aggiornare il middleware Express (`server.ts`) per leggere `seoConfig/{pageId}` da Firestore e iniettare i meta-tag corretti nell'HTML prima di servire ogni pagina pubblica, in modo che i crawler (Google, Facebook, WhatsApp) ricevano i tag aggiornati anche se la SPA non è ancora idratata.
 
 **File coinvolti:** `server.ts`, `src/pages/admin/SEOManager.tsx` (nuovo), `functions/src/generateSEOKeywords.ts` (nuovo), `firestore.rules` (aggiornare permessi).
