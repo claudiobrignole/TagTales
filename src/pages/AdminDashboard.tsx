@@ -236,7 +236,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-8">
         <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('adminDashboard.title')}</h1>
         <p className="text-[#59554E] text-lg">{t('adminDashboard.subtitle')}</p>

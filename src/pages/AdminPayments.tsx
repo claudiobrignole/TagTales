@@ -107,7 +107,7 @@ export default function AdminPayments() {
   }
 
   return (
-    <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
+    <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight text-[#121212] mb-2 font-['Shamgod'] uppercase leading-none text-[8vw] md:text-[60px]">
           {selectedArtist ? 'DETTAGLIO PAGAMENTO' : t('payments.allPaymentsTitle')}

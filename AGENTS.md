@@ -71,3 +71,8 @@ Regole aggiuntive per la roadmap:
 - Se un task è bloccato da una dipendenza esterna (es. risposta supporto Ecwid), segnalarlo esplicitamente e passare al task successivo disponibile nello stesso blocco o nel blocco successivo se possibile.
 - Se l'utente chiede di lavorare su qualcosa che non è nella roadmap, completare l'azione e poi proporre di aggiungere il nuovo task alla roadmap con il blocco e il numero appropriati.
 
+## Dashboard Padding
+
+1. **Layout Base**: The `Layout.tsx` main wrapper provides the main dashboard spacing using `className="flex-1 p-[25px] md:p-[50px] w-full"`. 
+2. **Admin Pages**: All sections and routes within the admin dashboard MUST use a `w-full` outer wrapper (e.g. `className="w-full space-y-8"`) WITHOUT ANY additional padding (no `p-4`, `p-8`) and WITHOUT constraining `max-w-[...]` or `mx-auto`. The spacing is fully controlled by the parent `Layout.tsx`. This utilizes the available space minus the predefined layout margin padding uniformly.
+

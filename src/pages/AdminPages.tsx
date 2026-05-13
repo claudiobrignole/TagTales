@@ -220,7 +220,7 @@ export default function AdminPages() {
   );
 
   return (
-    <div className="space-y-12 font-['Karla'] pb-20">
+    <div className="w-full space-y-12 font-['Karla'] pb-20">
       <header className="flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 border-b border-[#EAE3D9] pb-8">
         <div>
           <h1 className="text-[10vw] md:text-[60px] lg:text-[80px] font-['Shamgod'] uppercase leading-[0.8] mb-4">Pagine Statiche</h1>

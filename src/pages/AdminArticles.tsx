@@ -288,7 +288,7 @@ export default function AdminArticles() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

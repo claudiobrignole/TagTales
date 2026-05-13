@@ -221,7 +221,7 @@ export default function AdminHelp() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl lg:text-[40px] font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212]">

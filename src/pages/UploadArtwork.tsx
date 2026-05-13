@@ -191,7 +191,7 @@ export default function UploadArtwork() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       <header className="mb-10">
         <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('uploadArtwork.title')}</h1>
         <p className="font-['Karla'] text-[#59554E] text-lg">{t('uploadArtwork.subtitle')}</p>

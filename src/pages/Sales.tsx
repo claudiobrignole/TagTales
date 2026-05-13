@@ -121,7 +121,7 @@ export default function Sales() {
   }
 
   return (
-    <div className="space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <ConnectionBanner />
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>

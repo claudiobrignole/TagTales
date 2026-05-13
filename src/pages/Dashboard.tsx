@@ -135,7 +135,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <ConnectionBanner />
       <header className="mb-10">
         <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">

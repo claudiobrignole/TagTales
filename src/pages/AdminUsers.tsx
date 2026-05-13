@@ -60,7 +60,7 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-10">
         <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('adminUsers.title')}</h1>
         <p className="text-[#59554E] text-lg">{t('adminUsers.subtitle')}</p>

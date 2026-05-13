@@ -140,7 +140,7 @@ export default function Payments() {
   }
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('payments.title')} {t('payments.andPayouts')}</h1>

@@ -199,7 +199,7 @@ export default function AdminNotify() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-8">
         <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('adminNotify.title')}</h1>
         <p className="text-[#59554E] text-lg">{t('adminNotify.subtitle')}</p>

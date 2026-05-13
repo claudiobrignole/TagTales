@@ -300,7 +300,7 @@ export default function Artworks() {
   }
 
   return (
-    <div className="space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla']">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">

@@ -116,7 +116,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="w-full space-y-8">
       <ConnectionBanner showWhenActive={true} />
       <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
