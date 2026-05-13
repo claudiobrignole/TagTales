@@ -4,7 +4,7 @@ import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
 dotenv.config();
@@ -18,7 +18,7 @@ if (!getApps().length) {
     initializeApp();
   }
 }
-const db = getFirestore();
+const db = getFirestore(getApp(), 'ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168');
 
 async function getSeoConfig(pageId) {
   try {
