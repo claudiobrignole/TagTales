@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { collection, query, where, getDocs, orderBy, addDoc, doc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FileText, Download, CheckCircle, Clock, Plus, X, AlertCircle, Users } from 'lucide-react';
+import { FileText, Download, CheckCircle, Clock, Plus, X, AlertCircle, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { useNavigate } from 'react-router-dom';
 import { sendEmailNotification } from '../utils/emailService';
 import { createNotification } from '../utils/notificationService';
@@ -24,7 +22,7 @@ export default function AdminContracts() {
   
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [newContract, setNewContract] = useState({ title: '', writerIds: [] as string[], file: null as File | null });
+  const [newContract, setNewContract] = useState({ title: '', writerIds: [] as string[], documentUrl: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,24 +76,21 @@ export default function AdminContracts() {
 
   const handleUploadContract = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newContract.file || newContract.writerIds.length === 0 || !newContract.title) return;
+    if (!newContract.documentUrl || newContract.writerIds.length === 0 || !newContract.title) return;
 
     setUploading(true);
     try {
-      // Upload the file once
-      const storageRef = ref(storage, `contracts/templates/${Date.now()}_${newContract.file.name}`);
-      const snapshot = await uploadBytes(storageRef, newContract.file, { contentType: 'application/pdf' });
-      const url = await getDownloadURL(snapshot.ref);
-
       // Create a contract document for each selected writer
       const newContractsData = [];
       for (const writerId of newContract.writerIds) {
         const contractData = {
           artistaId: writerId,
           title: newContract.title,
-          stato: 'pending',
-          documentUrl: url,
-          date: new Date().toISOString()
+          stato: 'signed', // Directly setting as signed since flow happens via Google Docs
+          documentUrl: newContract.documentUrl,
+          date: new Date().toISOString(),
+          signedAt: new Date().toISOString(), // Adding the archival date
+          signedBy: writers.find(w => w.id === writerId)?.fullName || 'Writer'
         };
         const docRef = await addDoc(collection(db, 'contratti'), contractData);
         
@@ -106,7 +101,7 @@ export default function AdminContracts() {
           writerName: writer?.fullName || writer?.artistName || writer?.email || 'Unknown Writer'
         });
 
-        // Send email notification
+        // Send email notification (Note: might need a new email template for Archival)
         if (writer?.email) {
           await sendEmailNotification(writer.email, 'new_contract', { 
             contractTitle: newContract.title,
@@ -117,8 +112,8 @@ export default function AdminContracts() {
         // Create in-app notification
         await createNotification(
           writerId,
-          t('adminContracts.newContractNotification'),
-          t('adminContracts.newContractNotificationBody', { title: newContract.title }),
+          "Nuovo Contratto Archiviato",
+          `Il documento "${newContract.title}" firmato è ora disponibile nel tuo archivio.`,
           'contract',
           '/contracts'
         );
@@ -126,55 +121,12 @@ export default function AdminContracts() {
 
       setContracts([...newContractsData, ...contracts]);
       setShowUploadModal(false);
-      setNewContract({ title: '', writerIds: [], file: null });
+      setNewContract({ title: '', writerIds: [], documentUrl: '' });
     } catch (error) {
-      console.error("Error uploading contract:", error);
-      alert(t('adminContracts.uploadFailed'));
+      console.error("Error archiving contract:", error);
+      alert(t('adminContracts.uploadFailed') || 'Errore durante il salvataggio.');
     } finally {
       setUploading(false);
-    }
-  };
-
-  const handleDownloadSigned = async (contract: any) => {
-    try {
-      // Fetch the original PDF
-      const response = await fetch(contract.documentUrl);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const originalPdfBytes = await response.arrayBuffer();
-
-      // Load the PDF
-      const pdfDoc = await PDFDocument.load(originalPdfBytes);
-      
-      // Embed font
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-      // Add a new page for the signature record
-      const page = pdfDoc.addPage();
-      const { width, height } = page.getSize();
-
-      // Draw signature details
-      page.drawText(t('adminContracts.signatureRecord'), { x: 50, y: height - 50, size: 24, font: boldFont, color: rgb(0, 0, 0) });
-      
-      page.drawText(`${t('contracts.contractTitle')}: ${contract.title}`, { x: 50, y: height - 100, size: 12, font });
-      page.drawText(`${t('adminContracts.signedBy')}: ${contract.signedBy}`, { x: 50, y: height - 130, size: 12, font });
-      page.drawText(`${t('adminContracts.email')}: ${contract.signedEmail}`, { x: 50, y: height - 160, size: 12, font });
-      page.drawText(`${t('adminContracts.dateTime')}: ${format(parseISO(contract.signedAt), 'MMMM dd, yyyy HH:mm:ss')}`, { x: 50, y: height - 190, size: 12, font });
-      page.drawText(t('adminContracts.statusDigitallySigned'), { x: 50, y: height - 220, size: 12, font, color: rgb(0, 0.5, 0) });
-
-      // Serialize the PDFDocument to bytes
-      const pdfBytes = await pdfDoc.save();
-
-      // Trigger download
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `${contract.title.replace(/\s+/g, '_')}_Signed_${contract.writerName.replace(/\s+/g, '_')}.pdf`;
-      link.click();
-    } catch (error) {
-      console.error("Error generating signed PDF:", error);
-      alert(t('adminContracts.downloadFailed'));
-      window.open(contract.documentUrl, '_blank');
     }
   };
 
@@ -187,14 +139,14 @@ export default function AdminContracts() {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
           <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-tight text-[#121212] mb-4">{t('adminContracts.title')}</h1>
-          <p className="text-[#59554E] text-lg">{t('adminContracts.subtitle')}</p>
+          <p className="text-[#59554E] text-lg">{t('adminContracts.subtitle') || 'Gestisci i contratti firmati tramite Google Docs'}</p>
         </div>
         <button 
           onClick={() => setShowUploadModal(true)}
           className="flex items-center gap-2 px-6 py-3 bg-[#121212] text-white rounded-full font-bold hover:bg-[#FF4F00] transition-colors shrink-0"
         >
           <Plus size={20} />
-          <span>{t('adminContracts.newContract')}</span>
+          <span>{t('adminContracts.newContract') || 'Archivia Contratto'}</span>
         </button>
       </header>
 
@@ -236,32 +188,17 @@ export default function AdminContracts() {
                         {(contract.stato || contract.status) === 'signed' ? t('adminContracts.signed') : 
                          (contract.stato || contract.status) === 'expired' ? t('adminContracts.expired') : t('adminContracts.pending')}
                       </span>
-                      {(contract.stato || contract.status) === 'signed' && contract.signedAt && (
-                        <div className="text-[10px] text-[#59554E] mt-1">
-                          {format(parseISO(contract.signedAt), 'MMM dd, yyyy HH:mm')}
-                        </div>
-                      )}
                     </td>
                     <td className="p-4 text-right">
-                      {(contract.stato || contract.status) === 'signed' ? (
-                        <button 
-                          onClick={() => handleDownloadSigned(contract)}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors"
-                        >
-                          <Download size={14} />
-                          <span>{t('adminContracts.signedPdf')}</span>
-                        </button>
-                      ) : (
-                        <a 
-                          href={contract.documentUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[#59554E] hover:text-[#121212] hover:bg-[#F2EEE8] transition-colors"
-                        >
-                          <FileText size={14} />
-                          <span>{t('adminContracts.viewOriginal')}</span>
-                        </a>
-                      )}
+                      <a 
+                        href={contract.documentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors"
+                      >
+                        <ExternalLink size={14} />
+                        <span>Apri Documento</span>
+                      </a>
                     </td>
                   </tr>
                 ))}
@@ -276,7 +213,7 @@ export default function AdminContracts() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center shrink-0">
-              <h2 className="text-2xl font-bold text-[#121212]">{t('adminContracts.assignContract')}</h2>
+              <h2 className="text-2xl font-bold text-[#121212]">Archivia Contratto Firmato</h2>
               <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-[#F2EEE8] rounded-full transition-colors">
                 <X size={24} className="text-[#59554E]" />
               </button>
@@ -322,14 +259,16 @@ export default function AdminContracts() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212]">{t('adminContracts.pdfDocument')}</label>
+                <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212]">Link Google Drive (PDF Firmato)</label>
                 <input 
-                  type="file" 
-                  accept=".pdf"
-                  onChange={(e) => setNewContract({...newContract, file: e.target.files?.[0] || null})}
+                  type="url" 
+                  value={newContract.documentUrl}
+                  onChange={(e) => setNewContract({...newContract, documentUrl: e.target.value})}
                   required
-                  className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#121212] file:text-white hover:file:bg-[#FF4F00] file:transition-colors file:cursor-pointer" 
+                  placeholder="https://drive.google.com/file/d/..."
+                  className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none" 
                 />
+                <p className="text-xs text-[#59554E]">Assicurati che il link condivida l'accesso in visualizzazione per il writer.</p>
               </div>
               
               <div className="pt-4 flex justify-end gap-3 shrink-0">
@@ -345,7 +284,7 @@ export default function AdminContracts() {
                   disabled={uploading || newContract.writerIds.length === 0}
                   className="px-6 py-3 rounded-full font-bold text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors disabled:opacity-50"
                 >
-                  {uploading ? t('adminContracts.sending') : t('adminContracts.sendContract')}
+                  {uploading ? "Salvataggio..." : "Salva Contratto"}
                 </button>
               </div>
             </form>
@@ -355,3 +294,4 @@ export default function AdminContracts() {
     </div>
   );
 }
+
