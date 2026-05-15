@@ -876,7 +876,7 @@ export default function PublicHome() {
             >
               <div className="w-full md:w-1/2 space-y-6 min-w-0">
                 {(getLocalizedField(block, "title", lang) || block.title) && (
-                  <h3 className="font-['Shamgod'] text-[40px] md:text-[60px] leading-[0.9] uppercase">
+                  <h3 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase">
                     {getLocalizedField(block, "title", lang) || block.title}
                   </h3>
                 )}

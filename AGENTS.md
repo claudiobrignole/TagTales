@@ -20,7 +20,7 @@
 
 2. **Harmonic Scale for other Headings**
    - **H2 (Secondary)**: `font-['Shamgod'] text-[60px] md:text-[100px] leading-[0.8]`
-   - **H3 (Tertiary)**: `font-['Shamgod'] text-[40px] md:text-[60px] leading-[0.9]`
+   - **H3 (Tertiary)**: `font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9]`
    - **H4 (Quaternary)**: `font-['Shamgod'] text-[30px] md:text-[40px] leading-[1]`
 
 3. **Small Titles & Buttons**
