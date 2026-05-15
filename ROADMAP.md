@@ -89,6 +89,11 @@ Usare ogni volta che si crea un nuovo prodotto TagTales su Ecwid.
   - Percorso `/sitemap.xml` attivo e generazione di una sitemap XML dinamica che include pagine statiche e URL dinamici di autore/mostra/articolo.
   - Percorso `/robots.txt` attivo.
   - Integrazione chat diretta: i writer possono interagire con l'amministrazione tramite il componente DirectChat, e l'amministratore riceve notifiche email via campanella con redirect ottimizzato al tab di chat dell'utente specifico (`/app/admin/users?chat={userId}`).
+- **Integrazione Archiviazione Contratti e UI Admin (15 maggio 2026)**:
+  - Implementazione per gli Admin dell'archiviazione di contratti firmati tramite link esterno (es. Google Docs eSignature, file su Drive), eliminando la firma fittizia in-app.
+  - Sostituzione della select multipla dei writer con un campo a ricerca nel form di archiviazione contratti per facilitare la selezione man mano che gli utenti crescono.
+  - Pulizia generale e rimozione di codice orfano/inutilizzato in `AdminContracts.tsx` e `Contracts.tsx`.
+
 
 
 ### 🚧 In Corso (Fase attuale)
@@ -125,7 +130,7 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 ### Blocco 3 — Contenuto e Onboarding Artisti
 
 - [ ] **3.1** Caricare la prima mostra reale su Firestore tramite `populateData.ts` o pannello admin.
-- [ ] **3.2** Testare il flusso di upload contratti firmati in Firebase Storage e la loro visualizzazione nella Dashboard Writer.
+- [x] **3.2** Testare il flusso di archiviazione contratti firmati e la loro visualizzazione nella Dashboard Writer (sostituito l'upload su Storage con l'utilizzo di link Google Docs esterni).
 - [ ] **3.3** Rendere accessibile la Guida Introduttiva per Artisti dalla piattaforma (pagina pubblica o download dall'area writer).
 
 
