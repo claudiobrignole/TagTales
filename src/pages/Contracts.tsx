@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { FileText, Download, CheckCircle, Clock, X, AlertCircle, ExternalLink } from 'lucide-react';
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
+import { FileText, CheckCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
 import { useI18n } from '../contexts/I18nContext';

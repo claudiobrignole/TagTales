@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, orderBy, addDoc, doc, getDoc } from 'firebase/firestore';
-import { FileText, Download, CheckCircle, Clock, Plus, X, AlertCircle, ExternalLink } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Plus, X, Search, AlertCircle, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,8 @@ export default function AdminContracts() {
   
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [newContract, setNewContract] = useState({ title: '', writerIds: [] as string[], documentUrl: '' });
+  const [newContract, setNewContract] = useState({ title: '', writerId: '', documentUrl: '' });
+  const [writerSearch, setWriterSearch] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,65 +64,50 @@ export default function AdminContracts() {
     fetchData();
   }, [user]);
 
-  const handleWriterSelection = (writerId: string) => {
-    setNewContract(prev => {
-      const isSelected = prev.writerIds.includes(writerId);
-      if (isSelected) {
-        return { ...prev, writerIds: prev.writerIds.filter(id => id !== writerId) };
-      } else {
-        return { ...prev, writerIds: [...prev.writerIds, writerId] };
-      }
-    });
-  };
-
   const handleUploadContract = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newContract.documentUrl || newContract.writerIds.length === 0 || !newContract.title) return;
+    if (!newContract.documentUrl || !newContract.writerId || !newContract.title) return;
 
     setUploading(true);
     try {
-      // Create a contract document for each selected writer
-      const newContractsData = [];
-      for (const writerId of newContract.writerIds) {
-        const contractData = {
-          artistaId: writerId,
-          title: newContract.title,
-          stato: 'signed', // Directly setting as signed since flow happens via Google Docs
-          documentUrl: newContract.documentUrl,
-          date: new Date().toISOString(),
-          signedAt: new Date().toISOString(), // Adding the archival date
-          signedBy: writers.find(w => w.id === writerId)?.fullName || 'Writer'
-        };
-        const docRef = await addDoc(collection(db, 'contratti'), contractData);
-        
-        const writer = writers.find(a => a.id === writerId);
-        newContractsData.push({ 
-          id: docRef.id, 
-          ...contractData,
-          writerName: writer?.fullName || writer?.artistName || writer?.email || 'Unknown Writer'
+      const contractData = {
+        artistaId: newContract.writerId,
+        title: newContract.title,
+        stato: 'signed', // Directly setting as signed since flow happens via Google Docs
+        documentUrl: newContract.documentUrl,
+        date: new Date().toISOString(),
+        signedAt: new Date().toISOString(), // Adding the archival date
+        signedBy: writers.find(w => w.id === newContract.writerId)?.fullName || 'Writer'
+      };
+      const docRef = await addDoc(collection(db, 'contratti'), contractData);
+      
+      const writer = writers.find(a => a.id === newContract.writerId);
+      const newContractDataObj = { 
+        id: docRef.id, 
+        ...contractData,
+        writerName: writer?.fullName || writer?.artistName || writer?.email || 'Unknown Writer'
+      };
+
+      // Send email notification (Note: might need a new email template for Archival)
+      if (writer?.email) {
+        await sendEmailNotification(writer.email, 'new_contract', { 
+          contractTitle: newContract.title,
+          userId: newContract.writerId
         });
-
-        // Send email notification (Note: might need a new email template for Archival)
-        if (writer?.email) {
-          await sendEmailNotification(writer.email, 'new_contract', { 
-            contractTitle: newContract.title,
-            userId: writerId
-          });
-        }
-
-        // Create in-app notification
-        await createNotification(
-          writerId,
-          "Nuovo Contratto Archiviato",
-          `Il documento "${newContract.title}" firmato è ora disponibile nel tuo archivio.`,
-          'contract',
-          '/contracts'
-        );
       }
 
-      setContracts([...newContractsData, ...contracts]);
+      // Create in-app notification
+      await createNotification(
+        newContract.writerId,
+        "Nuovo Contratto Archiviato",
+        `Il documento "${newContract.title}" firmato è ora disponibile nel tuo archivio.`,
+        'contract',
+        '/contracts'
+      );
+
+      setContracts([newContractDataObj, ...contracts]);
       setShowUploadModal(false);
-      setNewContract({ title: '', writerIds: [], documentUrl: '' });
+      setNewContract({ title: '', writerId: '', documentUrl: '' });
     } catch (error) {
       console.error("Error archiving contract:", error);
       alert(t('adminContracts.uploadFailed') || 'Errore durante il salvataggio.');
@@ -232,28 +218,59 @@ export default function AdminContracts() {
                 />
               </div>
               
-              <div className="space-y-2">
-                <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212] flex justify-between">
-                  <span>{t('contracts.selectWriter', 'Seleziona Writer')}</span>
-                  <span className="text-[#FF4F00]">{newContract.writerIds.length} {t('adminContracts.selected')}</span>
+              <div className="space-y-4">
+                <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212]">
+                  {t('contracts.selectWriter', 'Seleziona Writer')}
                 </label>
+                
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#59554E]" size={18} />
+                  <input
+                    type="text"
+                    value={writerSearch}
+                    onChange={(e) => setWriterSearch(e.target.value)}
+                    placeholder="Cerca nome o email..."
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-[#EAE3D9] rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none"
+                  />
+                </div>
+
                 <div className="bg-[#F2EEE8] rounded-xl p-2 max-h-48 overflow-y-auto space-y-1">
-                  {writers.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-[#59554E]">{t('adminContracts.noWriters', 'Nessun writer trovato')}</div>
-                  ) : (
-                    writers.map(writer => (
-                      <label key={writer.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors">
-                        <input 
-                          type="checkbox" 
-                          checked={newContract.writerIds.includes(writer.id)}
-                          onChange={() => handleWriterSelection(writer.id)}
-                          className="w-4 h-4 text-[#FF4F00] rounded border-gray-300 focus:ring-[#FF4F00]"
-                        />
+                  {writers.filter(w => {
+                    const search = writerSearch.toLowerCase();
+                    return (w.fullName || '').toLowerCase().includes(search) || 
+                           (w.artistName || '').toLowerCase().includes(search) || 
+                           (w.email || '').toLowerCase().includes(search);
+                  }).map(writer => (
+                    <label key={writer.id} className={clsx(
+                      "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
+                      newContract.writerId === writer.id ? "bg-white shadow-sm ring-1 ring-[#FF4F00]" : "hover:bg-white/50"
+                    )}>
+                      <input 
+                        type="radio" 
+                        name="contract_writer"
+                        value={writer.id}
+                        checked={newContract.writerId === writer.id}
+                        onChange={(e) => setNewContract({...newContract, writerId: e.target.value})}
+                        className="w-4 h-4 text-[#FF4F00] focus:ring-[#FF4F00] border-gray-300"
+                        required
+                      />
+                      <div className="flex flex-col">
                         <span className="text-sm font-medium text-[#121212]">
                           {writer.fullName || writer.artistName || writer.email}
                         </span>
-                      </label>
-                    ))
+                        {(writer.fullName || writer.artistName) && writer.email && (
+                          <span className="text-xs text-[#59554E]">{writer.email}</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                  {writers.filter(w => {
+                    const search = writerSearch.toLowerCase();
+                    return (w.fullName || '').toLowerCase().includes(search) || 
+                           (w.artistName || '').toLowerCase().includes(search) || 
+                           (w.email || '').toLowerCase().includes(search);
+                  }).length === 0 && (
+                    <div className="p-4 text-center text-sm text-[#59554E]">Nessun writer trovato</div>
                   )}
                 </div>
               </div>
@@ -281,7 +298,7 @@ export default function AdminContracts() {
                 </button>
                 <button 
                   type="submit"
-                  disabled={uploading || newContract.writerIds.length === 0}
+                  disabled={uploading || !newContract.writerId}
                   className="px-6 py-3 rounded-full font-bold text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors disabled:opacity-50"
                 >
                   {uploading ? "Salvataggio..." : "Salva Contratto"}
