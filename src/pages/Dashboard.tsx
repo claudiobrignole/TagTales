@@ -248,80 +248,77 @@ export default function Dashboard() {
 
       {/* Recent Activity & Chat */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
-            <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center">
-                <h2 className="text-xl font-bold tracking-tight text-[#121212]">{t('dashboard.recentSales')}</h2>
-                <Link to="/app/sales" className="text-sm font-bold text-[#FF4F00] hover:underline">{t('dashboard.viewAllSales')}</Link>
-            </div>
-            <div className="p-0">
-                {recentSales.length === 0 ? (
-                <div className="p-8 text-center text-[#59554E]">{t('dashboard.noRecentSales')}</div>
-                ) : (
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                    <tr className="bg-[#F2EEE8]/50 text-[10px] uppercase tracking-widest text-[#59554E]">
-                        <th className="p-4 font-bold border-b border-[#EAE3D9]">{t('sales.artwork')}</th>
-                        <th className="p-4 font-bold border-b border-[#EAE3D9]">{t('common.date')}</th>
-                        <th className="p-4 font-bold border-b border-[#EAE3D9] text-right">{t('common.amount')}</th>
-                        <th className="p-4 font-bold border-b border-[#EAE3D9] text-center">{t('common.status')}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {recentSales.map((sale) => (
-                        <tr key={sale.id} className="hover:bg-[#F2EEE8]/30 transition-colors border-b border-[#EAE3D9] last:border-0">
-                        <td className="p-4 font-medium text-[#121212]">{sale.productName || sale.artworkTitle}</td>
-                        <td className="p-4 text-sm text-[#59554E]">{new Date(sale.date).toLocaleDateString()}</td>
-                        <td className="p-4 font-bold text-[#121212] text-right">{sale.artistShare?.toLocaleString()} {t('dashboard.currency')}</td>
-                        <td className="p-4 text-center">
-                            <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
-                            {sale.status}
-                            </span>
-                        </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-                )}
-            </div>
-            </div>
-
-            {/* Support / Direct Chat */}
+        {/* Col 1 & 2: Chat */}
+        <div className="lg:col-span-2 flex flex-col h-[500px] lg:h-[600px]">
             {user && (
-                <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
-                    <DirectChat 
-                        userId={user.uid} 
-                        isAdmin={false} 
-                        currentUserId={user.uid} 
-                    />
-                </div>
+                <DirectChat 
+                    userId={user.uid} 
+                    isAdmin={false} 
+                    currentUserId={user.uid} 
+                />
             )}
         </div>
 
-        <div className="space-y-8">
-            <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-6">
-            <h2 className="text-xl font-bold tracking-tight text-[#121212] mb-6">{t('dashboard.quickActions')}</h2>
-            <div className="space-y-3">
-                <Link to="/app/artworks/upload" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
-                    <Palette size={20} />
-                    </div>
-                    <span className="font-bold text-[#121212]">{t('dashboard.uploadArtwork')}</span>
+        {/* Col 3: Vendite Recenti + Azioni Rapide */}
+        <div className="space-y-8 lg:col-span-1">
+            <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
+                <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center">
+                    <h2 className="text-xl font-bold tracking-tight text-[#121212]">{t('dashboard.recentSales')}</h2>
+                    <Link to="/app/sales" className="text-sm font-bold text-[#FF4F00] hover:underline">{t('dashboard.viewAllSales')}</Link>
                 </div>
-                <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
-                </Link>
-                
-                <Link to="/app/payments" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
-                    <Receipt size={20} />
-                    </div>
-                    <span className="font-bold text-[#121212]">{t('dashboard.requestPayout')}</span>
+                <div className="p-0">
+                    {recentSales.length === 0 ? (
+                    <div className="p-8 text-center text-[#59554E]">{t('dashboard.noRecentSales')}</div>
+                    ) : (
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                        <tr className="bg-[#F2EEE8]/50 text-[10px] uppercase tracking-widest text-[#59554E]">
+                            <th className="p-4 font-bold border-b border-[#EAE3D9]">{t('sales.artwork')}</th>
+                            <th className="p-4 font-bold border-b border-[#EAE3D9] text-right">{t('common.amount')}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {recentSales.map((sale) => (
+                            <tr key={sale.id} className="hover:bg-[#F2EEE8]/30 transition-colors border-b border-[#EAE3D9] last:border-0">
+                            <td className="p-4 font-medium text-[#121212]">
+                                {sale.productName || sale.artworkTitle}
+                                <div className="text-xs text-[#59554E] font-normal">{new Date(sale.date).toLocaleDateString()}</div>
+                            </td>
+                            <td className="p-4 font-bold text-[#121212] text-right">
+                                {sale.artistShare?.toLocaleString()} {t('dashboard.currency')}
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-green-600 mt-1">{sale.status}</div>
+                            </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                    )}
                 </div>
-                <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
-                </Link>
             </div>
+
+            <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-6">
+                <h2 className="text-xl font-bold tracking-tight text-[#121212] mb-6">{t('dashboard.quickActions')}</h2>
+                <div className="space-y-3">
+                    <Link to="/app/artworks/upload" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
+                        <Palette size={20} />
+                        </div>
+                        <span className="font-bold text-[#121212]">{t('dashboard.uploadArtwork')}</span>
+                    </div>
+                    <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
+                    </Link>
+                    
+                    <Link to="/app/payments" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
+                        <Receipt size={20} />
+                        </div>
+                        <span className="font-bold text-[#121212]">{t('dashboard.requestPayout')}</span>
+                    </div>
+                    <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
+                    </Link>
+                </div>
             </div>
         </div>
       </div>

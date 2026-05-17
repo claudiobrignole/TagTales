@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
-import { FileText, CheckCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { FileText, CheckCircle, Clock, AlertCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
 import { useI18n } from '../contexts/I18nContext';
@@ -13,6 +13,7 @@ export default function Contracts() {
   const { t } = useI18n();
   const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contractToDelete, setContractToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -31,6 +32,19 @@ export default function Contracts() {
 
     fetchContracts();
   }, [user]);
+
+  const confirmDeleteContract = async () => {
+    if (!contractToDelete) return;
+    try {
+      await deleteDoc(doc(db, 'contratti', contractToDelete));
+      setContracts(prev => prev.filter(c => c.id !== contractToDelete));
+    } catch (error) {
+      console.error("Error deleting contract:", error);
+      alert('Errore durante l\'eliminazione del contratto.');
+    } finally {
+      setContractToDelete(null);
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center h-full">{t('common.loading')}</div>;
@@ -93,12 +107,49 @@ export default function Contracts() {
                       <span>Apri Documento</span>
                     </a>
                   )}
+                  <button
+                    onClick={() => setContractToDelete(contract.id)}
+                    className="flex flex-col items-center justify-center p-3 rounded-full text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                    title={t('common.delete') || 'Elimina'}
+                  >
+                    <Trash2 size={24} />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {contractToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-[#EAE3D9]">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <p className="text-[#59554E] text-sm mb-6">
+                Sei sicuro di voler eliminare questo contratto? Questa operazione non può essere annullata.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setContractToDelete(null)}
+                  className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={confirmDeleteContract}
+                  className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs shadow-md shadow-[#FF4F00]/20"
+                >
+                  Elimina
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

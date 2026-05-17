@@ -160,7 +160,7 @@ export default function Layout() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   clsx(
-                    "flex items-center gap-3 px-4 py-3 font-medium rounded-full transition-all duration-200",
+                    "flex items-center gap-3 px-4 py-2 font-medium rounded-full transition-all duration-200",
                     isActive
                       ? "bg-[#FF4F00] text-white shadow-lg shadow-[#FF4F00]/20 scale-[1.02]"
                       : "text-[#59554E] hover:bg-[#EAE3D9] hover:text-[#121212]",
@@ -182,7 +182,7 @@ export default function Layout() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
                     clsx(
-                      "flex items-center gap-3 px-4 py-3 font-medium rounded-full transition-all duration-200",
+                      "flex items-center gap-3 px-4 py-2 font-medium rounded-full transition-all duration-200",
                       isActive
                         ? "bg-[#FF4F00] text-white shadow-lg shadow-[#FF4F00]/20 scale-[1.02]"
                         : "text-[#59554E] hover:bg-[#EAE3D9] hover:text-[#121212]",
@@ -202,7 +202,7 @@ export default function Layout() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
                     clsx(
-                      "flex items-center gap-3 px-4 py-3 font-medium rounded-full transition-all duration-200",
+                      "flex items-center gap-3 px-4 py-2 font-medium rounded-full transition-all duration-200",
                       isActive
                         ? "bg-[#FF4F00] text-white shadow-lg shadow-[#FF4F00]/20 scale-[1.02]"
                         : "text-[#59554E] hover:bg-[#EAE3D9] hover:text-[#121212]",

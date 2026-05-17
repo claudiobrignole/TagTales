@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy, addDoc, doc, getDoc } from 'firebase/firestore';
-import { FileText, CheckCircle, Clock, Plus, X, Search, AlertCircle, ExternalLink } from 'lucide-react';
+import { collection, query, where, getDocs, orderBy, addDoc, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { FileText, CheckCircle, Clock, Plus, X, Search, AlertCircle, ExternalLink, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,7 @@ export default function AdminContracts() {
   const [uploading, setUploading] = useState(false);
   const [newContract, setNewContract] = useState({ title: '', writerId: '', documentUrl: '' });
   const [writerSearch, setWriterSearch] = useState('');
+  const [contractToDelete, setContractToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,6 +65,49 @@ export default function AdminContracts() {
     fetchData();
   }, [user]);
 
+  const confirmDeleteContract = async () => {
+    if (!contractToDelete) return;
+    try {
+      await deleteDoc(doc(db, 'contratti', contractToDelete));
+      setContracts(prev => prev.filter(c => c.id !== contractToDelete));
+    } catch (error) {
+      console.error("Error deleting contract:", error);
+      alert('Errore durante l\'eliminazione del contratto.');
+    } finally {
+      setContractToDelete(null);
+    }
+  };
+
+  const handleMarkAsSigned = async (contract: any) => {
+    try {
+      await updateDoc(doc(db, 'contratti', contract.id), {
+        stato: 'signed',
+        signedAt: new Date().toISOString(),
+        signedBy: contract.writerName || 'Writer'
+      });
+      
+      setContracts(prev => prev.map(c => 
+        c.id === contract.id 
+          ? { ...c, stato: 'signed', signedAt: new Date().toISOString(), signedBy: contract.writerName || 'Writer' } 
+          : c
+      ));
+
+      // Create in-app notification for the writer
+      if (contract.artistaId || contract.artistId) {
+        await createNotification(
+          contract.artistaId || contract.artistId,
+          "Contratto Validato",
+          `Il documento "${contract.title}" è stato verificato e contrassegnato come firmato.`,
+          'contract',
+          '/contracts'
+        );
+      }
+    } catch (error) {
+      console.error("Error marking contract as signed:", error);
+      alert('Errore durante l\'aggiornamento del contratto.');
+    }
+  };
+
   const handleUploadContract = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newContract.documentUrl || !newContract.writerId || !newContract.title) return;
@@ -73,11 +117,9 @@ export default function AdminContracts() {
       const contractData = {
         artistaId: newContract.writerId,
         title: newContract.title,
-        stato: 'signed', // Directly setting as signed since flow happens via Google Docs
+        stato: 'in_review', // Set as in review initially
         documentUrl: newContract.documentUrl,
         date: new Date().toISOString(),
-        signedAt: new Date().toISOString(), // Adding the archival date
-        signedBy: writers.find(w => w.id === newContract.writerId)?.fullName || 'Writer'
       };
       const docRef = await addDoc(collection(db, 'contratti'), contractData);
       
@@ -99,8 +141,8 @@ export default function AdminContracts() {
       // Create in-app notification
       await createNotification(
         newContract.writerId,
-        "Nuovo Contratto Archiviato",
-        `Il documento "${newContract.title}" firmato è ora disponibile nel tuo archivio.`,
+        "Nuovo Contratto in Revisione",
+        `Il documento "${newContract.title}" è in attesa della tua firma.`,
         'contract',
         '/contracts'
       );
@@ -121,7 +163,7 @@ export default function AdminContracts() {
   }
 
   return (
-    <div className="w-full space-y-8 font-['Karla']">
+    <div className="w-full space-y-8 font-['Karla'] pb-12">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
           <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-tight text-[#121212] mb-4">{t('adminContracts.title')}</h1>
@@ -175,16 +217,32 @@ export default function AdminContracts() {
                          (contract.stato || contract.status) === 'expired' ? t('adminContracts.expired') : t('adminContracts.pending')}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 flex items-center justify-end gap-2 text-right">
+                      {(contract.stato || contract.status) !== 'signed' && (
+                        <button
+                          onClick={() => handleMarkAsSigned(contract)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shrink-0"
+                        >
+                          <CheckCircle size={14} />
+                          <span>Segna come Firmato</span>
+                        </button>
+                      )}
                       <a 
                         href={contract.documentUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors shrink-0"
                       >
                         <ExternalLink size={14} />
                         <span>Apri Documento</span>
                       </a>
+                      <button
+                        onClick={() => setContractToDelete(contract.id)}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors shrink-0"
+                        title={t('common.delete') || 'Elimina'}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -305,6 +363,36 @@ export default function AdminContracts() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {contractToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-[#EAE3D9]">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <p className="text-[#59554E] text-sm mb-6">
+                Sei sicuro di voler eliminare questo contratto? Questa operazione non può essere annullata.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setContractToDelete(null)}
+                  className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={confirmDeleteContract}
+                  className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs shadow-md shadow-[#FF4F00]/20"
+                >
+                  Elimina
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

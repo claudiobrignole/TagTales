@@ -59,7 +59,12 @@
     "editorial": "Redazione"
   },
   "writer": {
-    "participatingExhibitions": "Mostre Partecipanti"
+    "participatingExhibitions": "Mostre Partecipanti",
+    "backToWriters": "Tutti i Writers",
+    "followInstagram": "Segui su Instagram",
+    "contactWriter": "Contatta Writer",
+    "artworks": "Opere",
+    "products": "Prodotti in Vendita"
   },
   "common": {
     "save": "Salva",

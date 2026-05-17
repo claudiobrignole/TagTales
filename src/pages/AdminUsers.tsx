@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { User, Shield, ShieldAlert, Check, X, Link as LinkIcon, Bell, Search, ArrowLeft, Save, ShoppingBag, Send, MessagesSquare, Trash2, Ban } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
@@ -28,6 +28,8 @@ export default function AdminUsers() {
   // Notes state
   const [adminNotes, setAdminNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -79,20 +81,24 @@ export default function AdminUsers() {
     }
   };
 
-  const deleteUserRecord = async (userId: string) => {
-    if (!window.confirm(t('adminUsers.crm.deleteConfirm') || "Sei sicuro di voler eliminare questo utente?")) return;
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
     try {
-      const response = await fetch(`/api/users/${userId}`, { method: "DELETE" });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error || "Errore durante l'eliminazione");
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      if (selectedUserId === userId) setSelectedUserId(null);
+      await updateDoc(doc(db, 'users', userToDelete), { isDeleted: true });
+      setUsers(prev => prev.filter(u => u.id !== userToDelete));
+      if (selectedUserId === userToDelete) setSelectedUserId(null);
       setMessage({ type: 'success', text: 'Utente eliminato con successo' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
       console.error("Error deleting user:", error);
       setMessage({ type: 'error', text: error.message || t('common.error') });
+    } finally {
+      setUserToDelete(null);
     }
+  };
+
+  const deleteUserRecord = (userId: string) => {
+    setUserToDelete(userId);
   };
 
   const handleSelectUser = (id: string) => {
@@ -411,6 +417,36 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
+
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-[#EAE3D9]">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <p className="text-[#59554E] text-sm mb-6">
+                {t('adminUsers.crm.deleteConfirm') || "Sei sicuro di voler eliminare questo utente? Questa operazione non può essere annullata."}
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setUserToDelete(null)}
+                  className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
+                >
+                  {t('common.cancel') || 'Annulla'}
+                </button>
+                <button
+                  onClick={confirmDeleteUser}
+                  className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs shadow-md shadow-[#FF4F00]/20"
+                >
+                  {t('common.delete') || 'Elimina'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {managingConnectionFor && (
         <EcwidConnectionModal

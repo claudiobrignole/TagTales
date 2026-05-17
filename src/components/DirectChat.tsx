@@ -132,9 +132,9 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[400px] w-full bg-white rounded-[32px] border border-[#EAE3D9] overflow-hidden shadow-none">
+    <div className="flex flex-col h-full min-h-[400px] w-full bg-white rounded-3xl border border-[#EAE3D9] overflow-hidden shadow-sm">
       <div className="p-4 bg-[#121212] text-white shrink-0 flex items-center justify-between">
-         <h3 className="font-bold font-['Shamgod'] uppercase text-xl leading-none">
+         <h3 className="font-bold font-['Shamgod'] uppercase text-[25px] leading-none">
            {isAdmin ? `Chat con ${recipientName || 'Writer'}` : 'Chat con l\'Amministrazione'}
          </h3>
       </div>
@@ -160,14 +160,14 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
                 className={clsx(
                   "max-w-[85%] rounded-2xl p-4 font-['Karla'] text-[15px] leading-relaxed relative",
                   isMine 
-                    ? "ml-auto bg-[#121212] text-white rounded-br-sm" 
+                    ? "ml-auto bg-[#EAE3D9] text-[#121212] rounded-br-sm" 
                     : "mr-auto bg-white text-[#121212] border border-[#EAE3D9] rounded-bl-sm"
                 )}
               >
                 <div className="whitespace-pre-wrap">{msg.message}</div>
                 <div className={clsx(
                   "text-[10px] mt-2 opacity-60 flex justify-end font-bold uppercase tracking-wider",
-                  isMine ? "text-gray-300" : "text-[#A39E93]"
+                  isMine ? "text-[#59554E]" : "text-[#A39E93]"
                 )}>
                    {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>

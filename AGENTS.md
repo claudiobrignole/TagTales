@@ -76,3 +76,9 @@ Regole aggiuntive per la roadmap:
 1. **Layout Base**: The `Layout.tsx` main wrapper provides the main dashboard spacing using `className="flex-1 p-[25px] md:p-[50px] w-full"`. 
 2. **Admin Pages**: All sections and routes within the admin dashboard MUST use a `w-full` outer wrapper (e.g. `className="w-full space-y-8"`) WITHOUT ANY additional padding (no `p-4`, `p-8`) and WITHOUT constraining `max-w-[...]` or `mx-auto`. The spacing is fully controlled by the parent `Layout.tsx`. This utilizes the available space minus the predefined layout margin padding uniformly.
 
+## Gestione Azioni Distruttive ed Eliminazione Utenti
+
+Regola 5: Divieto assoluto di `window.confirm` e `window.alert`. Poiché l'app viene renderizzata all'interno di un iFrame (nel preview di AI Studio e contesti simili), i popup nativi del browser (`window.confirm`) vengono frequentemente bloccati o creano eccezioni non gestite che interrompono l'esecuzione. NON usare MAI `window.confirm`. Qualsiasi operazione distruttiva deve invocare una Modal React UI (es. custom pop-up con tailwind e state handling).
+
+Regola 6: Soft-Delete Utenti (`/src/pages/AdminUsers.tsx`). L'azione di cancellazione degli utenti dalla dashboard amministratore è stata volutamente limitata tramite "Soft Delete". Si deve usare tassativamente `updateDoc(doc(db, 'users', userId), { isDeleted: true })`. È proibito usare `deleteDoc` per la collection 'users' o reintrodurre endpoint custom tipo `/api/users`. Questa funzionalità è bloccata e testata; non dovrà essere sovrascritta o ripristinata a metodi imperativi.
+

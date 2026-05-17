@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { ExhibitionBlock } from './AdminExhibitionBlocksEditor';
 import VideoEmbed from './VideoEmbed';
 import { getLocalizedField } from '../utils/localization';
 import { cleanHtml } from '../utils/cleanHtml';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
   blocks: ExhibitionBlock[];
@@ -13,11 +14,39 @@ interface Props {
 export default function ModularExhibitionLayout({ blocks }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const allImages = useMemo(() => {
+    const images: {url: string, ecwidLink?: string, blockType: string}[] = [];
+    if (!blocks) return images;
+    blocks.forEach(block => {
+      if (block.type === 'image_fullscreen' && block.images?.[0]?.url) {
+        images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, blockType: block.type });
+      } else if (block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') {
+        if (block.images?.[0]?.url) images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, blockType: block.type });
+        if (block.images?.[1]?.url) images.push({ url: block.images[1].url, ecwidLink: block.images[1].ecwidLink, blockType: block.type });
+      }
+    });
+    return images;
+  }, [blocks]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowLeft') setLightboxIndex(prev => (prev! - 1 + allImages.length) % allImages.length);
+      if (e.key === 'ArrowRight') setLightboxIndex(prev => (prev! + 1) % allImages.length);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, allImages.length]);
 
   if (!blocks || blocks.length === 0) return null;
 
+  let imageCounter = 0;
+
   return (
-    <div className="w-full mt-16 space-y-0">
+    <div className="w-full space-y-0">
       {blocks.map((block) => {
         // --- TEXT BLOCK (Quote) ---
         if (block.type === 'text') {
@@ -63,22 +92,25 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           const img = block.images?.[0];
           if (!img || !img.url) return null;
           
+          const currentIndex = imageCounter++;
+          
           return (
-            <div key={block.id} className="w-full relative h-[60vh] md:h-[100svh] bg-[#121212]">
+            <div key={block.id} className="w-full relative h-[60vh] md:h-[100svh] bg-[#121212] cursor-pointer" onClick={() => setLightboxIndex(currentIndex)}>
               <img 
                 src={img.url} 
                 alt="Mostra Fullscreen" 
                 className="w-full h-full object-cover"
               />
               {img.ecwidLink && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-6 right-6 z-10">
                   <a 
                     href={img.ecwidLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-primary"
+                    className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    Acquista Opera
+                    Acquista
                   </a>
                 </div>
               )}
@@ -112,6 +144,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           const img2 = block.images?.[1] || { url: '' };
           const isBlack = block.backgroundColor === 'black';
           
+          const index1 = img1.url ? imageCounter++ : -1;
+          const index2 = img2.url ? imageCounter++ : -1;
+          
           return (
             <div 
               key={block.id} 
@@ -121,26 +156,44 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
               )}
             >
               {/* Image 1 */}
-              <div className="w-full md:w-1/2 relative h-[50vh] md:h-full group bg-black/5">
+              <div 
+                className={clsx("w-full md:w-1/2 relative h-[50vh] md:h-full bg-black/5", img1.url ? "cursor-pointer" : "")} 
+                onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
+              >
                 {img1.url && (
                   <img src={img1.url} alt="Mostra 1" className="w-full h-full object-cover" />
                 )}
                 {img1.ecwidLink && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <a href={img1.ecwidLink} target="_blank" rel="noopener noreferrer" className="btn-primary bg-white text-black px-6 py-3 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-[#FF4F00] hover:text-white transition-colors">
+                  <div className="absolute bottom-6 right-6 z-10">
+                    <a 
+                      href={img1.ecwidLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                    >
                       Acquista
                     </a>
                   </div>
                 )}
               </div>
               {/* Image 2 */}
-              <div className="w-full md:w-1/2 relative h-[50vh] md:h-full group bg-black/5">
+              <div 
+                className={clsx("w-full md:w-1/2 relative h-[50vh] md:h-full bg-black/5", img2.url ? "cursor-pointer" : "")} 
+                onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
+              >
                 {img2.url && (
                   <img src={img2.url} alt="Mostra 2" className="w-full h-full object-cover" />
                 )}
                 {img2.ecwidLink && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <a href={img2.ecwidLink} target="_blank" rel="noopener noreferrer" className="btn-primary bg-white text-black px-6 py-3 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-[#FF4F00] hover:text-white transition-colors">
+                  <div className="absolute bottom-6 right-6 z-10">
+                    <a 
+                      href={img2.ecwidLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                    >
                       Acquista
                     </a>
                   </div>
@@ -156,6 +209,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           const img2 = block.images?.[1] || { url: '' };
           const isBlack = block.backgroundColor === 'black';
 
+          const index1 = img1.url ? imageCounter++ : -1;
+          const index2 = img2.url ? imageCounter++ : -1;
+
           return (
             <div 
               key={block.id} 
@@ -165,25 +221,43 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
               )}
             >
               <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-                <div className="md:-mt-24 relative group">
+                <div 
+                  className={clsx("md:-mt-24 relative block w-full", img1.url ? "cursor-pointer" : "")} 
+                  onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
+                >
                   {img1.url && (
                     <img src={img1.url} alt="Mostra Creative 1" className="w-full aspect-[4/5] object-cover" />
                   )}
                   {img1.ecwidLink && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a href={img1.ecwidLink} target="_blank" rel="noopener noreferrer" className="btn-primary bg-white text-black px-6 py-3 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-[#FF4F00] hover:text-white transition-colors">
+                    <div className="absolute bottom-6 right-6 z-10">
+                      <a 
+                        href={img1.ecwidLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                      >
                         Acquista
                       </a>
                     </div>
                   )}
                 </div>
-                <div className="md:mt-24 relative group">
+                <div 
+                  className={clsx("md:mt-24 relative block w-full", img2.url ? "cursor-pointer" : "")} 
+                  onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
+                >
                   {img2.url && (
                     <img src={img2.url} alt="Mostra Creative 2" className="w-full aspect-[4/5] object-cover" />
                   )}
                   {img2.ecwidLink && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a href={img2.ecwidLink} target="_blank" rel="noopener noreferrer" className="btn-primary bg-white text-black px-6 py-3 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-[#FF4F00] hover:text-white transition-colors">
+                    <div className="absolute bottom-6 right-6 z-10">
+                      <a 
+                        href={img2.ecwidLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                      >
                         Acquista
                       </a>
                     </div>
@@ -196,6 +270,58 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
 
         return null;
       })}
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && allImages[lightboxIndex] && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-12" onClick={() => setLightboxIndex(null)}>
+          {/* Close button */}
+          <button 
+            className="absolute top-6 right-6 md:top-10 md:right-10 text-white hover:text-[#FF4F00] transition-colors z-[110] p-4 cursor-pointer"
+            onClick={() => setLightboxIndex(null)}
+          >
+            <X size={32} />
+          </button>
+          
+          {/* Prev button */}
+          {allImages.length > 1 && (
+            <button 
+              className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 text-white hover:text-[#FF4F00] transition-colors z-[110] p-4 cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev! - 1 + allImages.length) % allImages.length); }}
+            >
+              <ChevronLeft size={48} />
+            </button>
+          )}
+
+          {/* Next button */}
+          {allImages.length > 1 && (
+            <button 
+              className="absolute right-4 md:right-10 top-1/2 -translate-y-1/2 text-white hover:text-[#FF4F00] transition-colors z-[110] p-4 cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev! + 1) % allImages.length); }}
+            >
+              <ChevronRight size={48} />
+            </button>
+          )}
+
+          {/* Image */}
+          <div className="relative max-w-full max-h-full flex flex-col items-center justify-center p-4 md:p-12" onClick={(e) => e.stopPropagation()}>
+             <img 
+               src={allImages[lightboxIndex].url} 
+               className="max-w-full max-h-[85vh] object-contain shadow-2xl"
+               alt=""
+             />
+             {allImages[lightboxIndex].ecwidLink && (
+               <a 
+                 href={allImages[lightboxIndex].ecwidLink}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="mt-6 inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg"
+               >
+                 {t('exhibition.buy', 'Acquista')}
+               </a>
+             )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
