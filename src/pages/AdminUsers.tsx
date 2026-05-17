@@ -188,16 +188,12 @@ export default function AdminUsers() {
                     selectedUserId === u.id && "bg-[#F2EEE8]"
                   )}
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#EAE3D9] overflow-hidden flex-shrink-0">
-                    {u.profilePictureUrl ? (
-                      <img src={u.profilePictureUrl} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-full h-full p-2 text-[#59554E]" />
-                    )}
+                  <div className="w-10 h-10 rounded-full bg-[#121212] text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0 border border-[#EAE3D9]">
+                    {u.artistName?.charAt(0) || u.fullName?.charAt(0) || u.email?.charAt(0) || '?'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                       <p className="font-bold text-[#121212] text-sm truncate">{u.fullName || `No ${t('adminUsers.name')}`}</p>
+                       <p className="font-bold text-[#121212] text-sm truncate">{u.artistName || u.fullName || `No ${t('adminUsers.name')}`}</p>
                        <div className="flex gap-1 shrink-0">
                          {u.role === 'admin' && <Shield size={12} className="text-purple-600" />}
                          {u.status === 'suspended' && <ShieldAlert size={12} className="text-red-600" />}
@@ -231,16 +227,12 @@ export default function AdminUsers() {
               {/* Master Header */}
               <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
                 <div className="flex items-start gap-4">
-                  <div className="w-20 h-20 rounded-full bg-[#EAE3D9] overflow-hidden flex-shrink-0">
-                    {selectedUser.profilePictureUrl ? (
-                      <img src={selectedUser.profilePictureUrl} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-full h-full p-4 text-[#59554E]" />
-                    )}
+                  <div className="w-20 h-20 rounded-full bg-[#121212] text-white flex items-center justify-center font-bold text-3xl uppercase flex-shrink-0 border border-[#EAE3D9]">
+                    {selectedUser.artistName?.charAt(0) || selectedUser.fullName?.charAt(0) || selectedUser.email?.charAt(0) || '?'}
                   </div>
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold font-['Shamgod'] uppercase text-[#121212] leading-[0.8]">
-                      {selectedUser.fullName || selectedUser.artistName || `No Name`}
+                      {selectedUser.artistName || selectedUser.fullName || `No Name`}
                     </h2>
                     <p className="text-[#59554E] font-medium mt-1">{selectedUser.email}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -346,7 +338,16 @@ export default function AdminUsers() {
                       {t('adminUsers.crm.salesAndProducts')}
                     </h3>
                     <div className="space-y-4 text-sm bg-[#F2EEE8]/30 p-4 rounded-xl border border-[#EAE3D9]">
-                      <p className="flex items-center justify-between"><span className="text-[#59554E] font-bold uppercase tracking-wider">{t('adminUsers.crm.assignedProducts')}:</span> <span className="font-bold text-[#121212] text-base">{selectedUser.ecwidProductIds?.length || 0}</span></p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#59554E] font-bold uppercase tracking-wider">{t('adminUsers.crm.assignedProducts')}:</span> 
+                        <span className="font-bold text-[#121212] text-base">{selectedUser.ecwidProductIds?.length || 0}</span>
+                      </div>
+                      <button 
+                        onClick={() => setManagingConnectionFor(selectedUser)}
+                        className="w-full mt-2 py-3 px-4 bg-[#121212] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black transition-colors"
+                      >
+                        Visualizza / Assegna Prodotti
+                      </button>
                     </div>
                   </div>
                 </div>

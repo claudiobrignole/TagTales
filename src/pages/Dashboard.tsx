@@ -3,14 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, orderBy, limit } from 'firebase/firestore';
-import { TrendingUp, Palette, Receipt, ArrowRight, CreditCard, CheckCircle2, Circle, MessagesSquare } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { TrendingUp, Palette, Receipt, ArrowRight, CreditCard, CheckCircle2, Circle, MessagesSquare, ShoppingBag } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import ConnectionBanner from '../components/ConnectionBanner';
 import DirectChat from '../components/DirectChat';
 import clsx from 'clsx';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { t } = useI18n();
   const [stats, setStats] = useState({
     totalArtworks: 0,
@@ -19,6 +20,7 @@ export default function Dashboard() {
     excludedSalesCount: 0,
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [productIds, setProductIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [onboarding, setOnboarding] = useState({
     show: false,
@@ -53,6 +55,12 @@ export default function Dashboard() {
         const hasPhoto = !!userData.profilePictureUrl;
         const profileComplete = hasName && hasBio && hasPhoto;
 
+        const isAdmin = userData.role === 'admin' || user.email?.toLowerCase() === 'claudio@brignole.ch';
+        if (isAdmin) {
+          navigate('/app/admin');
+          return;
+        }
+
         const bankComplete = !!(userData.bankIban && userData.bankBic);
 
         const contractsQ = query(collection(db, 'contratti'), where('artistaId', '==', user.uid), where('stato', '==', 'approvato'));
@@ -75,11 +83,8 @@ export default function Dashboard() {
         }
 
         let showOnboarding = true;
-        const isAdmin = userData.role === 'admin' || user.email?.toLowerCase() === 'claudio@brignole.ch';
         
-        if (isAdmin) {
-          showOnboarding = false;
-        } else if (currentAllCompletedAt) {
+        if (currentAllCompletedAt) {
           const completedDate = new Date(currentAllCompletedAt);
           const threeDaysAgo = new Date();
           threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -121,6 +126,7 @@ export default function Dashboard() {
 
         setStats({ totalArtworks, totalSales, pendingPayments: availableBalance, excludedSalesCount });
         setRecentSales(recent);
+        setProductIds(productIds);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -261,6 +267,37 @@ export default function Dashboard() {
 
         {/* Col 3: Vendite Recenti + Azioni Rapide */}
         <div className="space-y-8 lg:col-span-1">
+            {/* Products (Ecwid) Section if any are connected */}
+            {productIds.length > 0 && (
+                <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
+                    <div className="p-6 border-b border-[#EAE3D9]">
+                        <h2 className="text-xl font-bold tracking-tight text-[#121212] flex items-center gap-2">
+                           <ShoppingBag size={20} className="text-[#FF4F00]"/> {t('productsConnected', 'Prodotti Connessi')}
+                        </h2>
+                    </div>
+                    <div className="p-0">
+                       <ul className="divide-y divide-[#EAE3D9]">
+                          {productIds.map((pid: string | number) => (
+                              <li key={pid} className="p-4 flex items-center gap-3">
+                                 <div className="w-10 h-10 bg-[#F2EEE8] rounded-xl flex items-center justify-center text-[#59554E]">
+                                    <ShoppingBag size={18} />
+                                 </div>
+                                 <span className="font-bold text-[#121212] text-sm truncate flex-1">Prodotto ID: {pid}</span>
+                                 <a 
+                                   href={`https://store.tagtalesgallery.com/products/${pid}`} 
+                                   target="_blank" 
+                                   rel="noreferrer"
+                                   className="text-xs uppercase font-bold tracking-wider text-[#FF4F00]"
+                                 >
+                                    Vedi
+                                 </a>
+                              </li>
+                          ))}
+                       </ul>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
                 <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center">
                     <h2 className="text-xl font-bold tracking-tight text-[#121212]">{t('dashboard.recentSales')}</h2>

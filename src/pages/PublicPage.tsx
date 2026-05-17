@@ -124,6 +124,8 @@ export default function PublicPage({ id: propId }: { id?: string }) {
   const [loading, setLoading] = useState(true);
   const [activeQA, setActiveQA] = useState<any | null>(null);
 
+  const isVideo = (url?: string) => url ? url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null : false;
+
   useEffect(() => {
     const fetchPage = async () => {
       try {
@@ -201,7 +203,11 @@ export default function PublicPage({ id: propId }: { id?: string }) {
               </div>
               <div className="w-full md:w-1/2 min-w-0">
                 {block.images?.[0]?.url && (
-                  <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                  isVideo(block.images[0].url) ? (
+                    <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-3xl" />
+                  ) : (
+                    <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                  )
                 )}
               </div>
             </div>
@@ -212,7 +218,11 @@ export default function PublicPage({ id: propId }: { id?: string }) {
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
             <div className="max-w-4xl mx-auto">
               {block.images?.[0]?.url && (
-                <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                isVideo(block.images[0].url) ? (
+                  <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-3xl" />
+                ) : (
+                  <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                )
               )}
             </div>
           </section>
@@ -220,7 +230,11 @@ export default function PublicPage({ id: propId }: { id?: string }) {
       case 'image_fullscreen':
         return (
           <section key={block.id} className={clsx(`w-full overflow-hidden ${isFirst ? 'h-[calc(60vh-65px)] lg:h-[calc(80vh-75px)]' : 'h-[60vh] md:h-[80vh]'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
-            <img src={block.images?.[0]?.url} alt="" className="w-full h-full object-cover" />
+            {isVideo(block.images?.[0]?.url) ? (
+              <video src={block.images?.[0]?.url} poster={block.images?.[0]?.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            ) : (
+              <img src={block.images?.[0]?.url} alt="" className="w-full h-full object-cover" />
+            )}
           </section>
         );
       case 'video_embed':
@@ -236,7 +250,11 @@ export default function PublicPage({ id: propId }: { id?: string }) {
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 pt-4' : 'py-12'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
               {block.images?.map((img: any, idx: number) => (
-                <img key={idx} src={img.url} alt="" className="w-full aspect-[4/5] object-cover rounded-3xl" />
+                isVideo(img.url) ? (
+                  <video key={idx} src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] object-cover rounded-3xl" />
+                ) : (
+                  <img key={idx} src={img.url} alt="" className="w-full aspect-[4/5] object-cover rounded-3xl" />
+                )
               ))}
             </div>
           </section>

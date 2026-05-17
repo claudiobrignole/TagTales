@@ -99,7 +99,7 @@ export default function AdminContracts() {
           "Contratto Validato",
           `Il documento "${contract.title}" è stato verificato e contrassegnato come firmato.`,
           'contract',
-          '/contracts'
+          '/app/contracts'
         );
       }
     } catch (error) {
@@ -144,7 +144,7 @@ export default function AdminContracts() {
         "Nuovo Contratto in Revisione",
         `Il documento "${newContract.title}" è in attesa della tua firma.`,
         'contract',
-        '/contracts'
+        '/app/contracts'
       );
 
       setContracts([newContractDataObj, ...contracts]);

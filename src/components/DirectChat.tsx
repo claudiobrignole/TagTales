@@ -115,7 +115,8 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
                title: 'Nuovo messaggio in chat da ' + (recipientName || 'Writer'),
                message: messageText,
                type: 'MessageAlert', // Different type so it doesn't show in the admin's own DirectChat window
-               link: `/app/admin/users?chat=${userId}`, // Link to admin users panel highlighting specific writer
+               link: `/app/admin?chat=${userId}`, // Link to admin panel highlighting specific writer
+               senderId: currentUserId,
                read: false,
                createdAt: now
              });

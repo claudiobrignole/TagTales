@@ -17,7 +17,12 @@ interface Notification {
   createdAt: string;
 }
 
+import { useI18n } from '../contexts/I18nContext';
+import { it, enUS } from 'date-fns/locale';
+
 export default function NotificationsDropdown() {
+  const { t, language } = useI18n();
+  const locale = language === 'IT' ? it : enUS;
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -115,9 +120,9 @@ export default function NotificationsDropdown() {
           <div className="fixed sm:absolute top-20 sm:top-auto right-[25px] left-[25px] sm:left-auto sm:right-0 mt-2 sm:w-80 bg-white rounded-2xl shadow-xl border border-[#121212]/5 overflow-hidden z-50">
             <div className="p-4 border-b border-[#121212]/5 flex justify-between items-center bg-[#F2EEE8]/30">
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-[#121212]">Notifications</h3>
+                <h3 className="font-bold text-[#121212]">{t('notifications.title')}</h3>
                 {unreadCount > 0 && (
-                  <span className="text-xs text-[#FF4F00] font-medium">{unreadCount} unread</span>
+                  <span className="text-xs text-[#FF4F00] font-medium">{t('notifications.unread', { count: unreadCount })}</span>
                 )}
               </div>
               {notifications.length > 0 && (
@@ -125,7 +130,7 @@ export default function NotificationsDropdown() {
                   onClick={() => setShowClearAllConfirm(true)}
                   className="text-xs font-bold text-[#59554E] hover:text-[#FF4F00] transition-colors"
                 >
-                  Clear all
+                  {t('notifications.clearAll')}
                 </button>
               )}
             </div>
@@ -133,7 +138,7 @@ export default function NotificationsDropdown() {
             <div className="max-h-[400px] overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-6 text-center text-[#59554E] text-sm">
-                  No notifications yet.
+                  {t('notifications.noNotifications')}
                 </div>
               ) : (
                 <div className="divide-y divide-[#121212]/5">
@@ -159,10 +164,10 @@ export default function NotificationsDropdown() {
                         </p>
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] text-[#59554E] uppercase tracking-wider font-medium">
-                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale })}
                           </span>
                           <span className="text-[10px] font-bold text-[#FF4F00] opacity-0 group-hover:opacity-100 transition-opacity">
-                            Read more
+                            {t('notifications.readMore')}
                           </span>
                         </div>
                       </button>
@@ -172,7 +177,7 @@ export default function NotificationsDropdown() {
                           setNotificationToDelete(notification.id);
                         }}
                         className="absolute top-4 right-4 text-[#59554E] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Delete notification"
+                        title={t('notifications.delete')}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -192,7 +197,7 @@ export default function NotificationsDropdown() {
             <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-start bg-[#F2EEE8]/30">
               <div>
                 <span className="inline-block px-2 py-1 bg-[#121212] text-white text-[10px] font-bold uppercase tracking-wider rounded-full mb-2">
-                  {selectedNotification.type || 'Notification'}
+                  {selectedNotification.type || t('notifications.modalTitle')}
                 </span>
                 <h2 className="text-xl font-bold text-[#121212]">{selectedNotification.title}</h2>
               </div>
@@ -209,18 +214,21 @@ export default function NotificationsDropdown() {
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#59554E] font-medium">
-                  {format(new Date(selectedNotification.createdAt), 'PPpp')}
+                  {format(new Date(selectedNotification.createdAt), 'PPpp', { locale })}
                 </span>
                 {selectedNotification.link && selectedNotification.link !== '#' && (
                   <button
                     onClick={() => {
                       setSelectedNotification(null);
                       setIsOpen(false);
-                      navigate(selectedNotification.link);
+                      const targetLink = selectedNotification.link.startsWith('/app')
+                        ? selectedNotification.link
+                        : `/app${selectedNotification.link.startsWith('/') ? '' : '/'}${selectedNotification.link}`;
+                      navigate(targetLink);
                     }}
                     className="text-sm font-bold text-[#FF4F00] hover:underline"
                   >
-                    View Details
+                    {t('notifications.viewDetails')}
                   </button>
                 )}
               </div>
@@ -230,7 +238,7 @@ export default function NotificationsDropdown() {
                 onClick={() => setSelectedNotification(null)}
                 className="px-6 py-2 bg-[#121212] text-white text-sm font-bold rounded-full hover:bg-black transition-colors"
               >
-                Close
+                {t('notifications.close')}
               </button>
             </div>
           </div>
@@ -242,19 +250,19 @@ export default function NotificationsDropdown() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 text-center">
-              <h3 className="text-lg font-bold text-[#121212] mb-6">Delete this notification?</h3>
+              <h3 className="text-lg font-bold text-[#121212] mb-6">{t('notifications.deleteConfirm')}</h3>
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={() => handleDeleteNotification(notificationToDelete)}
                   className="px-6 py-2 bg-red-500 text-white text-sm font-bold rounded-full hover:bg-red-600 transition-colors"
                 >
-                  YES
+                  {t('notifications.yes')}
                 </button>
                 <button
                   onClick={() => setNotificationToDelete(null)}
                   className="px-6 py-2 bg-[#EAE3D9] text-[#121212] text-sm font-bold rounded-full hover:bg-[#D8D0C5] transition-colors"
                 >
-                  NO
+                  {t('notifications.no')}
                 </button>
               </div>
             </div>
@@ -267,19 +275,19 @@ export default function NotificationsDropdown() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 text-center">
-              <h3 className="text-lg font-bold text-[#121212] mb-6">Delete all notifications?</h3>
+              <h3 className="text-lg font-bold text-[#121212] mb-6">{t('notifications.clearAllConfirm')}</h3>
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={handleClearAll}
                   className="px-6 py-2 bg-red-500 text-white text-sm font-bold rounded-full hover:bg-red-600 transition-colors"
                 >
-                  YES
+                  {t('notifications.yes')}
                 </button>
                 <button
                   onClick={() => setShowClearAllConfirm(false)}
                   className="px-6 py-2 bg-[#EAE3D9] text-[#121212] text-sm font-bold rounded-full hover:bg-[#D8D0C5] transition-colors"
                 >
-                  NO
+                  {t('notifications.no')}
                 </button>
               </div>
             </div>

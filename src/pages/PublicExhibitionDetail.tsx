@@ -93,6 +93,7 @@ export default function PublicExhibitionDetail() {
   const exhibition = rawExhibitionData ? {
     ...rawExhibitionData,
     titolo: getLocalizedField(rawExhibitionData, 'titolo', lang) || getLocalizedField(rawExhibitionData, 'title', lang) || "MOSTRA",
+    preTitolo: getLocalizedField(rawExhibitionData, 'preTitolo', lang) || rawExhibitionData.preTitolo,
     bannerHero: rawExhibitionData.bannerHero || rawExhibitionData.coverImageUrl,
     intro: getLocalizedField(rawExhibitionData, 'intro', lang) || getLocalizedField(rawExhibitionData, 'sottotitolo', lang) || getLocalizedField(rawExhibitionData, 'subtitle', lang) || "",
     testoCuratela: getLocalizedField(rawExhibitionData, 'testoCuratela', lang) || getLocalizedField(rawExhibitionData, 'descrizione', lang) || getLocalizedField(rawExhibitionData, 'description', lang) || ""
@@ -138,11 +139,23 @@ export default function PublicExhibitionDetail() {
       <div className="pb-32">
         <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
           {exhibition.bannerHero && exhibition.bannerHero.trim() !== '' && (
-            <img
-              src={exhibition.bannerHero}
-              alt={exhibition.titolo}
-              className="absolute inset-0 w-full h-full object-cover opacity-80"
-            />
+            exhibition.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+              <video
+                src={exhibition.bannerHero}
+                poster={exhibition.bannerHeroFallback}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover opacity-80"
+              />
+            ) : (
+              <img
+                src={exhibition.bannerHero}
+                alt={exhibition.titolo}
+                className="absolute inset-0 w-full h-full object-cover opacity-80"
+              />
+            )
           )}
 
           <Link
@@ -165,7 +178,7 @@ export default function PublicExhibitionDetail() {
                 transition={{ delay: 0.25 }}
                 className="font-['Karla'] font-bold text-[clamp(14px,1.5vw,20px)] uppercase tracking-widest text-[#FF4F00] mb-2"
               >
-                {exhibition.artistNames?.join(", ")}
+                {exhibition.preTitolo || exhibition.artistNames?.join(", ") || "MOSTRA"}
               </motion.p>
               <motion.h1
                 initial={{ y: 20, opacity: 0 }}
@@ -183,6 +196,17 @@ export default function PublicExhibitionDetail() {
               >
                 {exhibition.intro || exhibition.sottotitolo}
               </motion.p>
+              {exhibition.dataApertura && (
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-4 text-sm font-['Karla'] font-bold text-[#FF4F00] uppercase tracking-widest"
+                >
+                  {lang === 'EN' ? 'Opening ' : 'Inaugurazione '}
+                  {new Date(exhibition.dataApertura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </motion.p>
+              )}
             </motion.div>
           </div>
         </div>
@@ -197,22 +221,8 @@ export default function PublicExhibitionDetail() {
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               <div className="lg:col-span-8 min-w-0">
-                {(exhibition.videoEmbeds && exhibition.videoEmbeds.length > 0) && (
-                  <div className="mb-12 space-y-8">
-                    {exhibition.videoEmbeds.map((url: string, index: number) => (
-                      <VideoEmbed key={index} url={url} />
-                    ))}
-                  </div>
-                )}
-                <h3 className="text-xl font-bold uppercase tracking-widest mb-6 border-b border-[#121212]/10 pb-4">
-                  Informazioni sulla mostra
-                </h3>
-                <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-xl leading-relaxed text-inherit">
-                  {cleanHtml(exhibition.testoCuratela) || "Nessuna descrizione fornita."}
-                </div>
-
                 {(exhibition.galleria && exhibition.galleria.length > 0) && (
-                  <div className="mt-12">
+                  <div className="mt-0">
                     <h3 className="text-xl font-bold uppercase tracking-widest mb-6 border-b border-[#121212]/10 pb-4">
                       Galleria Immagini
                     </h3>
@@ -228,22 +238,6 @@ export default function PublicExhibitionDetail() {
               </div>
 
               <div className="lg:col-span-4 space-y-8">
-                {(exhibition.dataApertura || exhibition.dataChiusura) && (
-                  <div className="bg-white rounded-3xl p-8 border border-[#EAE3D9]">
-                    <h4 className="text-sm font-bold uppercase tracking-widest text-[#59554E] mb-2">
-                      Date della mostra
-                    </h4>
-                    <p className="text-xl font-bold">
-                      {exhibition.dataApertura
-                        ? new Date(exhibition.dataApertura).toLocaleDateString()
-                        : "TBA"}
-                      {exhibition.dataChiusura
-                        ? ` - ${new Date(exhibition.dataChiusura).toLocaleDateString()}`
-                        : ""}
-                    </p>
-                  </div>
-                )}
-
                 {exhibition.artistaIds && exhibition.artistaIds.length > 0 && (
                   <div className="bg-white rounded-3xl p-8 border border-[#EAE3D9]">
                     <h4 className="text-sm font-bold uppercase tracking-widest text-[#59554E] mb-4">

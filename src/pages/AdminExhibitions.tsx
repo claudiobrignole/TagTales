@@ -43,17 +43,16 @@ export default function AdminExhibitions() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
+    preTitolo: "",
     titolo: "",
     slug: "",
     slug_en: "",
     intro: "",
-    testoCuratela: "",
     blocks: [] as any[],
     bannerHero: "",
+    bannerHeroFallback: "",
     galleria: [] as string[],
-    videoEmbeds: [] as string[],
     dataApertura: "",
-    dataChiusura: "",
     published: false,
     featured: false,
     artistaIds: [] as string[],
@@ -116,17 +115,16 @@ export default function AdminExhibitions() {
     if (exhibition) {
       setEditingId(exhibition.id);
       setFormData({
+        preTitolo: exhibition.preTitolo || "",
         titolo: exhibition.titolo || "",
         slug: exhibition.slug || "",
         slug_en: exhibition.slug_en || "",
         intro: exhibition.intro || "",
-        testoCuratela: exhibition.testoCuratela || "",
         blocks: exhibition.blocks || [],
         bannerHero: exhibition.bannerHero || "",
+        bannerHeroFallback: exhibition.bannerHeroFallback || "",
         galleria: exhibition.galleria || [],
-        videoEmbeds: exhibition.videoEmbeds || [],
         dataApertura: exhibition.dataApertura || "",
-        dataChiusura: exhibition.dataChiusura || "",
         published: exhibition.published || false,
         featured: exhibition.featured || false,
         artistaIds: exhibition.artistaIds || [],
@@ -134,17 +132,16 @@ export default function AdminExhibitions() {
     } else {
       setEditingId(null);
       setFormData({
+        preTitolo: "",
         titolo: "",
         slug: "",
         slug_en: "",
         intro: "",
-        testoCuratela: "",
         blocks: [],
         bannerHero: "",
+        bannerHeroFallback: "",
         galleria: [] as string[],
-        videoEmbeds: [] as string[],
         dataApertura: "",
-        dataChiusura: "",
         published: false,
         featured: false,
         artistaIds: [],
@@ -186,7 +183,7 @@ export default function AdminExhibitions() {
       const translatedData = await translateDirtyFields(
         formData,
         originalExhibition,
-        ['titolo', 'intro', 'testoCuratela'],
+        ['preTitolo', 'titolo', 'intro'],
         'en'
       );
       
@@ -385,11 +382,22 @@ export default function AdminExhibitions() {
 
               <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-[#F2EEE8] flex items-center justify-center border border-[#EAE3D9]">
                 {exhibition.bannerHero ? (
-                  <img
-                    src={exhibition.bannerHero}
-                    alt={exhibition.titolo}
-                    className="w-full h-full object-cover"
-                  />
+                  exhibition.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+                    <video
+                      src={exhibition.bannerHero}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={exhibition.bannerHero}
+                      alt={exhibition.titolo}
+                      className="w-full h-full object-cover"
+                    />
+                  )
                 ) : (
                   <ImageIcon className="w-8 h-8 text-[#59554E]" />
                 )}
@@ -498,6 +506,18 @@ export default function AdminExhibitions() {
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-[#59554E] mb-2">
+                    Pre-titolo (Occhiello)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.preTitolo}
+                    onChange={(e) => setFormData({ ...formData, preTitolo: e.target.value })}
+                    className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                    placeholder="es. PRESENTATO DA, IN COLLABORAZIONE CON..."
+                  />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
@@ -542,8 +562,8 @@ export default function AdminExhibitions() {
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
                       Sottotitolo / Intro
                     </label>
-                    <input
-                      type="text"
+                    <textarea
+                      rows={5}
                       value={formData.intro}
                       onChange={(e) =>
                         setFormData({ ...formData, intro: e.target.value })
@@ -552,22 +572,6 @@ export default function AdminExhibitions() {
                       placeholder="es. Ogni storia di writer inizia con un tag."
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-[#59554E] mb-2">
-                    Testo Curatela *
-                  </label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={formData.testoCuratela}
-                    onChange={(e) =>
-                      setFormData({ ...formData, testoCuratela: e.target.value })
-                    }
-                    className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
-                    placeholder="Descrivi la mostra..."
-                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -593,26 +597,6 @@ export default function AdminExhibitions() {
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Data di Chiusura (opzionale)
-                    </label>
-                    <input
-                      type="date"
-                      value={
-                        formData.dataChiusura ? formData.dataChiusura.split("T")[0] : ""
-                      }
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          dataChiusura: e.target.value
-                            ? new Date(e.target.value).toISOString()
-                            : "",
-                        })
-                      }
-                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
-                    />
-                  </div>
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-[#EAE3D9]">
@@ -623,6 +607,14 @@ export default function AdminExhibitions() {
                     onChange={(url) => setFormData({ ...formData, bannerHero: url })}
                     folder="exhibitions"
                   />
+                  {formData.bannerHero && formData.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) && (
+                    <ImageUpload
+                      label="Immagine Fallback Copertina (SEO/Poster Opzionale)"
+                      value={formData.bannerHeroFallback}
+                      onChange={(url) => setFormData({ ...formData, bannerHeroFallback: url })}
+                      folder="exhibitions"
+                    />
+                  )}
 
                   <MultiImageUpload
                     label="Galleria Immagini (Fallback / Vecchio formato)"
@@ -636,62 +628,7 @@ export default function AdminExhibitions() {
                     onChange={blocks => setFormData({ ...formData, blocks })}
                   />
 
-                  <div>
-                    <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Video Embeds (YouTube/Vimeo) (Fallback / Vecchio formato)
-                    </label>
-                    <p className="text-xs text-gray-400 mb-4">Questi video verranno visualizzati in fondo alla mostra se il layout modulare non è in uso.</p>
-                    <div className="space-y-3">
-                      {formData.videoEmbeds.map((url, index) => (
-                        <div key={index} className="flex gap-2">
-                          <input
-                            type="text"
-                            value={url}
-                            readOnly
-                            className="flex-1 bg-white border border-[#EAE3D9] rounded-xl px-4 py-2 text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, videoEmbeds: formData.videoEmbeds.filter((_, i) => i !== index) })}
-                            className="bg-red-50 text-red-500 p-2 rounded-xl"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      ))}
-                      <div className="flex gap-2">
-                        <input
-                          id="newVideoEmbed"
-                          type="text"
-                          placeholder="Incolla URL YouTube o Vimeo"
-                          className="flex-1 bg-white border border-[#EAE3D9] rounded-xl px-4 py-2 text-sm focus:border-[#FF4F00] outline-none"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const val = (e.target as HTMLInputElement).value;
-                              if (val) {
-                                setFormData({ ...formData, videoEmbeds: [...formData.videoEmbeds, val] });
-                                (e.target as HTMLInputElement).value = '';
-                              }
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const input = document.getElementById('newVideoEmbed') as HTMLInputElement;
-                            if (input.value) {
-                              setFormData({ ...formData, videoEmbeds: [...formData.videoEmbeds, input.value] });
-                              input.value = '';
-                            }
-                          }}
-                          className="bg-[#121212] text-white px-4 py-2 rounded-xl text-xs font-bold uppercase"
-                        >
-                          Aggiungi
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-[#EAE3D9]">

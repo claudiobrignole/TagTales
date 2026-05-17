@@ -23,7 +23,6 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Artworks from "./pages/Artworks";
-import UploadArtwork from "./pages/UploadArtwork";
 import Sales from "./pages/Sales";
 import Payments from "./pages/Payments";
 import Contracts from "./pages/Contracts";
@@ -32,13 +31,13 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminPayments from "./pages/AdminPayments";
 import AdminSales from "./pages/AdminSales";
-import AdminVideos from "./pages/AdminVideos";
 import Help from "./pages/Help";
 import AdminHelp from "./pages/AdminHelp";
 import AdminWriters from "./pages/AdminWriters";
 import AdminExhibitions from "./pages/AdminExhibitions";
 import AdminArticles from "./pages/AdminArticles";
 import AdminPages from "./pages/AdminPages";
+import AdminMedia from "./pages/AdminMedia";
 import AdminSEO from "./pages/admin/SEOManager";
 import NotFound from "./pages/NotFound";
 import ComingSoon from "./pages/ComingSoon";
@@ -374,7 +373,6 @@ export default function App() {
             >
               <Route index element={<Dashboard />} />
               <Route path="artworks" element={<Artworks />} />
-              <Route path="artworks/upload" element={<UploadArtwork />} />
               <Route path="sales" element={<Sales />} />
               <Route path="payments" element={<Payments />} />
               <Route path="contracts" element={<Contracts />} />
@@ -384,7 +382,7 @@ export default function App() {
               <Route path="admin/payments" element={<AdminPayments />} />
               <Route path="admin/sales" element={<AdminSales />} />
               <Route path="admin/contracts" element={<AdminContracts />} />
-              <Route path="admin/videos" element={<AdminVideos />} />
+              <Route path="admin/media" element={<AdminMedia />} />
               <Route path="admin/writers" element={<AdminWriters />} />
               <Route path="admin/exhibitions" element={<AdminExhibitions />} />
               <Route path="admin/articles" element={<AdminArticles />} />

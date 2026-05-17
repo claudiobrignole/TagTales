@@ -24,7 +24,7 @@ export interface PageBlock {
   title_en?: string;
   imagePosition?: 'left' | 'right';
   backgroundColor?: 'black' | 'light';
-  images?: { url: string; ecwidLink?: string }[];
+  images?: { url: string; ecwidLink?: string; fallbackUrl?: string }[];
   videoUrl?: string;
   qa?: { question: string; answer: string; question_en?: string; answer_en?: string }[];
   accordionItems?: { title: string; content: string; title_en?: string; content_en?: string }[];
@@ -89,7 +89,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
     onChange(blocks.filter(b => b.id !== id));
   };
 
-  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink', value: string) => {
+  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink' | 'fallbackUrl', value: string) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
@@ -568,6 +568,16 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                       onChange={url => updateImage(block.id, imgIndex, 'url', url)}
                       folder="page-blocks"
                     />
+                    {img.url && img.url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) && (
+                      <div className="mt-4 pt-4 border-t border-[#EAE3D9]">
+                        <ImageUpload
+                          label={`Immagine Fallback ${imgIndex + 1} (SEO/Poster Opzionale)`}
+                          value={img.fallbackUrl || ''}
+                          onChange={url => updateImage(block.id, imgIndex, 'fallbackUrl', url)}
+                          folder="page-blocks"
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

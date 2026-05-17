@@ -21,9 +21,11 @@ import SEO from "../components/SEO";
 interface Exhibition {
   id: string;
   titolo: string;
+  preTitolo?: string;
   intro?: string;
   sottotitolo?: string;
   bannerHero?: string;
+  bannerHeroFallback?: string;
   dataApertura?: string;
   artistaIds?: string[];
   slug?: string;
@@ -319,11 +321,23 @@ export default function PublicExhibitions() {
                 className="relative h-[100svh] w-full overflow-hidden bg-[#121212]"
               >
                 {ex.bannerHero && ex.bannerHero.trim() !== "" && (
-                  <img
-                    src={ex.bannerHero}
-                    alt={titolo}
-                    className="absolute inset-0 w-full h-full object-cover opacity-80"
-                  />
+                  ex.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+                    <video
+                      src={ex.bannerHero}
+                      poster={ex.bannerHeroFallback}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover opacity-80"
+                    />
+                  ) : (
+                    <img
+                      src={ex.bannerHero}
+                      alt={titolo}
+                      className="absolute inset-0 w-full h-full object-cover opacity-80"
+                    />
+                  )
                 )}
 
                 <div className="absolute top-[55%] md:top-1/2 -translate-y-1/2 left-0 w-full px-6 md:px-[25px] lg:px-20 text-white flex justify-center lg:justify-start mt-8 md:mt-0">
@@ -341,7 +355,7 @@ export default function PublicExhibitions() {
                       transition={{ delay: 0.25 }}
                       className="font-['Karla'] font-bold text-[clamp(16px,2.5vw,28px)] uppercase tracking-widest text-[#FF4F00] mb-2"
                     >
-                      {ex.artistNames?.join(", ")}
+                      {getLocalizedField(ex, 'preTitolo', lang) || ex.preTitolo || ex.artistNames?.join(", ") || "MOSTRA"}
                     </motion.p>
                     <motion.h2
                       initial={{ y: 20, opacity: 0 }}
@@ -406,11 +420,23 @@ export default function PublicExhibitions() {
                 >
                   <div className="aspect-square bg-[#2A2A2A] rounded-2xl overflow-hidden relative">
                     {ex.bannerHero && (
-                      <img
-                        src={ex.bannerHero}
-                        alt={titolo}
-                        className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
-                      />
+                      ex.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+                        <video
+                          src={ex.bannerHero}
+                          poster={ex.bannerHeroFallback}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                        />
+                      ) : (
+                        <img
+                          src={ex.bannerHero}
+                          alt={titolo}
+                          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                        />
+                      )
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-80" />
                     <div className="absolute bottom-6 left-6 pr-6 text-white">

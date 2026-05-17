@@ -1,18 +1,21 @@
 import React, { useState, useRef } from 'react';
 import { storage, auth } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { UploadCloud, X, Loader2 } from 'lucide-react';
+import { UploadCloud, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import MediaPickerModal from './MediaPickerModal';
 
 interface ImageUploadProps {
   label: string;
   value: string;
   onChange: (url: string) => void;
   folder?: string;
+  hideMediaPicker?: boolean;
 }
 
-export default function ImageUpload({ label, value, onChange, folder = 'uploads' }: ImageUploadProps) {
+export default function ImageUpload({ label, value, onChange, folder = 'uploads', hideMediaPicker = false }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,8 +27,8 @@ export default function ImageUpload({ label, value, onChange, folder = 'uploads'
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      alert('Seleziona un file immagine o video valido');
       return;
     }
 
@@ -75,11 +78,26 @@ export default function ImageUpload({ label, value, onChange, folder = 'uploads'
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-bold text-[#59554E] mb-2">{label}</label>
+      <div className="flex justify-between items-end mb-2">
+         <label className="block text-sm font-bold text-[#59554E]">{label}</label>
+         {!hideMediaPicker && (
+           <button
+             type="button"
+             onClick={() => setShowMediaPicker(true)}
+             className="text-xs font-bold uppercase tracking-widest text-[#FF4F00] hover:underline flex items-center gap-1"
+           >
+             <ImageIcon size={14} /> Scegli da Archivio
+           </button>
+         )}
+      </div>
       
       {value && value.trim() !== '' ? (
         <div className="relative w-full aspect-video md:aspect-[21/9] bg-[#F2EEE8] rounded-xl overflow-hidden border border-[#EAE3D9]">
-          <img src={value} alt="Uploaded" className="w-full h-full object-cover" />
+          {value.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+            <video src={value} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+          ) : (
+            <img src={value} alt="Uploaded" className="w-full h-full object-cover" />
+          )}
           <div className="absolute top-2 right-2 flex gap-2">
             <button
               type="button"
@@ -104,8 +122,8 @@ export default function ImageUpload({ label, value, onChange, folder = 'uploads'
           ) : (
             <div className="flex flex-col items-center text-[#59554E]">
               <UploadCloud className="w-8 h-8 mb-2 opacity-50" />
-              <div className="text-sm font-bold">Click to upload image</div>
-              <div className="text-xs opacity-70 mt-1">PNG, JPG up to 5MB</div>
+              <div className="text-sm font-bold">Clicca per caricare un file</div>
+              <div className="text-xs opacity-70 mt-1">Immagini o Video (PNG, JPG, MP4)</div>
             </div>
           )}
         </div>
@@ -115,9 +133,19 @@ export default function ImageUpload({ label, value, onChange, folder = 'uploads'
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept="image/*,video/mp4,video/webm,video/quicktime"
         className="hidden"
       />
+      
+      {showMediaPicker && (
+         <MediaPickerModal 
+           onClose={() => setShowMediaPicker(false)}
+           onSelect={(url) => {
+              onChange(url);
+              setShowMediaPicker(false);
+           }}
+         />
+      )}
     </div>
   );
 }

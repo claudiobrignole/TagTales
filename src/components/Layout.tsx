@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Languages,
   Globe,
+  ImageIcon,
 } from "lucide-react";
 import clsx from "clsx";
 import NotificationsDropdown from "./NotificationsDropdown";
@@ -83,18 +84,18 @@ export default function Layout() {
   ];
 
   const adminOnlyNavItems = [
-    { to: "/app/admin", icon: Shield, label: "adminDashboard" },
+    { to: "/app/admin", icon: LayoutDashboard, label: "dashboard" },
     { to: "/app/admin/sales", icon: Receipt, label: "allSales" },
     { to: "/app/admin/payments", icon: CreditCard, label: "paymentRequests" },
     { to: "/app/admin/contracts", icon: FileText, label: "manageContracts" },
     { to: "/app/admin/users", icon: User, label: "manageUsers" },
-    { to: "/app/admin/videos", icon: Film, label: "videoLibrary" },
-    { to: "/app/admin/pages", icon: FileText, label: "managePages" },
-    { to: "/app/admin/seo", icon: Globe, label: "manageSEO" },
-    { to: "/app/admin/faq", icon: HelpCircle, label: "helpFaq" },
+    { to: "/app/admin/media", icon: ImageIcon, label: "mediaLibrary" },
     { to: "/app/admin/writers", icon: User, label: "manageWriters" },
     { to: "/app/admin/exhibitions", icon: LayoutDashboard, label: "manageExhibitions" },
     { to: "/app/admin/articles", icon: FileText, label: "manageMagazine" },
+    { to: "/app/admin/pages", icon: FileText, label: "managePages" },
+    { to: "/app/admin/seo", icon: Globe, label: "manageSEO" },
+    { to: "/app/admin/faq", icon: HelpCircle, label: "helpFaq" },
   ];
 
   const languages: ("EN" | "IT")[] = [
@@ -173,27 +174,6 @@ export default function Layout() {
             ))
           ) : (
             <>
-              <div className="text-xs font-bold uppercase tracking-widest text-[#FF4F00] px-4 py-2 border-b border-[#EAE3D9] mb-2">Funzioni Condivise</div>
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === "/app"}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center gap-3 px-4 py-2 font-medium rounded-full transition-all duration-200",
-                      isActive
-                        ? "bg-[#FF4F00] text-white shadow-lg shadow-[#FF4F00]/20 scale-[1.02]"
-                        : "text-[#59554E] hover:bg-[#EAE3D9] hover:text-[#121212]",
-                    )
-                  }
-                >
-                  <item.icon size={20} />
-                  <span>{t("nav." + item.label)}</span>
-                </NavLink>
-              ))}
-              <div className="text-xs font-bold uppercase tracking-widest text-[#FF4F00] px-4 py-2 border-b border-[#EAE3D9] mt-6 mb-2">Solo Amministratore</div>
               {adminOnlyNavItems.map((item) => (
                 <NavLink
                   key={item.to}

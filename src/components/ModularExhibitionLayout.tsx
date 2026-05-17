@@ -17,14 +17,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const allImages = useMemo(() => {
-    const images: {url: string, ecwidLink?: string, blockType: string}[] = [];
+    const images: {url: string, ecwidLink?: string, fallbackUrl?: string, blockType: string}[] = [];
     if (!blocks) return images;
     blocks.forEach(block => {
       if (block.type === 'image_fullscreen' && block.images?.[0]?.url) {
-        images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, blockType: block.type });
+        images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, fallbackUrl: block.images[0].fallbackUrl, blockType: block.type });
       } else if (block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') {
-        if (block.images?.[0]?.url) images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, blockType: block.type });
-        if (block.images?.[1]?.url) images.push({ url: block.images[1].url, ecwidLink: block.images[1].ecwidLink, blockType: block.type });
+        if (block.images?.[0]?.url) images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, fallbackUrl: block.images[0].fallbackUrl, blockType: block.type });
+        if (block.images?.[1]?.url) images.push({ url: block.images[1].url, ecwidLink: block.images[1].ecwidLink, fallbackUrl: block.images[1].fallbackUrl, blockType: block.type });
       }
     });
     return images;
@@ -40,6 +40,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxIndex, allImages.length]);
+
+  const isVideo = (url: string) => url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null;
 
   if (!blocks || blocks.length === 0) return null;
 
@@ -96,11 +98,11 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           
           return (
             <div key={block.id} className="w-full relative h-[60vh] md:h-[100svh] bg-[#121212] cursor-pointer" onClick={() => setLightboxIndex(currentIndex)}>
-              <img 
-                src={img.url} 
-                alt="Mostra Fullscreen" 
-                className="w-full h-full object-cover"
-              />
+              {isVideo(img.url) ? (
+                <video src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+              ) : (
+                <img src={img.url} alt="Mostra Fullscreen" className="w-full h-full object-cover" />
+              )}
               {img.ecwidLink && (
                 <div className="absolute bottom-6 right-6 z-10">
                   <a 
@@ -161,7 +163,11 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
               >
                 {img1.url && (
-                  <img src={img1.url} alt="Mostra 1" className="w-full h-full object-cover" />
+                  isVideo(img1.url) ? (
+                    <video src={img1.url} poster={img1.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={img1.url} alt="Mostra 1" className="w-full h-full object-cover" />
+                  )
                 )}
                 {img1.ecwidLink && (
                   <div className="absolute bottom-6 right-6 z-10">
@@ -183,7 +189,11 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
               >
                 {img2.url && (
-                  <img src={img2.url} alt="Mostra 2" className="w-full h-full object-cover" />
+                  isVideo(img2.url) ? (
+                    <video src={img2.url} poster={img2.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={img2.url} alt="Mostra 2" className="w-full h-full object-cover" />
+                  )
                 )}
                 {img2.ecwidLink && (
                   <div className="absolute bottom-6 right-6 z-10">
@@ -226,7 +236,11 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
                 >
                   {img1.url && (
-                    <img src={img1.url} alt="Mostra Creative 1" className="w-full aspect-[4/5] object-cover" />
+                    isVideo(img1.url) ? (
+                      <video src={img1.url} poster={img1.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] object-cover" />
+                    ) : (
+                      <img src={img1.url} alt="Mostra Creative 1" className="w-full aspect-[4/5] object-cover" />
+                    )
                   )}
                   {img1.ecwidLink && (
                     <div className="absolute bottom-6 right-6 z-10">
@@ -247,7 +261,11 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
                 >
                   {img2.url && (
-                    <img src={img2.url} alt="Mostra Creative 2" className="w-full aspect-[4/5] object-cover" />
+                    isVideo(img2.url) ? (
+                      <video src={img2.url} poster={img2.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] object-cover" />
+                    ) : (
+                      <img src={img2.url} alt="Mostra Creative 2" className="w-full aspect-[4/5] object-cover" />
+                    )
                   )}
                   {img2.ecwidLink && (
                     <div className="absolute bottom-6 right-6 z-10">
@@ -304,11 +322,22 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
 
           {/* Image */}
           <div className="relative max-w-full max-h-full flex flex-col items-center justify-center p-4 md:p-12" onClick={(e) => e.stopPropagation()}>
-             <img 
-               src={allImages[lightboxIndex].url} 
-               className="max-w-full max-h-[85vh] object-contain shadow-2xl"
-               alt=""
-             />
+             {isVideo(allImages[lightboxIndex].url) ? (
+               <video 
+                 src={allImages[lightboxIndex].url}
+                 poster={allImages[lightboxIndex].fallbackUrl}
+                 controls
+                 autoPlay
+                 playsInline
+                 className="max-w-full max-h-[85vh] object-contain shadow-2xl"
+               />
+             ) : (
+               <img 
+                 src={allImages[lightboxIndex].url} 
+                 className="max-w-full max-h-[85vh] object-contain shadow-2xl"
+                 alt=""
+               />
+             )}
              {allImages[lightboxIndex].ecwidLink && (
                <a 
                  href={allImages[lightboxIndex].ecwidLink}

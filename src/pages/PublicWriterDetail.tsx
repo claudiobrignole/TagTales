@@ -271,7 +271,19 @@ export default function PublicWriterDetail() {
                   >
                     <div className="aspect-video bg-[#F2EEE8] relative overflow-hidden">
                       {ex.bannerHero && ex.bannerHero.trim() !== '' ? (
-                        <img src={ex.bannerHero} alt={ex.titolo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        ex.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+                          <video
+                            src={ex.bannerHero}
+                            poster={ex.bannerHeroFallback}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <img src={ex.bannerHero} alt={ex.titolo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        )
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>
                       )}

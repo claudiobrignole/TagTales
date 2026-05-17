@@ -2,16 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, getDocs, where, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { Users, Palette, CreditCard, FileText, Globe, Loader2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Users, Palette, CreditCard, FileText, Globe, Loader2, Search } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../contexts/I18nContext';
 import { translateText, translateObjectFields } from '../utils/translate';
+import DirectChat from '../components/DirectChat';
 
 export default function AdminDashboard() {
   const { t } = useI18n();
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const chatParam = searchParams.get('chat');
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     pendingArtworks: 0,
@@ -19,6 +23,9 @@ export default function AdminDashboard() {
     totalContracts: 0
   });
   const [loading, setLoading] = useState(true);
+  const [writers, setWriters] = useState<any[]>([]);
+  const [selectedWriterId, setSelectedWriterId] = useState<string>('');
+  const [writerSearch, setWriterSearch] = useState('');
   
   const [translationState, setTranslationState] = useState({
     running: false,
@@ -26,6 +33,13 @@ export default function AdminDashboard() {
     total: 0,
     status: ''
   });
+
+  useEffect(() => {
+    if (chatParam && writers.length > 0) {
+       const w = writers.find(w => w.id === chatParam);
+       if (w) setSelectedWriterId(w.id);
+    }
+  }, [chatParam, writers]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -41,6 +55,18 @@ export default function AdminDashboard() {
         const artworksSnap = await getDocs(query(collection(db, 'opere'), where('statoApprovazione', '==', 'in_attesa')));
         const paymentsSnap = await getDocs(query(collection(db, 'payouts'), where('stato', '==', 'in_attesa')));
         const contractsSnap = await getDocs(collection(db, 'contratti'));
+
+        const writersSnap = await getDocs(query(collection(db, 'users'), where('role', 'in', ['writer', 'artist'])));
+        const writersData = writersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setWriters(writersData);
+        
+        if (chatParam) {
+          const w = writersData.find(w => w.id === chatParam);
+          if (w) setSelectedWriterId(w.id);
+          else if (writersData.length > 0) setSelectedWriterId(writersData[0].id);
+        } else if (writersData.length > 0) {
+          setSelectedWriterId(writersData[0].id);
+        }
 
         setStats({
           totalUsers: usersSnap.size,
@@ -270,6 +296,55 @@ export default function AdminDashboard() {
             </p>
           </div>
         </a>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-6 h-[600px] flex flex-col">
+            <h2 className="text-xl font-bold text-[#121212] mb-4">Seleziona Writer</h2>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#59554E]" size={18} />
+              <input
+                type="text"
+                placeholder="Cerca nome..."
+                value={writerSearch}
+                onChange={(e) => setWriterSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-[#F2EEE8] border-transparent rounded-xl text-sm focus:ring-2 focus:ring-[#FF4F00] outline-none transition-all"
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+              {writers
+                .filter(w => (w.fullName || w.email || '').toLowerCase().includes(writerSearch.toLowerCase()) || (w.artistName || '').toLowerCase().includes(writerSearch.toLowerCase()))
+                .map(w => (
+                <button
+                  key={w.id}
+                  onClick={() => {
+                    setSelectedWriterId(w.id);
+                    setSearchParams({ chat: w.id });
+                  }}
+                  className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between ${selectedWriterId === w.id ? 'bg-[#121212] text-white' : 'hover:bg-[#F2EEE8] text-[#121212]'}`}
+                >
+                  <span className="font-bold text-sm truncate">{w.artistName || w.fullName || w.email}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="lg:col-span-2 h-[600px]">
+          {selectedWriterId && user ? (
+            <DirectChat 
+              userId={selectedWriterId} 
+              isAdmin={true} 
+              currentUserId={user.uid} 
+              recipientName={writers.find(w => w.id === selectedWriterId)?.artistName || writers.find(w => w.id === selectedWriterId)?.fullName || 'Writer'}
+            />
+          ) : (
+             <div className="h-full flex items-center justify-center bg-white rounded-3xl border border-[#EAE3D9] text-[#59554E]">
+               Seleziona un writer per iniziare a chattare
+             </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-8 bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9]">

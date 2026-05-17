@@ -1,33 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { Plus, Filter, Search, Image as ImageIcon, CheckCircle, XCircle, X, Film } from 'lucide-react';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, orderBy, deleteDoc } from 'firebase/firestore';
+import { Search, ExternalLink, Plus, X, Trash2, Video, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { sendEmailNotification } from '../utils/emailService';
 import { createNotification } from '../utils/notificationService';
 import { useI18n } from '../contexts/I18nContext';
-
+import { format, parseISO } from 'date-fns';
 
 export default function Artworks() {
   const { t } = useI18n();
-
   const { user } = useAuth();
   const [artworks, setArtworks] = useState<any[]>([]);
+  const [writers, setWriters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [approvalCosts, setApprovalCosts] = useState({ productionCost: '', shippingCost: '' });
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-  const [rejectingArtwork, setRejectingArtwork] = useState<any | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [requestingModArtwork, setRequestingModArtwork] = useState<any | null>(null);
-  const [modReason, setModReason] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [newArtwork, setNewArtwork] = useState({ title: '', writerId: '', driveLink: '' });
+  const [writerSearch, setWriterSearch] = useState('');
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchArtworks = async () => {
+    const fetchData = async () => {
       if (!user) return;
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -37,261 +36,149 @@ export default function Artworks() {
 
         let q;
         if (adminStatus) {
-          q = query(collection(db, 'opere'));
+          q = query(collection(db, 'opere'), orderBy('createdAt', 'desc'));
         } else {
-          q = query(collection(db, 'opere'), where('artistaId', '==', user.uid));
+          q = query(collection(db, 'opere'), where('artistaId', '==', user.uid), orderBy('createdAt', 'desc'));
         }
         
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-        setArtworks(data);
+        const data = snapshot.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        
+        let writersData: any[] = [];
+        if (adminStatus) {
+          const usersQ = query(collection(db, 'users'), where('role', 'in', ['writer', 'artist']));
+          const usersSnapshot = await getDocs(usersQ);
+          writersData = usersSnapshot.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+          setWriters(writersData);
+        }
+
+        const enrichedData = data.map(item => {
+          let wName = item.writerName;
+          if (!wName && adminStatus) {
+            const writer = writersData.find(w => w.id === item.artistaId);
+            wName = writer?.fullName || writer?.artistName || writer?.email || 'Unknown Writer';
+          }
+          return { ...item, writerName: wName };
+        });
+
+        setArtworks(enrichedData);
       } catch (error) {
-        console.error("Error fetching artworks:", error);
+        console.error("Error fetching media deliveries:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchArtworks();
+    fetchData();
   }, [user]);
 
-  const handleApprove = async (artwork: any) => {
-    setApprovingId(artwork.id);
-    setMessage(null);
+  const handleStatusChange = async (artworkId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/artworks/${artwork.id}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: artwork.titolo,
-          price: artwork.prezzo,
-          description: artwork.descrizioneCritica,
-          imageUrl: artwork.immagineHiRes || (artwork.galleria && artwork.galleria[0])
-        })
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || t('artworks.approveFailed'));
-      }
-
-      const { ecwidProductId } = await response.json();
-
-      const artworkRef = doc(db, 'opere', artwork.id);
-      await updateDoc(artworkRef, {
-        statoApprovazione: 'approvata',
-        ecwidId: ecwidProductId,
-        costoProduzione: Number(approvalCosts.productionCost),
-        costoSpedizione: Number(approvalCosts.shippingCost),
-        published: true,
+      await updateDoc(doc(db, 'opere', artworkId), {
+        statoApprovazione: newStatus,
         updatedAt: new Date().toISOString()
       });
-
+      
       setArtworks(prev => prev.map(a => 
-        a.id === artwork.id ? { ...a, statoApprovazione: 'approvata', ecwidId: ecwidProductId, costoProduzione: Number(approvalCosts.productionCost), costoSpedizione: Number(approvalCosts.shippingCost), published: true } : a
+        a.id === artworkId ? { ...a, statoApprovazione: newStatus } : a
       ));
-      
-      setApprovingId(null);
-      setApprovalCosts({ productionCost: '', shippingCost: '' });
-      setMessage({ type: 'success', text: t('artworks.approvedSuccess', { title: artwork.titolo }) });
-      
-      // Send email
-      const artistDoc = await getDoc(doc(db, 'users', artwork.artistaId));
-      if (artistDoc.exists()) {
-        const artistEmail = artistDoc.data().email;
-        await sendEmailNotification(artistEmail, 'artwork_approved', { artworkTitle: artwork.titolo, userId: artwork.artistaId });
-      }
 
-      // Create in-app notification
-      await createNotification(
-        artwork.artistaId,
-        'Artwork Approved',
-        `Your artwork "${artwork.titolo}" has been approved.`,
-        'artwork_approved',
-        '/artworks'
-      );
+      // Optional: notification logic here
+    } catch (err: any) {
+      console.error("Error updating status:", err);
+      alert('Errore durante l\'aggiornamento dello stato.');
+    }
+  };
 
-      setTimeout(() => setMessage(null), 5000);
-    } catch (error: any) {
-      console.error("Approval error:", error);
-      setMessage({ type: 'error', text: error.message });
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteDoc(doc(db, 'opere', itemToDelete));
+      setArtworks(prev => prev.filter(c => c.id !== itemToDelete));
+    } catch (error) {
+      console.error("Error deleting artwork:", error);
+      alert('Errore durante l\'eliminazione.');
     } finally {
-      setApprovingId(null);
+      setItemToDelete(null);
     }
   };
 
-  const submitReject = async () => {
-    if (!rejectingArtwork || !rejectReason.trim()) return;
-    
-    try {
-      const artworkRef = doc(db, 'opere', rejectingArtwork.id);
-      await updateDoc(artworkRef, {
-        statoApprovazione: 'rifiutata',
-        rejectReason: rejectReason,
-        updatedAt: new Date().toISOString()
-      });
+  const handleCreateDriveLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newArtwork.driveLink || !newArtwork.writerId || !newArtwork.title) return;
 
-      setArtworks(prev => prev.map(a => 
-        a.id === rejectingArtwork.id ? { ...a, statoApprovazione: 'rifiutata', rejectReason } : a
-      ));
+    setUploading(true);
+    try {
+      const payload = {
+        artistaId: newArtwork.writerId,
+        titolo: newArtwork.title,
+        driveLink: newArtwork.driveLink,
+        statoApprovazione: 'in_attesa',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       
-      setMessage({ type: 'success', text: t('artworks.rejectedSuccess', { title: rejectingArtwork.titolo }) });
+      const docRef = await addDoc(collection(db, 'opere'), payload);
       
-      // Send email
-      const artistDoc = await getDoc(doc(db, 'users', rejectingArtwork.artistaId));
-      if (artistDoc.exists()) {
-        const artistEmail = artistDoc.data().email;
-        await sendEmailNotification(artistEmail, 'artwork_rejected', { 
-          artworkTitle: rejectingArtwork.titolo, 
-          reason: rejectReason,
-          userId: rejectingArtwork.artistaId 
+      const writer = writers.find(a => a.id === newArtwork.writerId);
+      const newEntry = { 
+        id: docRef.id, 
+        ...payload,
+        writerName: writer?.fullName || writer?.artistName || writer?.email || 'Unknown Writer'
+      };
+
+      if (writer?.email) {
+        await sendEmailNotification(writer.email, 'new_media_link', { 
+          title: newArtwork.title,
+          userId: newArtwork.writerId
         });
       }
 
-      // Create in-app notification
       await createNotification(
-        rejectingArtwork.artistaId,
-        'Artwork Rejected',
-        `Your artwork "${rejectingArtwork.titolo}" has been rejected. Reason: ${rejectReason}`,
-        'artwork_rejected',
-        '/artworks'
-      );
-
-      setRejectingArtwork(null);
-      setRejectReason('');
-      setTimeout(() => setMessage(null), 5000);
-    } catch (error: any) {
-      console.error("Rejection error:", error);
-      setMessage({ type: 'error', text: error.message });
-    }
-  };
-
-  const submitRequestMod = async () => {
-    if (!requestingModArtwork || !modReason.trim()) return;
-    
-    try {
-      const artworkRef = doc(db, 'opere', requestingModArtwork.id);
-      await updateDoc(artworkRef, {
-        statoApprovazione: 'modifica_richiesta',
-        modReason: modReason,
-        updatedAt: new Date().toISOString()
-      });
-
-      setArtworks(prev => prev.map(a => 
-        a.id === requestingModArtwork.id ? { ...a, statoApprovazione: 'modifica_richiesta', modReason } : a
-      ));
-      
-      setMessage({ type: 'success', text: `Modification requested for ${requestingModArtwork.titolo}` });
-      
-      // Send email
-      const artistDoc = await getDoc(doc(db, 'users', requestingModArtwork.artistaId));
-      if (artistDoc.exists()) {
-        const artistEmail = artistDoc.data().email;
-        await sendEmailNotification(artistEmail, 'artwork_mod_requested', { 
-          artworkTitle: requestingModArtwork.titolo, 
-          reason: modReason,
-          userId: requestingModArtwork.artistaId 
-        });
-      }
-
-      // Create in-app notification
-      await createNotification(
-        requestingModArtwork.artistaId,
-        'Modification Requested',
-        `Modifications requested for "${requestingModArtwork.titolo}". Reason: ${modReason}`,
+        newArtwork.writerId,
+        "Nuovo Link Drive Creato",
+        `Puoi caricare il tuo materiale audio/video per "${newArtwork.title}".`,
         'artwork_mod_requested',
         '/artworks'
       );
 
-      setRequestingModArtwork(null);
-      setModReason('');
-      setTimeout(() => setMessage(null), 5000);
-    } catch (error: any) {
-      console.error("Modification request error:", error);
-      setMessage({ type: 'error', text: error.message });
+      setArtworks([newEntry, ...artworks]);
+      setShowUploadModal(false);
+      setNewArtwork({ title: '', writerId: '', driveLink: '' });
+    } catch (error) {
+      console.error("Error creating drive item:", error);
+      alert('Errore durante il salvataggio.');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleMarkAsSoldExternally = async (artwork: any) => {
-    try {
-      const artworkRef = doc(db, 'opere', artwork.id);
-      await updateDoc(artworkRef, {
-        statoVendita: 'venduta',
-        soldExternally: true,
-        updatedAt: new Date().toISOString()
-      });
-
-      setArtworks(prev => prev.map(a => 
-        a.id === artwork.id ? { ...a, statoVendita: 'venduta', soldExternally: true } : a
-      ));
-      
-      // Notify Admin
-      try {
-        const adminsSnapshot = await getDocs(query(collection(db, 'users'), where('role', '==', 'admin')));
-        adminsSnapshot.docs.forEach(async (adminDoc) => {
-          await createNotification(
-            adminDoc.id,
-            'Artwork Sold Externally',
-            `Artwork "${artwork.titolo || artwork.title}" was sold externally. Please unpublish it from Ecwid.`,
-            'artwork_sold_externally',
-            '/artworks'
-          );
-        });
-      } catch (adminErr) {
-        console.error("Failed to notify admins", adminErr);
-      }
-
-      setMessage({ type: 'success', text: `Artwork "${artwork.title}" marked as sold externally.` });
-      setTimeout(() => setMessage(null), 5000);
-    } catch (error: any) {
-      console.error("Mark as sold externally error:", error);
-      setMessage({ type: 'error', text: error.message });
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'in_attesa': return 'In attesa';
+      case 'prima_revisione': return 'Prima revisione';
+      case 'seconda_revisione': return 'Seconda revisione';
+      case 'terza_revisione': return 'Terza revisione';
+      case 'approvata': return 'Approvato';
+      default: return status || 'In attesa';
+    }
+  };
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'in_attesa': return 'bg-yellow-100 text-yellow-700';
+      case 'prima_revisione': return 'bg-orange-100 text-orange-700';
+      case 'seconda_revisione': return 'bg-purple-100 text-purple-700';
+      case 'terza_revisione': return 'bg-blue-100 text-blue-700';
+      case 'approvata': return 'bg-green-100 text-green-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const handleMarkAsSold = async (artwork: any) => {
-    try {
-      const artworkRef = doc(db, 'opere', artwork.id);
-      await updateDoc(artworkRef, {
-        statoVendita: 'venduta',
-        updatedAt: new Date().toISOString()
-      });
-
-      setArtworks(prev => prev.map(a => 
-        a.id === artwork.id ? { ...a, statoVendita: 'venduta' } : a
-      ));
-      
-      setMessage({ type: 'success', text: `Artwork "${artwork.titolo}" marked as sold.` });
-      
-      // Send email
-      const artistDoc = await getDoc(doc(db, 'users', artwork.artistaId));
-      if (artistDoc.exists()) {
-        const artistEmail = artistDoc.data().email;
-        await sendEmailNotification(artistEmail, 'artwork_sold', { 
-          artworkTitle: artwork.titolo, 
-          userId: artwork.artistaId 
-        });
-      }
-
-      // Create in-app notification
-      await createNotification(
-        artwork.artistaId,
-        'Artwork Sold',
-        `Congratulations! Your artwork "${artwork.titolo}" has been marked as sold.`,
-        'artwork_sold',
-        '/artworks'
-      );
-
-      setTimeout(() => setMessage(null), 5000);
-    } catch (error: any) {
-      console.error("Mark as sold error:", error);
-      setMessage({ type: 'error', text: error.message });
-    }
-  };
+  const statuses = ['in_attesa', 'prima_revisione', 'seconda_revisione', 'terza_revisione', 'approvata'];
 
   const filteredArtworks = artworks.filter(art => {
     if (filter === 'all') return true;
-    if (filter === 'sold') return art.statoVendita === 'venduta';
     return art.statoApprovazione === filter;
   });
 
@@ -300,287 +187,254 @@ export default function Artworks() {
   }
 
   return (
-    <div className="w-full space-y-8 font-['Karla']">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <div className="w-full space-y-8 font-['Karla'] pb-12">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">
-            {isAdmin ? t('artworks.allArtworks') : t('artworks.title')}
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-tight text-[#121212] mb-4">
+            {t('myArtworks', 'Le mie opere')}
           </h1>
           <p className="text-[#59554E] text-lg">
-            {isAdmin ? t('artworks.adminSubtitle') : t('artworks.subtitle')}
+            {isAdmin ? 'Gestisci i materiali inviati dai writer tramite Google Drive' : 'Visualizza e carica i tuoi materiali audio/video nelle cartelle Assegnate'}
           </p>
         </div>
-        <Link 
-          to="/artworks/upload" 
-          className="inline-flex items-center justify-center gap-2 bg-[#FF4F00] text-white font-bold py-3 px-6 rounded-full hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[#FF4F00]/20 uppercase tracking-widest text-xs"
-        >
-          <Plus size={20} />
-          <span>{t('artworks.uploadNew')}</span>
-        </Link>
+        {isAdmin && (
+          <button 
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-[#121212] text-white rounded-full font-bold hover:bg-[#FF4F00] transition-colors shrink-0 uppercase text-xs tracking-widest"
+          >
+            <Plus size={20} />
+            <span>Nuovo Media Link</span>
+          </button>
+        )}
       </header>
 
-      {/* Filters & Search */}
-      {message && (
-        <div className={clsx(
-          "p-4 rounded-2xl text-sm font-medium mb-4",
-          message.type === 'success' ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-600 border border-red-200"
-        )}>
-          {message.text}
-        </div>
-      )}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-[#EAE3D9]">
-        <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-          {['all', 'approvata', 'in_attesa', 'venduta', 'bozza'].map((status) => (
+        <div className="flex gap-2 text-xs overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
+          <button
+            onClick={() => setFilter('all')}
+            className={clsx("px-4 py-2 rounded-full font-bold uppercase tracking-widest whitespace-nowrap transition-all", filter === 'all' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#59554E]")}
+          >
+            Tutti
+          </button>
+          {statuses.map(s => (
             <button
-              key={status}
-              onClick={() => {
-                if (status === 'venduta') setFilter('sold');
-                else setFilter(status);
-              }}
-              className={clsx(
-                "px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all",
-                (filter === status || (filter === 'sold' && status === 'venduta'))
-                  ? "bg-[#121212] text-white" 
-                  : "bg-[#F2EEE8] text-[#59554E] hover:bg-[#EAE3D9]"
-              )}
+              key={s}
+              onClick={() => setFilter(s)}
+              className={clsx("px-4 py-2 rounded-full font-bold uppercase tracking-widest whitespace-nowrap transition-all", filter === s ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#59554E]")}
             >
-              {status === 'all' ? t('artworks.all') : 
-               status === 'approvata' ? t('artworks.statusApproved') : 
-               status === 'in_attesa' ? t('artworks.statusPending') : 
-               status === 'venduta' ? t('artworks.statusSold') : 
-               status === 'bozza' ? t('artworks.statusDraft') : status}
+              {getStatusLabel(s)}
             </button>
           ))}
-        </div>
-        <div className="relative w-full sm:w-64">
-          <input 
-            type="text" 
-            placeholder={t('artworks.searchPlaceholder')} 
-            className="w-full pl-10 pr-4 py-2 bg-[#F2EEE8] border-none rounded-full text-sm focus:ring-2 focus:ring-[#FF4F00] outline-none"
-          />
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#59554E]" />
         </div>
       </div>
 
-      {/* Grid */}
-      {filteredArtworks.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-[#EAE3D9] p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-          <div className="w-20 h-20 bg-[#F2EEE8] rounded-full flex items-center justify-center text-[#59554E] mb-6">
-            <ImageIcon size={32} />
+      <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
+        {filteredArtworks.length === 0 ? (
+          <div className="p-16 text-center text-[#59554E] flex flex-col items-center">
+            <div className="w-20 h-20 bg-[#F2EEE8] rounded-full flex items-center justify-center mb-6">
+              <Video size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-[#121212] mb-2">Nessun progetto trovato</h3>
+            <p className="max-w-md">Attualmente non ci sono materiali audio/video in elenco.</p>
           </div>
-          <h3 className="text-2xl font-bold text-[#121212] mb-2">{t('artworks.noArtworksFound')}</h3>
-          <p className="text-[#59554E] mb-8 max-w-md">{t('artworks.noArtworksDesc')}</p>
-          <Link 
-            to="/app/artworks/upload" 
-            className="inline-flex items-center justify-center gap-2 bg-[#121212] text-white font-bold py-3 px-8 rounded-full hover:bg-[#FF4F00] transition-colors"
-          >
-            <Plus size={20} />
-            <span>{t('artworks.uploadFirst')}</span>
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredArtworks.map((artwork) => (
-            <div key={artwork.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#EAE3D9] group hover:shadow-md transition-all">
-              <div className="aspect-square bg-[#F2EEE8] relative overflow-hidden">
-                {artwork.immagineHiRes ? (
-                  <img src={artwork.immagineHiRes} alt={artwork.titolo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#59554E]">
-                    <ImageIcon size={48} opacity={0.2} />
-                  </div>
-                )}
-                <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                  <span className={clsx(
-                    "px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full backdrop-blur-md",
-                    artwork.statoApprovazione === 'approvata' && artwork.statoVendita !== 'venduta' ? "bg-green-500/90 text-white" :
-                    artwork.statoVendita === 'venduta' && artwork.soldExternally ? "bg-gray-600/90 text-white" :
-                    artwork.statoVendita === 'venduta' ? "bg-[#121212]/90 text-white" :
-                    artwork.statoApprovazione === 'in_attesa' ? "bg-yellow-500/90 text-white" :
-                    artwork.statoApprovazione === 'rifiutata' ? "bg-red-500/90 text-white" :
-                    "bg-white/90 text-[#121212]"
-                  )}>
-                    {artwork.statoVendita === 'venduta' && artwork.soldExternally ? t('artworks.statusSoldExternally') :
-                     artwork.statoVendita === 'venduta' ? t('artworks.statusSold') : 
-                     artwork.statoApprovazione === 'approvata' ? t('artworks.statusApproved') : 
-                     artwork.statoApprovazione === 'in_attesa' ? t('artworks.statusPending') : 
-                     artwork.statoApprovazione === 'bozza' ? t('artworks.statusDraft') : 
-                     artwork.statoApprovazione === 'rifiutata' ? t('artworks.statusRejected') : 
-                     artwork.statoApprovazione === 'modifica_richiesta' ? 'MODIFICA RICHIESTA' : artwork.statoApprovazione}
-                  </span>
-                  {artwork.videoYoutube && (
-                    <span className="px-2 py-1 bg-black/70 text-white text-[10px] font-bold uppercase tracking-widest rounded-full backdrop-blur-md flex items-center gap-1">
-                      <Film size={12} /> {t('artworks.video')}
-                    </span>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="border-b border-[#EAE3D9] bg-[#F2EEE8]/50">
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Progetto / Titolo</th>
+                  {isAdmin && <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Writer</th>}
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Data</th>
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Status</th>
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider text-right">Azioni</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EAE3D9]">
+                {filteredArtworks.map((item) => (
+                  <tr key={item.id} className="hover:bg-[#F2EEE8]/30 transition-colors">
+                    <td className="p-4 font-bold text-[#121212] max-w-[200px] truncate" title={item.titolo || item.title}>
+                      {item.titolo || item.title}
+                    </td>
+                    {isAdmin && <td className="p-4 text-[#59554E] font-medium">{item.writerName}</td>}
+                    <td className="p-4 text-[#59554E]">
+                      {item.createdAt ? format(parseISO(item.createdAt), 'MMM dd, yyyy') : 'N/A'}
+                    </td>
+                    <td className="p-4">
+                      {isAdmin ? (
+                        <select
+                          value={item.statoApprovazione || 'in_attesa'}
+                          onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                          className={clsx(
+                            "px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border-none outline-none cursor-pointer",
+                            getStatusColor(item.statoApprovazione || 'in_attesa')
+                          )}
+                        >
+                          {statuses.map(s => (
+                            <option key={s} value={s}>{getStatusLabel(s)}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className={clsx(
+                          "inline-block px-3 py-1.5 text-xs font-bold uppercase tracking-widest rounded-full",
+                          getStatusColor(item.statoApprovazione || 'in_attesa')
+                        )}>
+                          {getStatusLabel(item.statoApprovazione || 'in_attesa')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 flex flex-wrap items-center justify-end gap-2 text-right">
+                      {(item.driveLink || item.documentUrl) && (
+                        <a 
+                          href={item.driveLink || item.documentUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors uppercase tracking-widest"
+                        >
+                          <ExternalLink size={14} />
+                          <span>Apri Drive</span>
+                        </a>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={() => setItemToDelete(item.id)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                          title="Elimina"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showUploadModal && isAdmin && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center shrink-0">
+              <h2 className="text-xl font-bold text-[#121212]">Nuovo Progetto Media</h2>
+              <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-[#F2EEE8] rounded-full transition-colors">
+                <X size={24} className="text-[#59554E]" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateDriveLink} className="p-6 space-y-6 overflow-y-auto">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">Titolo Progetto / Opera</label>
+                <input 
+                  type="text" 
+                  value={newArtwork.title}
+                  onChange={(e) => setNewArtwork({...newArtwork, title: e.target.value})}
+                  required
+                  className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none" 
+                  placeholder="Es. Video Intervista / Making of..." 
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">Seleziona Writer</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#59554E]" size={18} />
+                  <input
+                    type="text"
+                    value={writerSearch}
+                    onChange={(e) => setWriterSearch(e.target.value)}
+                    placeholder="Cerca nome..."
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-[#EAE3D9] rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none"
+                  />
+                </div>
+                <div className="bg-[#F2EEE8] rounded-xl p-2 max-h-48 overflow-y-auto space-y-1">
+                  {writers.filter(w => {
+                    const search = writerSearch.toLowerCase();
+                    return (w.fullName || '').toLowerCase().includes(search) || 
+                           (w.artistName || '').toLowerCase().includes(search);
+                  }).map(writer => (
+                    <label key={writer.id} className={clsx(
+                      "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
+                      newArtwork.writerId === writer.id ? "bg-white shadow-sm ring-1 ring-[#FF4F00]" : "hover:bg-white/50"
+                    )}>
+                      <input 
+                        type="radio" 
+                        name="writer_selection"
+                        value={writer.id}
+                        checked={newArtwork.writerId === writer.id}
+                        onChange={(e) => setNewArtwork({...newArtwork, writerId: e.target.value})}
+                        className="w-4 h-4 text-[#FF4F00] focus:ring-[#FF4F00] border-gray-300"
+                        required
+                      />
+                      <span className="text-sm font-medium text-[#121212]">
+                        {writer.artistName || writer.fullName || writer.email}
+                      </span>
+                    </label>
+                  ))}
+                  {writers.filter(w => (w.fullName || '').toLowerCase().includes(writerSearch.toLowerCase())).length === 0 && (
+                    <div className="p-4 text-center text-sm text-[#59554E]">Nessun writer trovato</div>
                   )}
                 </div>
               </div>
-              <div className="p-5">
-                <h3 className="font-bold text-lg text-[#121212] truncate mb-1 uppercase tracking-tight font-['Shamgod'] leading-none h-6">{artwork.titolo}</h3>
-                <p className="text-sm text-[#59554E] mb-3">{artwork.anno} • {artwork.tecnica || artwork.tipologia}</p>
-                <div className="flex justify-between items-center pt-3 border-t border-[#EAE3D9]">
-                  <span className="font-black text-xl text-[#121212] font-['Shamgod']">{artwork.prezzo?.toLocaleString() || 'N/A'} {artwork.valuta || 'EUR'}</span>
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    {isAdmin && artwork.statoApprovazione === 'in_attesa' && (
-                      <>
-                        <button 
-                          onClick={() => handleApprove(artwork)}
-                          disabled={approvingId === artwork.id}
-                          className="text-[10px] font-bold text-green-600 uppercase tracking-widest hover:underline flex items-center gap-1 disabled:opacity-50"
-                        >
-                          {approvingId === artwork.id ? t('artworks.approving') : <><CheckCircle size={14} /> {t('artworks.approve')}</>}
-                        </button>
-                        <button 
-                          onClick={() => setRequestingModArtwork(artwork)}
-                          className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest hover:underline flex items-center gap-1"
-                        >
-                          {t('artworks.mod')}
-                        </button>
-                        <button 
-                          onClick={() => setRejectingArtwork(artwork)}
-                          className="text-[10px] font-bold text-red-600 uppercase tracking-widest hover:underline flex items-center gap-1"
-                        >
-                          <XCircle size={14} /> {t('artworks.reject')}
-                        </button>
-                      </>
-                    )}
-                    {artwork.statoApprovazione === 'approvata' && artwork.statoVendita !== 'venduta' && (
-                      <button 
-                        onClick={() => handleMarkAsSoldExternally(artwork)}
-                        className="text-[10px] font-bold text-[#121212] uppercase tracking-widest hover:underline flex items-center gap-1"
-                      >
-                        {t('artworks.markSoldExternally')}
-                      </button>
-                    )}
-                    {isAdmin && artwork.statoApprovazione === 'approvata' && artwork.statoVendita !== 'venduta' && (
-                      <button 
-                        onClick={() => handleMarkAsSold(artwork)}
-                        className="text-[10px] font-bold text-[#121212] uppercase tracking-widest hover:underline flex items-center gap-1"
-                      >
-                        {t('artworks.markSold')}
-                      </button>
-                    )}
-                    <button className="text-[10px] font-bold text-[#FF4F00] uppercase tracking-widest hover:underline">{t('artworks.edit')}</button>
-                  </div>
-                </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">Link Cartella Google Drive</label>
+                <input 
+                  type="url" 
+                  value={newArtwork.driveLink}
+                  onChange={(e) => setNewArtwork({...newArtwork, driveLink: e.target.value})}
+                  required
+                  placeholder="https://drive.google.com/drive/folders/..."
+                  className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none" 
+                />
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Approve Modal */}
-      {approvingId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
-            <h2 className="text-2xl font-bold text-[#121212] mb-6">{t('artworks.setCostsForApproval')}</h2>
-            <div className="space-y-4 mb-6">
-              <input
-                type="number"
-                placeholder={t('artworks.productionCost')}
-                value={approvalCosts.productionCost}
-                onChange={(e) => setApprovalCosts({...approvalCosts, productionCost: e.target.value})}
-                className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212]"
-              />
-              <input
-                type="number"
-                placeholder={t('artworks.shippingCost')}
-                value={approvalCosts.shippingCost}
-                onChange={(e) => setApprovalCosts({...approvalCosts, shippingCost: e.target.value})}
-                className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212]"
-              />
-            </div>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setApprovingId(null)} className="px-6 py-3 font-bold text-[#59554E] hover:bg-[#F2EEE8] rounded-full transition-all">{t('common.cancel')}</button>
-              <button 
-                onClick={() => {
-                  const artwork = artworks.find(a => a.id === approvingId);
-                  if (artwork) handleApprove(artwork);
-                }}
-                disabled={!approvalCosts.productionCost || !approvalCosts.shippingCost}
-                className="px-6 py-3 font-bold text-white bg-[#FF4F00] hover:bg-[#FF6600] rounded-full transition-all disabled:opacity-50"
-              >
-                {t('artworks.approve')}
-              </button>
-            </div>
+              
+              <div className="pt-4 flex justify-end gap-3 shrink-0">
+                <button 
+                  type="button"
+                  onClick={() => setShowUploadModal(false)}
+                  className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button 
+                  type="submit"
+                  disabled={uploading || !newArtwork.writerId}
+                  className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-white bg-[#FF4F00] hover:bg-[#E64700] transition-colors disabled:opacity-50"
+                >
+                  {uploading ? "Creazione..." : "Crea Link"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Reject Modal */}
-      {rejectingArtwork && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
-            <button 
-              onClick={() => { setRejectingArtwork(null); setRejectReason(''); }}
-              className="absolute top-6 right-6 text-[#59554E] hover:text-[#121212]"
-            >
-              <X size={24} />
-            </button>
-            <h2 className="text-2xl font-bold text-[#121212] mb-2">{t('artworks.rejectArtwork')}</h2>
-            <p className="text-[#59554E] mb-6">{t('artworks.rejectReasonPrompt', { title: rejectingArtwork.titolo || rejectingArtwork.title })}</p>
-            
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder={t('artworks.rejectReasonPlaceholder')}
-              rows={4}
-              className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none transition-all resize-none mb-6"
-            />
-            
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => { setRejectingArtwork(null); setRejectReason(''); }}
-                className="px-6 py-3 font-bold text-[#59554E] hover:bg-[#F2EEE8] rounded-full transition-all"
-              >
-                {t('common.cancel')}
-              </button>
-              <button 
-                onClick={submitReject}
-                disabled={!rejectReason.trim()}
-                className="px-6 py-3 font-bold text-white bg-red-600 hover:bg-red-700 rounded-full transition-all disabled:opacity-50"
-              >
-                {t('artworks.confirmRejection')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Request Mod Modal */}
-      {requestingModArtwork && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
-            <button 
-              onClick={() => { setRequestingModArtwork(null); setModReason(''); }}
-              className="absolute top-6 right-6 text-[#59554E] hover:text-[#121212]"
-            >
-              <X size={24} />
-            </button>
-            <h2 className="text-2xl font-bold text-[#121212] mb-2">{t('artworks.requestModification')}</h2>
-            <p className="text-[#59554E] mb-6">{t('artworks.requestModPrompt', { title: requestingModArtwork.titolo || requestingModArtwork.title })}</p>
-            
-            <textarea
-              value={modReason}
-              onChange={(e) => setModReason(e.target.value)}
-              placeholder={t('artworks.requestModPlaceholder')}
-              rows={4}
-              className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none transition-all resize-none mb-6"
-            />
-            
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => { setRequestingModArtwork(null); setModReason(''); }}
-                className="px-6 py-3 font-bold text-[#59554E] hover:bg-[#F2EEE8] rounded-full transition-all"
-              >
-                {t('common.cancel')}
-              </button>
-              <button 
-                onClick={submitRequestMod}
-                disabled={!modReason.trim()}
-                className="px-6 py-3 font-bold text-white bg-yellow-600 hover:bg-yellow-700 rounded-full transition-all disabled:opacity-50"
-              >
-                {t('artworks.requestModText')}
-              </button>
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-[#EAE3D9]">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <p className="text-[#59554E] text-sm mb-6">
+                Sei sicuro di voler eliminare questo progetto? L'operazione è irreversibile.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setItemToDelete(null)}
+                  className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs"
+                >
+                  Elimina
+                </button>
+              </div>
             </div>
           </div>
         </div>

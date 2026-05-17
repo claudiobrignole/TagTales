@@ -41,6 +41,7 @@ import VideoEmbed from "../components/VideoEmbed";
 interface Exhibition {
   id: string;
   title: string;
+  preTitolo?: string;
   subtitle: string;
   img: string;
   link: string;
@@ -269,6 +270,8 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
   );
 };
 
+const isVideo = (url?: string) => url ? url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null : false;
+
 export default function PublicHome() {
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
@@ -350,7 +353,10 @@ export default function PublicHome() {
                 "",
               image: data.bannerHero || data.coverImageUrl,
               img: data.bannerHero || data.coverImageUrl,
+              fallbackUrl: data.bannerHeroFallback || "",
+              dataApertura: data.dataApertura || "",
               title: data.titolo || data.title,
+              preTitolo: data.preTitolo || "",
               owner: artistaId ? writersMap[artistaId] || "MOSTRA" : "MOSTRA",
               link: `/exhibitions/${data.slug || doc.id}`,
               buttonText: "VISITA LA MOSTRA", // handled via getLoc or translation
@@ -436,11 +442,23 @@ export default function PublicHome() {
                 >
                   {featuredExhibitions[currentSlide] &&
                     (featuredExhibitions[currentSlide] as any).image && (
-                      <img
-                        src={(featuredExhibitions[currentSlide] as any).image}
-                        alt={featuredExhibitions[currentSlide].title}
-                        className="w-full h-full object-cover opacity-80"
-                      />
+                      isVideo((featuredExhibitions[currentSlide] as any).image) ? (
+                        <video
+                          src={(featuredExhibitions[currentSlide] as any).image}
+                          poster={(featuredExhibitions[currentSlide] as any).fallbackUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover opacity-80"
+                        />
+                      ) : (
+                        <img
+                          src={(featuredExhibitions[currentSlide] as any).image}
+                          alt={featuredExhibitions[currentSlide].title}
+                          className="w-full h-full object-cover opacity-80"
+                        />
+                      )
                     )}
                   <div className="absolute top-[55%] md:top-1/2 -translate-y-1/2 left-0 w-full px-6 md:px-[25px] lg:px-20 text-white flex justify-center lg:justify-start">
                     <motion.div
@@ -450,7 +468,7 @@ export default function PublicHome() {
                       className="inline-block bg-[#121212]/60 backdrop-blur-md p-6 md:p-10 rounded-[32px] max-w-4xl text-left"
                     >
                       <motion.p className="font-['Karla'] font-bold text-[clamp(16px,2.5vw,28px)] uppercase tracking-widest text-[#FF4F00] mb-2">
-                        {featuredExhibitions[currentSlide].owner}
+                        {getLocalizedField(featuredExhibitions[currentSlide], "preTitolo", lang) || featuredExhibitions[currentSlide].preTitolo || featuredExhibitions[currentSlide].owner}
                       </motion.p>
                       <motion.h1 className="heading-hero mb-2 md:mb-6 text-white leading-none uppercase">
                         {getLocalizedField(
@@ -532,16 +550,28 @@ export default function PublicHome() {
                 >
                   <div className="aspect-square bg-[#2A2A2A] rounded-2xl overflow-hidden relative">
                     {item.img && (
-                      <img
-                        src={item.img}
-                        alt={item.title}
-                        className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
-                      />
+                      isVideo(item.img) ? (
+                        <video
+                          src={item.img}
+                          poster={(item as any).fallbackUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                        />
+                      ) : (
+                        <img
+                          src={item.img}
+                          alt={item.title}
+                          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                        />
+                      )
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-80" />
                     <div className="absolute bottom-6 left-6 pr-6 text-white">
                       <p className="font-['Karla'] font-bold text-lg tracking-widest text-[#FF4F00] uppercase mb-2">
-                        {item.owner}
+                        {getLocalizedField(item, "preTitolo", lang) || item.preTitolo || item.owner}
                       </p>
                       <h3 className="heading-h3 leading-none group-hover:text-[#FF4F00] transition-colors uppercase">
                         {getLocalizedField(item, "titolo", lang) ||

@@ -1,17 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { storage, auth } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { UploadCloud, X, Loader2, Plus } from 'lucide-react';
+import { UploadCloud, X, Loader2, Plus, Image as ImageIcon } from 'lucide-react';
+import MediaPickerModal from './MediaPickerModal';
 
 interface MultiImageUploadProps {
   label: string;
   values: string[];
   onChange: (urls: string[]) => void;
   folder?: string;
+  hideMediaPicker?: boolean;
 }
 
-export default function MultiImageUpload({ label, values, onChange, folder = 'uploads' }: MultiImageUploadProps) {
+export default function MultiImageUpload({ label, values, onChange, folder = 'uploads', hideMediaPicker = false }: MultiImageUploadProps) {
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: number }>({});
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // We keep track of the results locally to handle parallel uploads correctly
@@ -28,7 +31,7 @@ export default function MultiImageUpload({ label, values, onChange, folder = 'up
     let currentUrls = [...values];
 
     files.forEach((file: File) => {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
         return;
       }
 
@@ -87,12 +90,27 @@ export default function MultiImageUpload({ label, values, onChange, folder = 'up
 
   return (
     <div className="mb-6">
-      <label className="block text-sm font-bold text-[#59554E] mb-3 uppercase tracking-widest">{label}</label>
+      <div className="flex justify-between items-end mb-3">
+        <label className="block text-sm font-bold text-[#59554E] uppercase tracking-widest">{label}</label>
+        {!hideMediaPicker && (
+           <button
+             type="button"
+             onClick={() => setShowMediaPicker(true)}
+             className="text-xs font-bold uppercase tracking-widest text-[#FF4F00] hover:underline flex items-center gap-1"
+           >
+             <ImageIcon size={14} /> Scegli da Archivio
+           </button>
+        )}
+      </div>
       
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {values.filter(url => url && url.trim() !== '').map((url, index) => (
           <div key={index} className="relative aspect-square bg-[#F2EEE8] rounded-2xl overflow-hidden border border-[#EAE3D9] group shadow-sm">
-            <img src={url} alt={`Gallery ${index}`} className="w-full h-full object-cover" />
+            {url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
+              <video src={url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            ) : (
+              <img src={url} alt={`Gallery ${index}`} className="w-full h-full object-cover" />
+            )}
             <button
               type="button"
               onClick={() => removeImage(index)}
@@ -126,10 +144,20 @@ export default function MultiImageUpload({ label, values, onChange, folder = 'up
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept="image/*,video/mp4,video/webm,video/quicktime"
         multiple
         className="hidden"
       />
+
+      {showMediaPicker && (
+         <MediaPickerModal 
+           onClose={() => setShowMediaPicker(false)}
+           onSelect={(url) => {
+              onChange([...values, url]);
+              setShowMediaPicker(false);
+           }}
+         />
+      )}
     </div>
   );
 }

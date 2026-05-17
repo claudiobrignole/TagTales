@@ -8,7 +8,7 @@ export interface ExhibitionBlock {
   text?: string;
   text_en?: string;
   backgroundColor?: 'black' | 'light';
-  images?: { url: string; ecwidLink?: string }[];
+  images?: { url: string; ecwidLink?: string; fallbackUrl?: string }[];
   videoUrl?: string;
 }
 
@@ -58,7 +58,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     onChange(newBlocks);
   };
 
-  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink', value: string) => {
+  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink' | 'fallbackUrl', value: string) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
@@ -170,6 +170,16 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                         onChange={url => updateImage(block.id, imgIndex, 'url', url)}
                         folder="exhibition-blocks"
                       />
+                      {img.url && img.url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <ImageUpload
+                            label={`Immagine Fallback ${imgIndex + 1} (SEO/Poster Opzionale)`}
+                            value={img.fallbackUrl || ''}
+                            onChange={url => updateImage(block.id, imgIndex, 'fallbackUrl', url)}
+                            folder="exhibition-blocks"
+                          />
+                        </div>
+                      )}
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Link prodotto Ecwid (Opzionale)</label>
                         <input
