@@ -3,8 +3,9 @@ import * as logger from "firebase-functions/logger";
 import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import * as crypto from "crypto";
 
-const ecwidWebhookSecret = defineSecret("ECWID_WEBHOOK_SECRET");
+const ecwidClientSecret = defineSecret("ECWID_CLIENT_SECRET");
 const ecwidStoreId = defineSecret("ECWID_STORE_ID");
 const ecwidToken = defineSecret("ECWID_SECRET_TOKEN");
 
@@ -40,7 +41,7 @@ const getAttribute = (item: any, attrName: string): any => {
 };
 
 export const ecwidWebhook = onRequest(
-  { secrets: [ecwidWebhookSecret, ecwidStoreId, ecwidToken], invoker: "public" },
+  { secrets: [ecwidClientSecret, ecwidStoreId, ecwidToken], invoker: "public", rawBody: true } as any,
   async (req: any, res: any) => {
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
@@ -53,11 +54,22 @@ export const ecwidWebhook = onRequest(
       return;
     }
 
-    const providedSecret = req.headers['x-ecwid-secret'];
-    const expectedSecret = ecwidWebhookSecret.value();
+    const providedSignature = req.headers['x-ecwid-signature'];
+    const expectedSecret = ecwidClientSecret.value();
 
-    if (providedSecret !== expectedSecret) {
-      logger.error("Invalid secret");
+    if (!providedSignature || !req.rawBody) {
+      logger.error("Missing signature or raw body");
+      res.status(401).send("Unauthorized");
+      return;
+    }
+
+    const calculatedSignature = crypto.createHmac('sha256', expectedSecret).update(req.rawBody).digest('base64');
+    
+    const providedBuffer = Buffer.from(providedSignature as string);
+    const calculatedBuffer = Buffer.from(calculatedSignature);
+
+    if (providedBuffer.length !== calculatedBuffer.length || !crypto.timingSafeEqual(providedBuffer, calculatedBuffer)) {
+      logger.error("Invalid signature");
       res.status(401).send("Unauthorized");
       return;
     }
