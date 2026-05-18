@@ -41,7 +41,7 @@ const getAttribute = (item: any, attrName: string): any => {
 };
 
 export const ecwidWebhook = onRequest(
-  { secrets: [ecwidClientSecret, ecwidStoreId, ecwidToken], invoker: "public", rawBody: true } as any,
+  { secrets: [ecwidClientSecret, ecwidStoreId, ecwidToken], invoker: "public", rawBody: true, minInstances: 1 } as any,
   async (req: any, res: any) => {
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
