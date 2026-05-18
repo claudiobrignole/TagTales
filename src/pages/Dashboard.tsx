@@ -7,6 +7,7 @@ import { TrendingUp, Palette, Receipt, ArrowRight, CreditCard, CheckCircle2, Cir
 import { Link, useNavigate } from 'react-router-dom';
 import ConnectionBanner from '../components/ConnectionBanner';
 import DirectChat from '../components/DirectChat';
+import EcwidPreviewModal from '../components/EcwidPreviewModal';
 import clsx from 'clsx';
 
 export default function Dashboard() {
@@ -21,6 +22,7 @@ export default function Dashboard() {
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [productIds, setProductIds] = useState<number[]>([]);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [onboarding, setOnboarding] = useState({
     show: false,
@@ -283,19 +285,21 @@ export default function Dashboard() {
                                     <ShoppingBag size={18} />
                                  </div>
                                  <span className="font-bold text-[#121212] text-sm truncate flex-1">Prodotto ID: {pid}</span>
-                                 <a 
-                                   href={`https://store.tagtalesgallery.com/products/${pid}`} 
-                                   target="_blank" 
-                                   rel="noreferrer"
-                                   className="text-xs uppercase font-bold tracking-wider text-[#FF4F00]"
+                                 <button 
+                                   onClick={() => setShowPreviewModal(true)}
+                                   className="text-xs uppercase font-bold tracking-wider text-[#FF4F00] hover:underline"
                                  >
                                     Vedi
-                                 </a>
+                                 </button>
                               </li>
                           ))}
                        </ul>
                     </div>
                 </div>
+            )}
+
+            {showPreviewModal && (
+              <EcwidPreviewModal productIds={productIds} onClose={() => setShowPreviewModal(false)} />
             )}
 
             <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
@@ -333,30 +337,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-6">
-                <h2 className="text-xl font-bold tracking-tight text-[#121212] mb-6">{t('dashboard.quickActions')}</h2>
-                <div className="space-y-3">
-                    <Link to="/app/artworks/upload" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
-                        <Palette size={20} />
-                        </div>
-                        <span className="font-bold text-[#121212]">{t('dashboard.uploadArtwork')}</span>
-                    </div>
-                    <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
-                    </Link>
-                    
-                    <Link to="/app/payments" className="w-full flex items-center justify-between p-4 rounded-2xl border border-[#EAE3D9] hover:border-[#FF4F00] hover:bg-[#FF4F00]/5 transition-all group">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#F2EEE8] rounded-xl text-[#59554E] group-hover:text-[#FF4F00] group-hover:bg-white transition-colors">
-                        <Receipt size={20} />
-                        </div>
-                        <span className="font-bold text-[#121212]">{t('dashboard.requestPayout')}</span>
-                    </div>
-                    <ArrowRight size={16} className="text-[#59554E] group-hover:text-[#FF4F00]" />
-                    </Link>
-                </div>
-            </div>
+
         </div>
       </div>
     </div>

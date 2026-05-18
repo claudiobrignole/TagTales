@@ -31,6 +31,7 @@ export default function AdminWriters() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [usersList, setUsersList] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     nickname: "",
@@ -60,6 +61,10 @@ export default function AdminWriters() {
       let q;
       if (userIsAdmin) {
         q = query(collection(db, "scrittori"), orderBy("createdAt", "desc"));
+        try {
+          const usersSnap = await getDocs(collection(db, "users"));
+          setUsersList(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        } catch(e) { console.error(e) }
       } else {
         q = query(collection(db, "scrittori"), where("uid", "==", user.uid));
       }
@@ -196,10 +201,22 @@ export default function AdminWriters() {
         return newBlock;
       }));
 
+      let ecwidProductIds: any[] = [];
+      const uidToSave = isAdmin ? formData.uid : (formData.uid || user.uid);
+      if (uidToSave) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", uidToSave));
+          if (userDoc.exists() && userDoc.data().ecwidProductIds) {
+             ecwidProductIds = userDoc.data().ecwidProductIds;
+          }
+        } catch (e) { console.error("Could not sync ecwid logic from users:", e) }
+      }
+
       const payload = {
         ...translatedData,
         blocks: translatedBlocks,
-        uid: isAdmin ? formData.uid : (formData.uid || user.uid),
+        uid: uidToSave,
+        ecwidProductIds,
         updatedAt: new Date().toISOString(),
       };
 
@@ -488,17 +505,22 @@ export default function AdminWriters() {
                   {isAdmin && (
                     <div>
                       <label className="block text-sm font-bold text-[#59554E] mb-2">
-                         Account ID (UID Firebase)
+                         Collega a Utente Firebase
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.uid}
                         onChange={(e) =>
                           setFormData({ ...formData, uid: e.target.value })
                         }
                         className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
-                        placeholder="Firebase User ID (opzionale)"
-                      />
+                      >
+                        <option value="">Nessun utente collegato</option>
+                        {usersList.map(u => (
+                          <option key={u.id} value={u.id}>
+                            {u.fullName || u.artistName || u.email} ({u.email})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>

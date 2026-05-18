@@ -363,6 +363,7 @@ export default function App() {
             />
             <Route path="/populate" element={<Populate />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/en/login" element={<Login />} />
             <Route
               path="/app"
               element={
@@ -382,6 +383,7 @@ export default function App() {
               <Route path="admin/payments" element={<AdminPayments />} />
               <Route path="admin/sales" element={<AdminSales />} />
               <Route path="admin/contracts" element={<AdminContracts />} />
+              <Route path="admin/drive" element={<Artworks />} />
               <Route path="admin/media" element={<AdminMedia />} />
               <Route path="admin/writers" element={<AdminWriters />} />
               <Route path="admin/exhibitions" element={<AdminExhibitions />} />

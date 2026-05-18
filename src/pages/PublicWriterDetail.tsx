@@ -6,7 +6,6 @@ import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
 import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { Film, Mail } from "lucide-react";
-import EcwidBuyButton from "../components/EcwidBuyButton";
 import { getLocalizedField } from "../utils/localization";
 import VideoEmbed from "../components/VideoEmbed";
 import { cleanHtml } from "../utils/cleanHtml";
@@ -22,7 +21,6 @@ export default function PublicWriterDetail() {
   const { language: lang } = useI18n();
 
   const [rawWriterData, setRawWriterData] = useState<any>(null);
-  const [artworks, setArtworks] = useState<any[]>([]);
   const [exhibitions, setExhibitions] = useState<any[]>([]);
   const [ecwidProducts, setEcwidProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,13 +55,6 @@ export default function PublicWriterDetail() {
             (window as any).fbq('track', 'ViewContent', { content_type: 'writer', content_ids: [docSnap.id] });
           }
 
-          // Fetch artworks
-          const artworksSnap = await getDocs(collection(db, "opere"));
-          const artworksData = artworksSnap.docs
-            .map(aDoc => ({ id: aDoc.id, ...aDoc.data() }))
-            .filter((a: any) => (a.artistaId === docSnap.id || (data.uid && a.artistaId === data.uid)) && a.published !== false && a.isPublished !== false);
-          setArtworks(artworksData);
-
           // Fetch exhibitions where writer is participant
           const exhibitionsSnap = await getDocs(collection(db, "mostre"));
           const exhibitionsData = exhibitionsSnap.docs
@@ -75,45 +66,60 @@ export default function PublicWriterDetail() {
           setExhibitions(exhibitionsData);
 
           // Fetch ecwid products if assigned
-          let userEcwidProductIds: any[] = [];
+          let userEcwidProductIds: any[] = data.ecwidProductIds || [];
           
-          if (data.uid) {
-            const userDoc = await getDoc(doc(db, "users", data.uid));
-            if (userDoc.exists()) {
-              userEcwidProductIds = userDoc.data().ecwidProductIds || [];
+          if (userEcwidProductIds.length === 0 && data.uid) {
+            try {
+              const userDoc = await getDoc(doc(db, "users", data.uid));
+              if (userDoc.exists()) {
+                userEcwidProductIds = userDoc.data().ecwidProductIds || [];
+              }
+            } catch (e: any) {
+              console.warn("Could not fetch user document for ecwidProductIds (missing permissions for public access, please resync products from Admin dashboard)");
             }
           }
 
           // Fallback if uid is not set or not matching
           if (userEcwidProductIds.length === 0) {
-            const writersSnap = await getDocs(query(collection(db, "users"), where("role", "in", ["writer", "artist"])));
-            writersSnap.forEach(uDoc => {
-              const uData = uDoc.data();
-              if (
-                (data.emailContatto && uData.email === data.emailContatto) ||
-                (data.nickname && uData.artistName === data.nickname) ||
-                (data.nomeDarte && uData.artistName === data.nomeDarte)
-              ) {
-                 if (uData.ecwidProductIds && uData.ecwidProductIds.length > 0) {
-                    userEcwidProductIds = uData.ecwidProductIds;
-                 }
-              }
-            });
+            try {
+              const writersSnap = await getDocs(query(collection(db, "users"), where("role", "in", ["writer", "artist"])));
+              writersSnap.forEach(uDoc => {
+                const uData = uDoc.data();
+                if (
+                  (data.emailContatto && uData.email === data.emailContatto) ||
+                  (data.nickname && uData.artistName === data.nickname) ||
+                  (data.nomeDarte && uData.artistName === data.nomeDarte)
+                ) {
+                   if (uData.ecwidProductIds && uData.ecwidProductIds.length > 0) {
+                      userEcwidProductIds = uData.ecwidProductIds;
+                   }
+                }
+              });
+            } catch (e: any) {
+              // Ignore public access error
+            }
           }
 
           if (userEcwidProductIds.length > 0) {
             try {
+              console.log("Fetching ecwid products for IDs:", userEcwidProductIds);
               const ecwidRes = await fetch("/api/ecwid/products");
               if (ecwidRes.ok) {
                 const ecwidData = await ecwidRes.json();
+                console.log("Total ecwid products fetched:", ecwidData.items?.length);
                 const allItems = ecwidData.items || [];
                 const safeIdsStr = userEcwidProductIds.map(String);
                 const writerProducts = allItems.filter((p: any) => safeIdsStr.includes(String(p.id)));
+                console.log("Matched ecwid products:", writerProducts);
                 setEcwidProducts(writerProducts);
+              } else {
+                console.error("Ecwid fetch failed with status:", ecwidRes.status);
               }
             } catch (e) {
               console.error("Failed to fetch ecwid products", e);
             }
+          } else {
+            console.log("No ecwid product IDs assigned to this writer.");
           }
         }
       } catch (error) {
@@ -306,66 +312,27 @@ export default function PublicWriterDetail() {
                <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8">
                  {t('writer.products', 'Prodotti in Vendita')}
                </h2>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                 {ecwidProducts.map((product) => (
-                   <div key={product.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group flex flex-col">
-                     <div className="aspect-[4/5] bg-[#F2EEE8] relative overflow-hidden">
-                       {product.imageUrl ? (
-                         <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>
-                       )}
+               <div className="space-y-4">
+                 {ecwidProducts.map(product => (
+                   <div key={product.id} className="flex items-center gap-4 p-4 border border-[#EAE3D9] rounded-xl hover:bg-[#F2EEE8]/30 transition-colors bg-white">
+                     {(product.thumbnailUrl || product.imageUrl) && (
+                       <img src={product.thumbnailUrl || product.imageUrl} alt={product.name} className="w-16 h-16 object-cover rounded-lg border border-[#EAE3D9]" />
+                     )}
+                     <div className="flex-1 min-w-0">
+                       <p className="font-bold text-[#121212] truncate">{product.name}</p>
+                       <p className="text-sm text-[#59554E]">{product.defaultDisplayedPriceFormatted || `${product.price?.toLocaleString()} Euro`}</p>
                      </div>
-                     <div className="p-6 flex-1 flex flex-col">
-                       <h3 className="font-bold text-2xl text-[#121212] font-['Shamgod'] uppercase mb-2 leading-none">{product.name}</h3>
-                       <div className="prose prose-sm font-['Karla'] mt-2 flex-grow text-[#59554E]" dangerouslySetInnerHTML={{ __html: cleanHtml(product.description || '') }} />
-                       <div className="flex justify-between items-center pt-4 border-t border-[#EAE3D9] mt-6">
-                          <span className="font-bold text-xl text-[#FF4F00]">{product.price?.toLocaleString()} Euro</span>
-                          <EcwidBuyButton productId={product.id} />
-                       </div>
-                     </div>
+                     {product.url ? (
+                       <a href={product.url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#121212] text-white text-xs font-bold rounded-lg hover:bg-black transition-colors shrink-0">
+                         {t('writer.goToStore', 'Vai allo store')}
+                       </a>
+                     ) : (
+                       <span className="text-xs font-bold text-[#59554E] shrink-0">Non disponibile</span>
+                     )}
                    </div>
                  ))}
                </div>
              </div>
-          )}
-
-          {artworks.length > 0 && (
-            <div className="mt-16 pt-16 border-t border-[#121212]/10">
-              <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8">
-                {t('writer.artworks', 'Opere')}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {artworks.map((artwork) => (
-                  <div key={artwork.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group">
-                    <div className="aspect-[4/5] bg-[#F2EEE8] relative overflow-hidden">
-                      {artwork.immagineHiRes && artwork.immagineHiRes.trim() !== '' ? (
-                        <img src={artwork.immagineHiRes} alt={artwork.titolo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <h3 className="font-bold text-2xl text-[#121212] font-['Shamgod'] uppercase mb-2 leading-none">{getLocalizedField(artwork, 'titolo', lang) || artwork.titolo}</h3>
-                      <p className="text-sm text-[#59554E] font-bold tracking-wider uppercase mb-4">{artwork.anno} • {artwork.tecnica}</p>
-                      <div className="flex justify-between items-center pt-4 border-t border-[#EAE3D9]">
-                         <span className="font-bold text-xl text-[#FF4F00]">{artwork.prezzo?.toLocaleString() || '0'} Euro</span>
-                        
-                        {artwork.statoVendita === 'sold' || artwork.statoVendita === 'venduta' ? (
-                          <span className="px-6 py-3 rounded-full font-bold uppercase tracking-widest bg-[#EAE3D9] text-[#59554E]">Sold</span>
-                        ) : artwork.ecwidId ? (
-                          <EcwidBuyButton productId={artwork.ecwidId} />
-                        ) : (
-                          <button className="px-6 py-3 rounded-full font-bold uppercase tracking-widest text-[#121212] border-2 border-[#121212] hover:bg-[#121212] hover:text-white transition-colors" disabled>
-                            Non Disponibile
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           )}
         </motion.div>
       </div>

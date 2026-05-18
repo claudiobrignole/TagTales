@@ -194,7 +194,7 @@ export default function Artworks() {
             {t('myArtworks', 'Le mie opere')}
           </h1>
           <p className="text-[#59554E] text-lg">
-            {isAdmin ? 'Gestisci i materiali inviati dai writer tramite Google Drive' : 'Visualizza e carica i tuoi materiali audio/video nelle cartelle Assegnate'}
+            {isAdmin ? t('artworks.subtitleAdmin') : t('artworks.subtitleWriter')}
           </p>
         </div>
         {isAdmin && (
@@ -208,25 +208,6 @@ export default function Artworks() {
         )}
       </header>
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-[#EAE3D9]">
-        <div className="flex gap-2 text-xs overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-          <button
-            onClick={() => setFilter('all')}
-            className={clsx("px-4 py-2 rounded-full font-bold uppercase tracking-widest whitespace-nowrap transition-all", filter === 'all' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#59554E]")}
-          >
-            Tutti
-          </button>
-          {statuses.map(s => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={clsx("px-4 py-2 rounded-full font-bold uppercase tracking-widest whitespace-nowrap transition-all", filter === s ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#59554E]")}
-            >
-              {getStatusLabel(s)}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
         {filteredArtworks.length === 0 ? (

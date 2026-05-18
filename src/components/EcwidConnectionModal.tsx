@@ -68,6 +68,43 @@ export default function EcwidConnectionModal({ user, onClose, onSave }: EcwidCon
       await updateDoc(doc(db, 'users', user.id), {
         ecwidProductIds: selectedProductIds
       });
+      
+      // Also sync over to linked 'scrittori' profiles for public access
+      const { query, collection, where, getDocs, or } = await import('firebase/firestore');
+      
+      const scrittoriRef = collection(db, 'scrittori');
+      // Search by exact uid match, OR matching email, OR matching artist name
+      const conditions = [where('uid', '==', user.id)];
+      if (user.email) conditions.push(where('emailContatto', '==', user.email));
+      if (user.artistName) {
+        conditions.push(where('nomeDarte', '==', user.artistName));
+        conditions.push(where('nickname', '==', user.artistName));
+      }
+
+      // getDocs in chunks or sequentially since 'or' might have limits if we don't index properly
+      // Actually doing it sequentially is safer to avoid "index required" errors on OR queries.
+      const syncToScrittori = async (q: any) => {
+         try {
+           const snap = await getDocs(q);
+           const updatePromises = snap.docs.map(docSnap => 
+             updateDoc(doc(db, 'scrittori', docSnap.id), {
+               ecwidProductIds: selectedProductIds,
+               uid: user.id // Fix the missing uid link while we're at it!
+             })
+           );
+           await Promise.all(updatePromises);
+         } catch (e) {
+           console.warn("Failed to query scrittori for sync:", e);
+         }
+      };
+
+      await syncToScrittori(query(scrittoriRef, where('uid', '==', user.id)));
+      if (user.email) await syncToScrittori(query(scrittoriRef, where('emailContatto', '==', user.email)));
+      if (user.artistName) {
+        await syncToScrittori(query(scrittoriRef, where('nomeDarte', '==', user.artistName)));
+        await syncToScrittori(query(scrittoriRef, where('nickname', '==', user.artistName)));
+      }
+
       onSave(user.id, selectedProductIds);
     } catch (err: any) {
       console.error(err);

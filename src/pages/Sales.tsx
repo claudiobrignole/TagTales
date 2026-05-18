@@ -141,7 +141,7 @@ export default function Sales() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#121212] p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
           <p className="text-sm font-bold text-white/70 uppercase tracking-widest mb-4">{t('sales.totalEarnings')} ({t('sales.filtered')})</p>
-          <h3 className="text-5xl font-black tracking-tighter">{totalEarnings.toLocaleString()} {t('common.amount')}</h3>
+          <h3 className="text-5xl font-black tracking-tighter">{totalEarnings.toLocaleString()} €</h3>
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9] flex flex-col justify-between">
           <p className="text-sm font-bold text-[#59554E] uppercase tracking-widest mb-4">{t('sales.artworksSold')}</p>
@@ -150,7 +150,7 @@ export default function Sales() {
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9] flex flex-col justify-between">
           <p className="text-sm font-bold text-[#59554E] uppercase tracking-widest mb-4">{t('sales.avgPrice')}</p>
           <h3 className="text-5xl font-black tracking-tighter text-[#121212]">
-            {filteredSales.length > 0 ? Math.round(totalEarnings / filteredSales.length).toLocaleString() : 0} {t('common.amount')}
+            {filteredSales.length > 0 ? Math.round(totalEarnings / filteredSales.length).toLocaleString() : 0} €
           </h3>
         </div>
       </div>
