@@ -26,10 +26,12 @@ import MultiImageUpload from "../components/MultiImageUpload";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { translateDirtyFields } from "../utils/translate";
+import { useI18n } from '../contexts/I18nContext';
 
 import { generateSlug } from "../utils/slugify";
 
 export default function AdminArticles() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +194,7 @@ export default function AdminArticles() {
       );
       
       setSaveProgress(80);
-      setSaveStatus("Salvataggio...");
+      setSaveStatus(t('adminArticles.saving', 'Salvataggio...'));
 
       const payload = {
         ...translatedData,
@@ -209,7 +211,7 @@ export default function AdminArticles() {
         });
       }
       setSaveProgress(100);
-      setSaveStatus("Salvato!");
+      setSaveStatus(t('adminArticles.saved', 'Salvato!'));
       setTimeout(() => {
         handleCloseModal();
         fetchArticles();
@@ -219,7 +221,7 @@ export default function AdminArticles() {
       }, 1000);
     } catch (error) {
       console.error("Error saving article:", error);
-      alert("Errore durante il salvataggio dell'articolo.");
+      alert(t('adminArticles.saveError', "Errore durante il salvataggio dell'articolo."));
       setIsSaving(false);
       setSaveProgress(0);
       setSaveStatus("");
@@ -278,7 +280,7 @@ export default function AdminArticles() {
     } catch (error) {
       console.error("Error deleting article:", error);
       handleFirestoreError(error, OperationType.DELETE, `articoli/${id}`);
-      alert("Errore nell'eliminazione dell'articolo: " + (error instanceof Error ? error.message : String(error)));
+      alert(t('adminArticles.deleteError', "Errore nell'eliminazione dell'articolo: ") + (error instanceof Error ? error.message : String(error)));
       fetchArticles(); // revert optimistic update
     }
   };
@@ -295,30 +297,29 @@ export default function AdminArticles() {
         className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold font-['Shamgod'] uppercase text-[#121212] mb-2 tracking-widest text-[8vw] md:text-[50px] leading-none">
-            Gestione Magazine
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
+            {t('adminArticles.title', 'Gestione Magazine')}
           </h1>
           <p className="text-[#59554E]">
-            Gestisci articoli e notizie per la sezione magazine pubblica.
+            {t('adminArticles.subtitle', 'Gestisci articoli e notizie per la sezione magazine pubblica.')}
           </p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
         >
-          <Plus size={20} /> Aggiungi Articolo
+          <Plus size={20} /> {t('adminArticles.addArticle', 'Aggiungi Articolo')}
         </button>
       </motion.div>
 
       {loading ? (
         <div className="flex justify-center items-center py-20">
-          Caricamento...
+          {t('adminArticles.loading', 'Caricamento...')}
         </div>
       ) : articles.length === 0 ? (
         <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-8 md:p-12 text-center text-[#59554E]">
           <p>
-            Nessun articolo aggiunto. Clicca "Aggiungi Articolo" per scrivere il
-            primo.
+            {t('adminArticles.noArticles', 'Nessun articolo aggiunto. Clicca "Aggiungi Articolo" per scrivere il primo.')}
           </p>
         </div>
       ) : (
@@ -378,7 +379,7 @@ export default function AdminArticles() {
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
-                    {article.published ? "Pubblicato" : "Bozza"}
+                    {article.published ? t('adminArticles.statusPublished', "Pubblicato") : t('adminArticles.statusDraft', "Bozza")}
                   </span>
                 </div>
                 <h3 className="font-bold text-lg text-[#121212] font-['Shamgod'] uppercase tracking-wider mb-1 leading-tight truncate">
@@ -423,23 +424,23 @@ export default function AdminArticles() {
               className="bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center"
             >
               <h3 className="font-['Shamgod'] text-2xl uppercase mb-4 text-[#121212]">
-                Conferma Eliminazione
+                {t('adminArticles.confirmDelete', 'Conferma Eliminazione')}
               </h3>
-              <p className="text-[#59554E] mb-6">
-                Sei sicuro di voler eliminare questo articolo? L'azione non può essere annullata.
-              </p>
+            <p className="text-[#59554E] mb-6">
+              {t('adminArticles.deleteWarning', "Sei sicuro di voler eliminare questo articolo? L'azione non può essere annullata.")}
+            </p>
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => setItemToDelete(null)}
                   className="px-6 py-2 rounded-full font-bold uppercase tracking-wider bg-gray-100 hover:bg-gray-200 text-[#121212] transition-colors"
                 >
-                  Annulla
+                  {t('adminArticles.cancel', 'Annulla')}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="px-6 py-2 rounded-full font-bold uppercase tracking-wider bg-red-500 hover:bg-red-600 text-white transition-colors"
                 >
-                  Elimina
+                  {t('adminArticles.delete', 'Elimina')}
                 </button>
               </div>
             </motion.div>
@@ -458,7 +459,7 @@ export default function AdminArticles() {
             >
               <div className="flex items-center justify-between p-6 border-b border-[#EAE3D9] sticky top-0 bg-[#F2EEE8] z-10">
                 <h2 className="text-2xl font-bold font-['Shamgod'] uppercase text-[#121212] tracking-widest">
-                  {editingId ? "Modifica Articolo" : "Scrivi Nuovo Articolo"}
+                  {editingId ? t('adminArticles.editArticle', "Modifica Articolo") : t('adminArticles.writeNew', "Scrivi Nuovo Articolo")}
                 </h2>
                 <button
                   onClick={handleCloseModal}
@@ -691,7 +692,7 @@ export default function AdminArticles() {
                           }}
                           className="bg-[#121212] text-white px-4 py-2 rounded-xl text-xs font-bold uppercase"
                         >
-                          Aggiungi
+                          {t('adminArticles.add', 'Aggiungi')}
                         </button>
                       </div>
                     </div>
@@ -766,7 +767,7 @@ export default function AdminArticles() {
                     onClick={handleCloseModal}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-[#59554E] hover:bg-white transition-colors"
                   >
-                    Annulla
+                    {t('adminArticles.cancel', 'Annulla')}
                   </button>
                   <button
                     type="button"
@@ -774,14 +775,14 @@ export default function AdminArticles() {
                     disabled={isSaving}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-white bg-blue-500 hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Forza Traduzione
+                    {t('common.forceTranslate', 'Forza Traduzione')}
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-white bg-[#FF4F00] hover:bg-[#121212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSaving ? "Salvataggio..." : editingId ? "Salva Modifiche" : "Pubblica Articolo"}
+                    {isSaving ? t('adminArticles.saving', "Salvataggio...") : editingId ? t('adminArticles.saveChanges', "Salva Modifiche") : t('adminArticles.publishArticle', "Pubblica Articolo")}
                   </button>
                 </div>
               </form>

@@ -435,7 +435,7 @@ export default function SEOManager() {
     <div className="w-full space-y-8 font-['Karla']">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-['Shamgod'] uppercase">
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
             SEO Manager
           </h1>
           <p className="text-[#59554E] mt-2">

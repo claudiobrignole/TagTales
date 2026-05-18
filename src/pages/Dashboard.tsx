@@ -52,10 +52,9 @@ export default function Dashboard() {
         const productIds = userData.ecwidProductIds || [];
 
         // Check onboarding steps
-        const hasName = !!(userData.artistName || userData.fullName || userData.displayName || (userData.firstName && userData.lastName));
-        const hasBio = !!userData.bio;
-        const hasPhoto = !!userData.profilePictureUrl;
-        const profileComplete = hasName && hasBio && hasPhoto;
+        const requiredProfileFields = ['firstName', 'lastName', 'artistName', 'phone', 'address', 'city', 'country', 'vatNumber', 'accountHolder', 'iban', 'bic', 'bankName'];
+        const missingFields = requiredProfileFields.filter(f => !userData[f]);
+        const profileComplete = missingFields.length === 0;
 
         const isAdmin = userData.role === 'admin' || user.email?.toLowerCase() === 'claudio@brignole.ch';
         if (isAdmin) {
@@ -63,7 +62,7 @@ export default function Dashboard() {
           return;
         }
 
-        const bankComplete = !!(userData.bankIban && userData.bankBic);
+        const bankComplete = !!((userData.iban || userData.bankIban) && (userData.bic || userData.bankBic));
 
         const contractsQ = query(collection(db, 'contratti'), where('artistaId', '==', user.uid), where('stato', '==', 'approvato'));
         const contractsSnapshot = await getDocs(contractsQ);
@@ -274,7 +273,7 @@ export default function Dashboard() {
                 <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] overflow-hidden">
                     <div className="p-6 border-b border-[#EAE3D9]">
                         <h2 className="text-xl font-bold tracking-tight text-[#121212] flex items-center gap-2">
-                           <ShoppingBag size={20} className="text-[#FF4F00]"/> {t('productsConnected', 'Prodotti Connessi')}
+                           <ShoppingBag size={20} className="text-[#FF4F00]"/> {t('dashboard.productsConnected')}
                         </h2>
                     </div>
                     <div className="p-0">
@@ -284,12 +283,12 @@ export default function Dashboard() {
                                  <div className="w-10 h-10 bg-[#F2EEE8] rounded-xl flex items-center justify-center text-[#59554E]">
                                     <ShoppingBag size={18} />
                                  </div>
-                                 <span className="font-bold text-[#121212] text-sm truncate flex-1">Prodotto ID: {pid}</span>
+                                 <span className="font-bold text-[#121212] text-sm truncate flex-1">{t('dashboard.productId', { pid })}</span>
                                  <button 
                                    onClick={() => setShowPreviewModal(true)}
                                    className="text-xs uppercase font-bold tracking-wider text-[#FF4F00] hover:underline"
                                  >
-                                    Vedi
+                                    {t('dashboard.view')}
                                  </button>
                               </li>
                           ))}

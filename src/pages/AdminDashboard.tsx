@@ -84,10 +84,12 @@ export default function AdminDashboard() {
     fetchStats();
   }, [user]);
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   const runTranslations = async () => {
-    if (!window.confirm("Sei sicuro di voler avviare la traduzione di tutti i contenuti mancanti? L'operazione potrebbe richiedere alcuni minuti.")) return;
+    setShowConfirmModal(false);
     
-    setTranslationState({ running: true, progress: 0, total: 1, status: 'Calcolo elementi da tradurre...' });
+    setTranslationState({ running: true, progress: 0, total: 1, status: t('adminDashboard.calcElements', 'Calcolo elementi da tradurre...') });
     
     try {
       const docsToUpdate = [];
@@ -157,11 +159,11 @@ export default function AdminDashboard() {
       }
 
       if (docsToUpdate.length === 0) {
-        setTranslationState({ running: false, progress: 0, total: 0, status: `Tutti i contenuti sono già tradotti o non necessitano di traduzione.` });
+        setTranslationState({ running: false, progress: 0, total: 0, status: t('adminDashboard.allTranslated', `Tutti i contenuti sono già tradotti o non necessitano di traduzione.`) });
         return;
       }
 
-      setTranslationState({ running: true, progress: 0, total: docsToUpdate.length, status: `Trovati ${docsToUpdate.length} elementi da tradurre. Inizio traduzione...` });
+      setTranslationState({ running: true, progress: 0, total: docsToUpdate.length, status: t('adminDashboard.foundElements', `Trovati {{count}} elementi da tradurre. Inizio traduzione...`, { count: docsToUpdate.length }) });
 
       let completed = 0;
       for (const item of docsToUpdate) {
@@ -236,17 +238,17 @@ export default function AdminDashboard() {
              await updateDoc(item.ref, updates);
           }
           completed++;
-          setTranslationState(prev => ({ ...prev, progress: completed, status: `Tradotti ${completed} su ${docsToUpdate.length}...` }));
+          setTranslationState(prev => ({ ...prev, progress: completed, status: t('adminDashboard.translatedCount', `Tradotti {{completed}} su {{total}}...`, { completed, total: docsToUpdate.length }) }));
         } catch (e) {
           console.error("Error translating doc", item.ref.id, e);
         }
       }
       
-      setTranslationState({ running: false, progress: completed, total: docsToUpdate.length, status: `Traduzione di ${docsToUpdate.length} elementi completata con successo!` });
+      setTranslationState({ running: false, progress: completed, total: docsToUpdate.length, status: t('adminDashboard.translationDone', `Traduzione di {{count}} elementi completata con successo!`, { count: docsToUpdate.length }) });
       
     } catch (e) {
       console.error(e);
-      setTranslationState({ running: false, progress: 0, total: 0, status: 'Errore durante la traduzione.' });
+      setTranslationState({ running: false, progress: 0, total: 0, status: t('adminDashboard.translationError', 'Errore durante la traduzione.') });
     }
   };
 
@@ -264,7 +266,7 @@ export default function AdminDashboard() {
   return (
     <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-8">
-        <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('adminDashboard.title')}</h1>
+        <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">{t('adminDashboard.title')}</h1>
         <p className="text-[#59554E] text-lg">{t('adminDashboard.subtitle')}</p>
       </header>
 
@@ -292,7 +294,7 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm text-[#59554E] font-medium uppercase tracking-wider">Google Analytics</p>
             <p className="text-sm font-bold text-[#121212] flex items-center gap-1">
-              Apri dashboard ↗
+              {t('adminDashboard.openDashboard')}
             </p>
           </div>
         </a>
@@ -301,12 +303,12 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-6 h-[600px] flex flex-col">
-            <h2 className="text-xl font-bold text-[#121212] mb-4">Seleziona Writer</h2>
+            <h2 className="text-xl font-bold text-[#121212] mb-4">{t('adminDashboard.selectWriter')}</h2>
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#59554E]" size={18} />
               <input
                 type="text"
-                placeholder="Cerca nome..."
+                placeholder={t('adminDashboard.searchWriter')}
                 value={writerSearch}
                 onChange={(e) => setWriterSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-[#F2EEE8] border-transparent rounded-xl text-sm focus:ring-2 focus:ring-[#FF4F00] outline-none transition-all"
@@ -341,7 +343,7 @@ export default function AdminDashboard() {
             />
           ) : (
              <div className="h-full flex items-center justify-center bg-white rounded-3xl border border-[#EAE3D9] text-[#59554E]">
-               Seleziona un writer per iniziare a chattare
+               {t('adminDashboard.selectWriterToChat')}
              </div>
           )}
         </div>
@@ -353,8 +355,8 @@ export default function AdminDashboard() {
             <Globe size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#121212]">Traduzioni Automatiche (Batch)</h2>
-            <p className="text-sm text-[#59554E] mt-1">Traduci tutto il contenuto esistente (Mostre, Magazine, Pagine, Writers) che non è ancora stato tradotto in inglese.</p>
+            <h2 className="text-xl font-bold text-[#121212]">{t('adminDashboard.batchTranslation')}</h2>
+            <p className="text-sm text-[#59554E] mt-1">{t('adminDashboard.batchTranslationDesc')}</p>
           </div>
         </div>
 
@@ -368,20 +370,49 @@ export default function AdminDashboard() {
         )}
 
         <button
-          onClick={runTranslations}
+          onClick={() => setShowConfirmModal(true)}
           disabled={translationState.running}
           className="flex items-center gap-2 px-6 py-3 bg-[#121212] text-white rounded-xl font-bold hover:bg-[#FF4F00] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {translationState.running ? (
             <>
               <Loader2 size={18} className="animate-spin" />
-              IN CORSO...
+              {t('adminDashboard.translating')}
             </>
           ) : (
-            'AVVIA TRADUZIONE CONTENUTI'
+            t('adminDashboard.runTranslation')
           )}
         </button>
       </div>
+
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-[#EAE3D9]">
+            <div className="p-6 text-center">
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">
+                {t('adminDashboard.confirmTranslation', 'Conferma Traduzione')}
+              </h2>
+              <p className="text-[#59554E] text-sm mb-6 font-['Karla']">
+                {t('adminDashboard.translationWarning', "Sei sicuro di voler avviare la traduzione di tutti i contenuti mancanti? L'operazione potrebbe richiedere alcuni minuti.")}
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
+                >
+                  {t('common.cancel', 'Annulla')}
+                </button>
+                <button
+                  onClick={runTranslations}
+                  className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs shadow-md shadow-[#FF4F00]/20"
+                >
+                  {t('common.confirm', 'Conferma')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

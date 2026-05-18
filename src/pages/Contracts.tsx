@@ -89,8 +89,7 @@ export default function Contracts() {
                       (contract.stato || contract.status) === 'signed' ? "bg-green-100 text-green-700" : 
                       (contract.stato || contract.status) === 'expired' ? "bg-gray-100 text-gray-700" : "bg-yellow-100 text-yellow-700"
                     )}>
-                      {(contract.stato || contract.status) === 'signed' ? 'Archiviato e Firmato' : 
-                       (contract.stato || contract.status) === 'expired' ? 'Expired' : 'In attesa'}
+                      {t(`contracts.status.${(contract.stato || contract.status) === 'signed' ? 'signed' : (contract.stato || contract.status) === 'expired' ? 'expired' : 'pending'}`)}
                     </span>
                   </div>
                 </div>
@@ -104,7 +103,7 @@ export default function Contracts() {
                       className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors shadow-sm"
                     >
                       <ExternalLink size={18} />
-                      <span>Apri Documento</span>
+                      <span>{t('contracts.openDocument')}</span>
                     </a>
                   )}
                   <button

@@ -12,7 +12,10 @@ const STATIC_PAGES = [
 
 import { translateDirtyFields, translateText, translateObjectFields } from '../utils/translate';
 
+import { useTranslation } from 'react-i18next';
+
 export default function AdminPages() {
+  const { t } = useTranslation();
   const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -181,7 +184,7 @@ export default function AdminPages() {
       await fetchPages();
     } catch(err) {
       console.error(err);
-      alert('Errore al salvataggio');
+      alert(t('adminPages.saveError', 'Errore al salvataggio'));
     } finally {
       setSaving(false);
     }
@@ -191,7 +194,7 @@ export default function AdminPages() {
     if (!pageToDelete) return;
     try {
       if (pageToDelete.isStatic) {
-        alert("Non puoi eliminare una pagina di sistema, puoi solo svuotarne il contenuto.");
+        alert(t('adminPages.systemPageError', "Non puoi eliminare una pagina di sistema, puoi solo svuotarne il contenuto."));
         setPageToDelete(null);
         return;
       }
@@ -199,7 +202,7 @@ export default function AdminPages() {
       await fetchPages();
     } catch(err) {
       console.error(err);
-      alert('Errore durante l\'eliminazione della pagina: ' + (err instanceof Error ? err.message : 'Errore sconosciuto'));
+      alert(t('adminPages.deleteError', 'Errore durante l\'eliminazione della pagina: ') + (err instanceof Error ? err.message : 'Errore sconosciuto'));
     } finally {
       setPageToDelete(null);
     }
@@ -207,7 +210,7 @@ export default function AdminPages() {
 
   const handleDelete = (id: string, isStatic: boolean) => {
     if (isStatic) {
-        alert("Non puoi eliminare una pagina di sistema, puoi solo svuotarne il contenuto.");
+        alert(t('adminPages.systemPageError', "Non puoi eliminare una pagina di sistema, puoi solo svuotarne il contenuto."));
         return;
     }
     setPageToDelete({ id, isStatic });
@@ -223,14 +226,14 @@ export default function AdminPages() {
     <div className="w-full space-y-12 font-['Karla'] pb-20">
       <header className="flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 border-b border-[#EAE3D9] pb-8">
         <div>
-          <h1 className="text-[10vw] md:text-[60px] lg:text-[80px] font-['Shamgod'] uppercase leading-[0.8] mb-4">Pagine Statiche</h1>
-          <p className="text-[#59554E] text-lg max-w-2xl">Gestisci i contenuti e il layout modulare delle pagine istituzionali. Puoi aggiungere blocchi di testo, immagini, video e moduli speciali.</p>
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">{t('adminPages.title', 'Pagine Statiche')}</h1>
+          <p className="text-[#59554E] text-lg max-w-2xl">{t('adminPages.subtitle', 'Gestisci i contenuti e il layout modulare delle pagine istituzionali. Puoi aggiungere blocchi di testo, immagini, video e moduli speciali.')}</p>
         </div>
         <button 
           onClick={() => handleOpenModal()} 
           className="bg-[#121212] hover:bg-[#FF4F00] text-white font-bold py-4 px-8 rounded-full transition-all flex items-center gap-2 uppercase tracking-widest text-xs"
         >
-          <Plus size={20} /> Nuova Pagina
+          <Plus size={20} /> {t('adminPages.newPage', 'Nuova Pagina')}
         </button>
       </header>
 
@@ -253,7 +256,7 @@ export default function AdminPages() {
                 <h3 className="text-2xl font-['Shamgod'] uppercase leading-none mb-2">{page.titolo}</h3>
                 <p className="text-xs font-bold text-[#59554E] uppercase tracking-widest opacity-60">ID: {page.id}</p>
                 {!page.published && (
-                    <span className="inline-block mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase rounded-full">Bozza</span>
+                    <span className="inline-block mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase rounded-full">{t('adminPages.statusDraft', 'Bozza')}</span>
                 )}
               </div>
 
@@ -288,20 +291,20 @@ export default function AdminPages() {
               className="bg-white rounded-[32px] p-8 max-w-sm w-full border border-[#EAE3D9] shadow-xl text-center"
             >
               <Trash2 size={48} className="mx-auto text-red-500 mb-6" />
-              <h3 className="text-2xl font-['Shamgod'] uppercase mb-4">Elimina Pagina</h3>
-              <p className="text-[#59554E] mb-8 font-['Karla']">Sei sicuro di voler eliminare questa pagina? L'azione è irreversibile.</p>
+              <h3 className="text-2xl font-['Shamgod'] uppercase mb-4">{t('adminPages.deletePage', 'Elimina Pagina')}</h3>
+              <p className="text-[#59554E] mb-8 font-['Karla']">{t('adminPages.deleteWarning', "Sei sicuro di voler eliminare questa pagina? L'azione è irreversibile.")}</p>
               <div className="flex gap-4">
                 <button 
                   onClick={() => setPageToDelete(null)}
                   className="flex-1 py-3 px-4 bg-[#F8F6F3] hover:bg-[#EAE3D9] text-[#121212] rounded-xl font-bold uppercase text-xs tracking-widest transition-colors font-['Karla']"
                 >
-                  Annulla
+                  {t('adminPages.cancel', 'Annulla')}
                 </button>
                 <button 
                   onClick={handleDeleteConfirm}
                   className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold uppercase text-xs tracking-widest transition-colors font-['Karla']"
                 >
-                  Elimina
+                  {t('adminPages.delete', 'Elimina')}
                 </button>
               </div>
             </motion.div>
@@ -321,7 +324,7 @@ export default function AdminPages() {
               <div className="flex items-center justify-between p-8 border-b border-[#EAE3D9] bg-white/50">
                 <div>
                     <h2 className="text-3xl font-['Shamgod'] uppercase leading-none tracking-widest">
-                        {editingId ? `Modifica: ${formData.titolo}` : 'Nuova Pagina'}
+                        {editingId ? `${t('adminPages.edit', 'Modifica:')} ${formData.titolo}` : t('adminPages.newPage', 'Nuova Pagina')}
                     </h2>
                     <p className="text-xs font-bold text-[#59554E] uppercase tracking-widest opacity-60 mt-1">
                         {editingId ? `ID: ${formData.id}` : 'Inserisci i dettagli della pagina'}
@@ -343,7 +346,7 @@ export default function AdminPages() {
                             onChange={e => setFormData({ ...formData, id: e.target.value.toLowerCase().replace(/\s/g, '-') })}
                             required
                             className="w-full bg-[#F8F6F3] text-[#121212] p-4 rounded-xl border border-transparent focus:border-[#FF4F00] outline-none font-bold uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                            placeholder="es. faq-nuova"
+                            placeholder={t('adminPages.placeholderId', "es. faq-nuova")}
                         />
                     </div>
                     <div className="space-y-4">
@@ -458,14 +461,14 @@ export default function AdminPages() {
                         onClick={handleCloseModal}
                         className="px-8 py-4 font-bold uppercase tracking-widest text-xs text-[#59554E] hover:bg-white rounded-full transition-all"
                     >
-                        Annulla
+                        {t('adminPages.cancel', 'Annulla')}
                     </button>
                     <button 
                         disabled={saving}
                         type="submit"
                         className="bg-[#FF4F00] hover:bg-[#121212] text-white font-bold py-4 px-10 rounded-full transition-all shadow-lg shadow-[#FF4F00]/20 flex items-center gap-2 uppercase tracking-widest text-xs"
                     >
-                        <Save size={18} /> {saving ? 'Salvataggio...' : 'Salva Modifiche'}
+                        <Save size={18} /> {saving ? t('adminPages.saving', 'Salvataggio...') : t('adminPages.saveChanges', 'Salva Modifiche')}
                     </button>
                 </div>
               </form>

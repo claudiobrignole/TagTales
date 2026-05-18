@@ -23,8 +23,10 @@ import ImageUpload from "../components/ImageUpload";
 import AdminExhibitionBlocksEditor from "../components/AdminExhibitionBlocksEditor";
 import { translateDirtyFields, translateText } from "../utils/translate";
 import { generateSlug } from "../utils/slugify";
+import { useI18n } from '../contexts/I18nContext';
 
 export default function AdminWriters() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [writers, setWriters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,19 +224,19 @@ export default function AdminWriters() {
 
       if (editingId) {
         await updateDoc(doc(db, "scrittori", editingId), payload);
-        alert("Writer aggiornato con successo!");
+        alert(t('adminWriters.updatedMsg', "Writer aggiornato con successo!"));
       } else {
         await addDoc(collection(db, "scrittori"), {
           ...payload,
           createdAt: new Date().toISOString(),
         });
-        alert("Writer creato con successo!");
+        alert(t('adminWriters.createdMsg', "Writer creato con successo!"));
       }
       handleCloseModal();
       fetchWriters();
     } catch (error) {
       console.error("Error saving writer:", error);
-      alert("Errore durante il salvataggio del writer.");
+      alert(t('adminWriters.saveError', "Errore durante il salvataggio del writer."));
     } finally {
       setIsSaving(false);
     }
@@ -292,7 +294,7 @@ export default function AdminWriters() {
     } catch (error) {
       console.error("Error deleting writer:", error);
       handleFirestoreError(error, OperationType.DELETE, `scrittori/${id}`);
-      alert("Errore nell'eliminazione del writer: " + (error instanceof Error ? error.message : String(error)));
+      alert(t('adminWriters.deleteError', "Errore nell'eliminazione del writer: ") + (error instanceof Error ? error.message : String(error)));
       fetchWriters(); // revert optimistic update
     }
   };
@@ -309,27 +311,27 @@ export default function AdminWriters() {
         className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold font-['Shamgod'] uppercase text-[#121212] mb-2 tracking-widest text-[8vw] md:text-[50px] leading-none">
-            Gestione Writers
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
+            {t('nav.writers', 'Gestione Writers')}
           </h1>
           <p className="text-[#59554E]">
-            Gestisci i profili pubblici dei writer graffiti.
+            {t('adminWriters.subtitle', 'Gestisci i profili pubblici dei writer graffiti.')}
           </p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
         >
-          <Plus size={20} /> Aggiungi Writer
+          <Plus size={20} /> {t('adminWriters.addWriter', 'Aggiungi Writer')}
         </button>
       </motion.div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">Caricamento...</div>
+        <div className="flex justify-center items-center py-20">{t('common.loading')}</div>
       ) : writers.length === 0 ? (
         <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-8 md:p-12 text-center text-[#59554E]">
           <p>
-            Nessun writer aggiunto. Clicca "Aggiungi Writer" per creare il primo profilo.
+            {t('adminWriters.noWriters', 'Nessun writer aggiunto. Clicca "Aggiungi Writer" per creare il primo profilo.')}
           </p>
         </div>
       ) : (
@@ -395,7 +397,7 @@ export default function AdminWriters() {
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
-                    {writer.published ? "Pubblicato" : "Bozza"}
+                    {writer.published ? t('adminWriters.statusPublished', "Pubblicato") : t('adminWriters.statusDraft', "Bozza")}
                   </span>
                 </div>
               </div>
@@ -429,23 +431,23 @@ export default function AdminWriters() {
               className="bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center"
             >
               <h3 className="font-['Shamgod'] text-2xl uppercase mb-4 text-[#121212]">
-                Conferma Eliminazione
+                {t('adminWriters.confirmDeleteTitle', 'Conferma Eliminazione')}
               </h3>
               <p className="text-[#59554E] mb-6">
-                Sei sicuro di voler eliminare questo writer? L'azione non può essere annullata.
+                {t('adminWriters.confirmDeleteDesc', "Sei sicuro di voler eliminare questo writer? L'azione non può essere annullata.")}
               </p>
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => setItemToDelete(null)}
                   className="px-6 py-2 rounded-full font-bold uppercase tracking-wider bg-gray-100 hover:bg-gray-200 text-[#121212] transition-colors"
                 >
-                  Annulla
+                  {t('common.cancel', 'Annulla')}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="px-6 py-2 rounded-full font-bold uppercase tracking-wider bg-red-500 hover:bg-red-600 text-white transition-colors"
                 >
-                  Elimina
+                  {t('common.delete', 'Elimina')}
                 </button>
               </div>
             </motion.div>
@@ -464,7 +466,7 @@ export default function AdminWriters() {
             >
               <div className="flex items-center justify-between p-6 border-b border-[#EAE3D9] sticky top-0 bg-[#F2EEE8] z-10">
                 <h2 className="text-2xl font-bold font-['Shamgod'] uppercase text-[#121212] tracking-widest">
-                  {editingId ? "Modifica Writer" : "Aggiungi Nuovo Writer"}
+                  {editingId ? t('adminWriters.editTitle', "Modifica Writer") : t('adminWriters.newTitle', "Aggiungi Nuovo Writer")}
                 </h2>
                 <button
                   onClick={handleCloseModal}
@@ -505,7 +507,7 @@ export default function AdminWriters() {
                   {isAdmin && (
                     <div>
                       <label className="block text-sm font-bold text-[#59554E] mb-2">
-                         Collega a Utente Firebase
+                         {t('adminWriters.linkUser', 'Collega a Utente Firebase')}
                       </label>
                       <select
                         value={formData.uid}
@@ -514,7 +516,7 @@ export default function AdminWriters() {
                         }
                         className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                       >
-                        <option value="">Nessun utente collegato</option>
+                        <option value="">{t('adminWriters.noUserLinked', 'Nessun utente collegato')}</option>
                         {usersList.map(u => (
                           <option key={u.id} value={u.id}>
                             {u.fullName || u.artistName || u.email} ({u.email})
@@ -528,7 +530,7 @@ export default function AdminWriters() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Città
+                      {t('adminWriters.city', 'Città')}
                     </label>
                     <input
                       type="text"
@@ -542,7 +544,7 @@ export default function AdminWriters() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Paese
+                      {t('adminWriters.country', 'Paese')}
                     </label>
                     <input
                       type="text"
@@ -559,7 +561,7 @@ export default function AdminWriters() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Biografia Breve *
+                      {t('adminWriters.shortBio', 'Biografia Breve *')}
                     </label>
                     <textarea
                       rows={4}
@@ -574,7 +576,7 @@ export default function AdminWriters() {
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-[#EAE3D9]">
-                  <h3 className="font-bold text-[#121212]">Media & Links</h3>
+                  <h3 className="font-bold text-[#121212]">{t('adminWriters.mediaLinks', 'Media & Links')}</h3>
                   <ImageUpload
                     label="Foto Profilo"
                     value={formData.fotoProfilo}
@@ -623,7 +625,7 @@ export default function AdminWriters() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Email di Contatto (Protetta, Opzionale)
+                      {t('adminWriters.contactEmail', 'Email di Contatto (Protetta, Opzionale)')}
                     </label>
                     <input
                       type="email"
@@ -640,7 +642,7 @@ export default function AdminWriters() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-[#59554E] mb-2">Video Embeds (YouTube/Vimeo)</label>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">{t('adminWriters.videoEmbeds', 'Video Embeds (YouTube/Vimeo)')}</label>
                     <div className="space-y-3">
                       {formData.videoEmbeds.map((url, index) => (
                         <div key={index} className="flex gap-2">
@@ -663,7 +665,7 @@ export default function AdminWriters() {
                         <input
                           type="text"
                           id="newVideoEmbedWriters"
-                          placeholder="Nuovo URL video..."
+                          placeholder={t('adminWriters.newVideoPlaceholder', 'Nuovo URL video...')}
                           className="flex-1 bg-white border border-[#EAE3D9] rounded-xl px-4 py-3"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -687,7 +689,7 @@ export default function AdminWriters() {
                           }}
                           className="bg-[#121212] text-white px-6 rounded-xl font-bold uppercase"
                         >
-                          Aggiungi
+                          {t('adminWriters.add', 'Aggiungi')}
                         </button>
                       </div>
                     </div>
@@ -723,14 +725,14 @@ export default function AdminWriters() {
                     </label>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-[#59554E] mb-2"> Stato Writer </label>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2"> {t('adminWriters.writerStatus', 'Stato Writer')} </label>
                     <select
                       value={formData.stato}
                       onChange={(e) => setFormData({ ...formData, stato: e.target.value as any })}
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                     >
-                      <option value="inattivo">Inattivo</option>
-                      <option value="attivo">Attivo</option>
+                      <option value="inattivo">{t('adminWriters.inactive', 'Inattivo')}</option>
+                      <option value="attivo">{t('adminWriters.active', 'Attivo')}</option>
                     </select>
                   </div>
                 </div>
@@ -741,14 +743,14 @@ export default function AdminWriters() {
                     onClick={handleCloseModal}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-[#59554E] hover:bg-white transition-colors"
                   >
-                    Annulla
+                    {t('common.cancel', 'Annulla')}
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-white bg-[#FF4F00] hover:bg-[#121212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSaving ? "Salvataggio..." : editingId ? "Salva Modifiche" : "Crea Writer"}
+                    {isSaving ? t('adminWriters.saving', "Salvataggio...") : editingId ? t('adminWriters.saveChanges', "Salva Modifiche") : t('adminWriters.createWriter', "Crea Writer")}
                   </button>
                 </div>
               </form>

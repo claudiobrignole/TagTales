@@ -34,7 +34,10 @@ import AdminExhibitionBlocksEditor from "../components/AdminExhibitionBlocksEdit
 import { translateDirtyFields, translateText } from "../utils/translate";
 import { generateSlug } from "../utils/slugify";
 
+import { useTranslation } from "react-i18next";
+
 export default function AdminExhibitions() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [exhibitions, setExhibitions] = useState<any[]>([]);
   const [writers, setWriters] = useState<any[]>([]);
@@ -204,7 +207,7 @@ export default function AdminExhibitions() {
       }));
 
       setSaveProgress(85);
-      setSaveStatus("Salvataggio su database...");
+      setSaveStatus(t('adminExhibitions.savingDb', "Salvataggio su database..."));
 
       const payload = {
         ...translatedData,
@@ -222,7 +225,7 @@ export default function AdminExhibitions() {
         });
       }
       setSaveProgress(100);
-      setSaveStatus("Mostra salvata con successo!");
+      setSaveStatus(t('adminExhibitions.savedSuccess', "Mostra salvata con successo!"));
       setTimeout(() => {
         handleCloseModal();
         fetchData();
@@ -232,7 +235,7 @@ export default function AdminExhibitions() {
       }, 1500);
     } catch (error) {
       console.error("Error saving exhibition:", error);
-      alert("Errore durante il salvataggio della mostra.");
+      alert(t('adminExhibitions.saveError', "Errore durante il salvataggio della mostra."));
       setIsSaving(false);
       setSaveProgress(0);
       setSaveStatus("");
@@ -296,7 +299,7 @@ export default function AdminExhibitions() {
     } catch (error) {
       console.error("Error deleting exhibition:", error);
       handleFirestoreError(error, OperationType.DELETE, `mostre/${id}`);
-      alert("Errore nell'eliminazione della mostra: " + (error instanceof Error ? error.message : String(error)));
+      alert(t('adminExhibitions.deleteError', "Errore nell'eliminazione della mostra: ") + (error instanceof Error ? error.message : String(error)));
       fetchData();
     }
   };
@@ -322,8 +325,8 @@ export default function AdminExhibitions() {
         className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold font-['Shamgod'] uppercase text-[#121212] mb-2 tracking-widest text-[8vw] md:text-[50px] leading-none">
-            Gestione Mostre
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
+            {t('adminDashboard.exhibitions', 'Gestione Mostre')}
           </h1>
           <p className="text-[#59554E]">
             Crea e gestisci le mini-mostre presentate sulla piattaforma.
@@ -333,16 +336,16 @@ export default function AdminExhibitions() {
           onClick={() => handleOpenModal()}
           className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
         >
-          <Plus size={20} /> Aggiungi Mostra
+          <Plus size={20} /> {t('adminExhibitions.addExhibition', 'Aggiungi Mostra')}
         </button>
       </motion.div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">Caricamento...</div>
+        <div className="flex justify-center items-center py-20">{t('adminExhibitions.loading', 'Caricamento...')}</div>
       ) : exhibitions.length === 0 ? (
         <div className="bg-white rounded-3xl shadow-sm border border-[#EAE3D9] p-8 md:p-12 text-center text-[#59554E]">
           <p>
-            Nessuna mostra aggiunta. Clicca "Aggiungi Mostra" per creare la prima.
+            {t('adminExhibitions.noExhibitions', 'Nessuna mostra aggiunta. Clicca "Aggiungi Mostra" per creare la prima.')}
           </p>
         </div>
       ) : (
@@ -413,11 +416,11 @@ export default function AdminExhibitions() {
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
-                    {exhibition.published ? "Pubblicata" : "Bozza"}
+                    {exhibition.published ? t('adminExhibitions.statusPublished', "Pubblicata") : t('adminExhibitions.statusDraft', "Bozza")}
                   </span>
                   {exhibition.featured && (
                     <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                      In Evidenza
+                      {t('adminExhibitions.statusFeatured', 'In Evidenza')}
                     </span>
                   )}
                 </div>
@@ -460,23 +463,23 @@ export default function AdminExhibitions() {
               className="bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center"
             >
               <h3 className="font-['Shamgod'] text-2xl uppercase mb-4 text-[#121212]">
-                Conferma Eliminazione
+                {t('adminExhibitions.confirmDelete', 'Conferma Eliminazione')}
               </h3>
               <p className="text-[#59554E] mb-6">
-                Sei sicuro di voler eliminare questa mostra? L'azione non può essere annullata.
+                {t('adminExhibitions.deleteWarning', "Sei sicuro di voler eliminare questa mostra? L'azione non può essere annullata.")}
               </p>
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => setItemToDelete(null)}
                   className="px-6 py-2 rounded-full font-bold uppercase tracking-wider bg-gray-100 hover:bg-gray-200 text-[#121212] transition-colors"
                 >
-                  Annulla
+                  {t('adminExhibitions.cancel', 'Annulla')}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="px-6 py-2 rounded-full font-bold uppercase tracking-wider bg-red-500 hover:bg-red-600 text-white transition-colors"
                 >
-                  Elimina
+                  {t('adminExhibitions.delete', 'Elimina')}
                 </button>
               </div>
             </motion.div>
@@ -495,7 +498,7 @@ export default function AdminExhibitions() {
             >
               <div className="flex items-center justify-between p-6 border-b border-[#EAE3D9] sticky top-0 bg-[#F2EEE8] z-10">
                 <h2 className="text-2xl font-bold font-['Shamgod'] uppercase text-[#121212] tracking-widest">
-                  {editingId ? "Modifica Mostra" : "Aggiungi Nuova Mostra"}
+                  {editingId ? t('adminExhibitions.editExhibition', "Modifica Mostra") : t('adminExhibitions.addNew', "Aggiungi Nuova Mostra")}
                 </h2>
                 <button
                   onClick={handleCloseModal}
@@ -636,7 +639,7 @@ export default function AdminExhibitions() {
                   <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto bg-white border border-[#EAE3D9] rounded-xl p-2">
                     {writers.length === 0 ? (
                       <p className="text-sm text-center text-[#59554E] p-4">
-                        Nessun writer trovato. Aggiungi i writer prima.
+                        {t('adminExhibitions.noWriters', 'Nessun writer trovato. Aggiungi i writer prima.')}
                       </p>
                     ) : (
                       writers.map((writer) => (
@@ -727,14 +730,14 @@ export default function AdminExhibitions() {
                     onClick={handleCloseModal}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-[#59554E] hover:bg-white transition-colors"
                   >
-                    Annulla
+                    {t('adminExhibitions.cancel', 'Annulla')}
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
                     className="px-6 py-3 rounded-full font-bold uppercase tracking-wider text-white bg-[#FF4F00] hover:bg-[#121212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSaving ? "Salvataggio..." : editingId ? "Salva Modifiche" : "Crea Mostra"}
+                    {isSaving ? t('adminExhibitions.savingDb', "Salvataggio...") : editingId ? t('adminExhibitions.saveChanges', "Salva Modifiche") : t('adminExhibitions.createExhibition', "Crea Mostra")}
                   </button>
                 </div>
               </form>

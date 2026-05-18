@@ -72,7 +72,7 @@ export default function AdminContracts() {
       setContracts(prev => prev.filter(c => c.id !== contractToDelete));
     } catch (error) {
       console.error("Error deleting contract:", error);
-      alert('Errore durante l\'eliminazione del contratto.');
+      alert(t('adminContracts.deleteError', 'Errore durante l\'eliminazione del contratto.'));
     } finally {
       setContractToDelete(null);
     }
@@ -97,14 +97,14 @@ export default function AdminContracts() {
         await createNotification(
           contract.artistaId || contract.artistId,
           "Contratto Validato",
-          `Il documento "${contract.title}" è stato verificato e contrassegnato come firmato.`,
+          t('adminContracts.contractValidatedMsg', `Il documento "{{title}}" è stato verificato e contrassegnato come firmato.`, { title: contract.title }),
           'contract',
           '/app/contracts'
         );
       }
     } catch (error) {
       console.error("Error marking contract as signed:", error);
-      alert('Errore durante l\'aggiornamento del contratto.');
+      alert(t('adminContracts.updateError', 'Errore durante l\'aggiornamento del contratto.'));
     }
   };
 
@@ -142,7 +142,7 @@ export default function AdminContracts() {
       await createNotification(
         newContract.writerId,
         "Nuovo Contratto in Revisione",
-        `Il documento "${newContract.title}" è in attesa della tua firma.`,
+        t('adminContracts.contractInReviewMsg', `Il documento "{{title}}" è in attesa della tua firma.`, { title: newContract.title }),
         'contract',
         '/app/contracts'
       );
@@ -166,8 +166,8 @@ export default function AdminContracts() {
     <div className="w-full space-y-8 font-['Karla'] pb-12">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-tight text-[#121212] mb-4">{t('adminContracts.title')}</h1>
-          <p className="text-[#59554E] text-lg">{t('adminContracts.subtitle') || 'Gestisci i contratti firmati tramite Google Docs'}</p>
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">{t('adminContracts.title')}</h1>
+          <p className="text-[#59554E] text-lg">{t('adminContracts.subtitle') || 'Manage contracts signed via Google Docs'}</p>
         </div>
         <button 
           onClick={() => setShowUploadModal(true)}
@@ -224,7 +224,7 @@ export default function AdminContracts() {
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shrink-0"
                         >
                           <CheckCircle size={14} />
-                          <span>Segna come Firmato</span>
+                          <span>{t('adminContracts.markSigned', 'Segna come Firmato')}</span>
                         </button>
                       )}
                       <a 
@@ -234,7 +234,7 @@ export default function AdminContracts() {
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors shrink-0"
                       >
                         <ExternalLink size={14} />
-                        <span>Apri Documento</span>
+                        <span>{t('adminContracts.openDocument', 'Apri Documento')}</span>
                       </a>
                       <button
                         onClick={() => setContractToDelete(contract.id)}
@@ -257,7 +257,7 @@ export default function AdminContracts() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center shrink-0">
-              <h2 className="text-2xl font-bold text-[#121212]">Archivia Contratto Firmato</h2>
+              <h2 className="text-2xl font-bold text-[#121212]">{t('adminContracts.archiveSigned', 'Archivia Contratto Firmato')}</h2>
               <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-[#F2EEE8] rounded-full transition-colors">
                 <X size={24} className="text-[#59554E]" />
               </button>
@@ -287,7 +287,7 @@ export default function AdminContracts() {
                     type="text"
                     value={writerSearch}
                     onChange={(e) => setWriterSearch(e.target.value)}
-                    placeholder="Cerca nome o email..."
+                    placeholder={t('adminContracts.searchNameEmail', "Cerca nome o email...")}
                     className="w-full pl-10 pr-4 py-3 bg-white border border-[#EAE3D9] rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none"
                   />
                 </div>
@@ -328,13 +328,13 @@ export default function AdminContracts() {
                            (w.artistName || '').toLowerCase().includes(search) || 
                            (w.email || '').toLowerCase().includes(search);
                   }).length === 0 && (
-                    <div className="p-4 text-center text-sm text-[#59554E]">Nessun writer trovato</div>
+                    <div className="p-4 text-center text-sm text-[#59554E]">{t('adminContracts.noWritersFound', 'Nessun writer trovato')}</div>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212]">Link Google Drive (PDF Firmato)</label>
+                <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212]">{t('adminContracts.driveLink', 'Link Google Drive (PDF Firmato)')}</label>
                 <input 
                   type="url" 
                   value={newContract.documentUrl}
@@ -343,7 +343,7 @@ export default function AdminContracts() {
                   placeholder="https://drive.google.com/file/d/..."
                   className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none" 
                 />
-                <p className="text-xs text-[#59554E]">Assicurati che il link condivida l'accesso in visualizzazione per il writer.</p>
+                <p className="text-xs text-[#59554E]">{t('adminContracts.driveLinkRule', "Assicurati che il link condivida l'accesso in visualizzazione per il writer.")}</p>
               </div>
               
               <div className="pt-4 flex justify-end gap-3 shrink-0">
@@ -359,7 +359,7 @@ export default function AdminContracts() {
                   disabled={uploading || !newContract.writerId}
                   className="px-6 py-3 rounded-full font-bold text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors disabled:opacity-50"
                 >
-                  {uploading ? "Salvataggio..." : "Salva Contratto"}
+                  {uploading ? t('adminContracts.saving', "Salvataggio...") : t('adminContracts.saveContract', "Salva Contratto")}
                 </button>
               </div>
             </form>
@@ -374,22 +374,22 @@ export default function AdminContracts() {
               <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 size={32} />
               </div>
-              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">{t('adminContracts.confirmDeleteTitle', 'Conferma Eliminazione')}</h2>
               <p className="text-[#59554E] text-sm mb-6">
-                Sei sicuro di voler eliminare questo contratto? Questa operazione non può essere annullata.
+                {t('adminContracts.confirmDeletePrompt', "Sei sicuro di voler eliminare questo contratto? Questa operazione non può essere annullata.")}
               </p>
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setContractToDelete(null)}
                   className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
                 >
-                  Annulla
+                  {t('common.cancel', 'Annulla')}
                 </button>
                 <button
                   onClick={confirmDeleteContract}
                   className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs shadow-md shadow-[#FF4F00]/20"
                 >
-                  Elimina
+                  {t('common.delete', 'Elimina')}
                 </button>
               </div>
             </div>

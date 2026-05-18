@@ -136,7 +136,7 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
     <div className="flex flex-col h-full min-h-[400px] w-full bg-white rounded-3xl border border-[#EAE3D9] overflow-hidden shadow-sm">
       <div className="p-4 bg-[#121212] text-white shrink-0 flex items-center justify-between">
          <h3 className="font-bold font-['Shamgod'] uppercase text-[25px] leading-none">
-           {isAdmin ? `Chat con ${recipientName || 'Writer'}` : 'Chat con l\'Amministrazione'}
+           {isAdmin ? t('chat.with', { name: recipientName || 'Writer' }) : t('chat.withAdmin')}
          </h3>
       </div>
       
@@ -147,7 +147,7 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
           </div>
         ) : messages.length === 0 ? (
           <div className="flex justify-center items-center h-full text-[#A39E93] text-sm">
-            Nessun messaggio. Scrivi qualcosa per iniziare.
+            No messages. Write something to start.
           </div>
         ) : (
           messages.map((msg) => {
@@ -186,7 +186,7 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
             onChange={(e) => setInput(e.target.value)}
             disabled={sending}
             className="flex-1 bg-[#F8F6F3] border-none rounded-full px-6 py-4 font-['Karla'] text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none placeholder:text-[#121212]/50 text-base"
-            placeholder="Scrivi un messaggio..."
+            placeholder={t('chat.placeholder')}
           />
           <button
             type="submit"

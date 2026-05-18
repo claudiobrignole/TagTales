@@ -159,7 +159,7 @@ export default function AdminSales() {
     <div className="w-full space-y-8 font-['Karla']">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('sales.allSalesTitle')}</h1>
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">{t('sales.allSalesTitle')}</h1>
           <p className="text-[#59554E] text-lg">{t('sales.allSalesSubtitle')}</p>
         </div>
         <div className="flex gap-4">
@@ -242,11 +242,11 @@ export default function AdminSales() {
               <tr className="border-b border-[#EAE3D9] bg-[#F2EEE8]/50">
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.orderId')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('common.date')}</th>
-                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">Writer</th>
+                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.writer')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.type')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.grossSalePrice')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.yourShare')}</th>
-                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">Piattaforma</th>
+                <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right">{t('sales.platform')}</th>
                 <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider">{t('sales.status')}</th>
               </tr>
             </thead>

@@ -87,7 +87,7 @@ export default function AdminUsers() {
       await updateDoc(doc(db, 'users', userToDelete), { isDeleted: true });
       setUsers(prev => prev.filter(u => u.id !== userToDelete));
       if (selectedUserId === userToDelete) setSelectedUserId(null);
-      setMessage({ type: 'success', text: 'Utente eliminato con successo' });
+      setMessage({ type: 'success', text: t('adminUsers.deleteSuccess', 'Utente eliminato con successo') });
       setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
       console.error("Error deleting user:", error);
@@ -139,7 +139,7 @@ export default function AdminUsers() {
   return (
     <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-8">
-        <h1 className="text-4xl md:text-6xl font-['Shamgod'] leading-[0.8] tracking-tight text-[#121212] mb-4 uppercase">{t('adminUsers.title')}</h1>
+        <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">{t('adminUsers.title')}</h1>
         <p className="text-[#59554E] text-lg">{t('adminUsers.crm.selectUserDesc')}</p>
       </header>
 
@@ -309,8 +309,8 @@ export default function AdminUsers() {
                     <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Phone:</span> <span className="font-medium text-[#121212]">{selectedUser.phone || '-'}</span></p>
                     <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Address:</span> <span className="font-medium text-[#121212]">{selectedUser.address || '-'}</span></p>
                     <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">City / Country:</span> <span className="font-medium text-[#121212]">{selectedUser.city || '-'}, {selectedUser.country || '-'}</span></p>
-                    <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Instagram:</span> <span className="font-medium text-[#121212]">{selectedUser.instagram || '-'}</span></p>
-                    <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Website:</span> <span className="font-medium text-[#121212]">{selectedUser.website || '-'}</span></p>
+                    <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Instagram:</span> <span className="font-medium text-[#121212]">{selectedUser.instagram || selectedUser.instagramUrl || '-'}</span></p>
+                    <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Website:</span> <span className="font-medium text-[#121212]">{selectedUser.website || selectedUser.websiteUrl || '-'}</span></p>
                     <div className="mt-4 pt-4 border-t border-[#EAE3D9]">
                       <span className="text-[#59554E] font-bold text-xs uppercase tracking-wider block mb-2">Bio:</span>
                       <p className="text-[#121212] leading-relaxed max-h-32 overflow-y-auto">{selectedUser.bio || t('adminUsers.notProvided')}</p>
@@ -325,10 +325,10 @@ export default function AdminUsers() {
                       {t('adminUsers.crm.financials')}
                     </h3>
                     <div className="space-y-4 text-sm bg-[#F2EEE8]/30 p-4 rounded-xl border border-[#EAE3D9]">
-                      <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">IBAN:</span> <span className="font-mono text-[#121212]">{selectedUser.iban || '-'}</span></p>
-                      <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">BIC/SWIFT:</span> <span className="font-mono text-[#121212]">{selectedUser.bic || '-'}</span></p>
+                      <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">IBAN:</span> <span className="font-mono text-[#121212]">{selectedUser.iban || selectedUser.bankIban || '-'}</span></p>
+                      <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">BIC/SWIFT:</span> <span className="font-mono text-[#121212]">{selectedUser.bic || selectedUser.bankBic || '-'}</span></p>
                       <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Bank Name:</span> <span className="font-medium text-[#121212]">{selectedUser.bankName || '-'}</span></p>
-                      <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Account Holder:</span> <span className="font-medium text-[#121212]">{selectedUser.accountHolder || '-'}</span></p>
+                      <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">Account Holder:</span> <span className="font-medium text-[#121212]">{selectedUser.accountHolder || selectedUser.bankAccountHolder || '-'}</span></p>
                       <p className="flex flex-col"><span className="text-[#59554E] font-bold text-xs uppercase tracking-wider mb-1">VAT Number:</span> <span className="font-medium text-[#121212]">{selectedUser.vatNumber || '-'}</span></p>
                     </div>
                   </div>
@@ -342,11 +342,11 @@ export default function AdminUsers() {
                         <span className="text-[#59554E] font-bold uppercase tracking-wider">{t('adminUsers.crm.assignedProducts')}:</span> 
                         <span className="font-bold text-[#121212] text-base">{selectedUser.ecwidProductIds?.length || 0}</span>
                       </div>
-                      <button 
+                        <button 
                         onClick={() => setManagingConnectionFor(selectedUser)}
                         className="w-full mt-2 py-3 px-4 bg-[#121212] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black transition-colors"
                       >
-                        Visualizza / Assegna Prodotti
+                        {t('adminUsers.viewProducts', 'Visualizza / Assegna Prodotti')}
                       </button>
                     </div>
                   </div>
@@ -426,7 +426,7 @@ export default function AdminUsers() {
               <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 size={32} />
               </div>
-              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">{t('adminUsers.confirmDelete', 'Conferma Eliminazione')}</h2>
               <p className="text-[#59554E] text-sm mb-6">
                 {t('adminUsers.crm.deleteConfirm') || "Sei sicuro di voler eliminare questo utente? Questa operazione non può essere annullata."}
               </p>

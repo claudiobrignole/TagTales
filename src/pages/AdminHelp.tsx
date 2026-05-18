@@ -224,11 +224,11 @@ export default function AdminHelp() {
     <div className="w-full space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl lg:text-[40px] font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212]">
-            Gestione Assistenza AI
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
+            {t('adminHelp.title', 'Gestione Assistenza AI')}
           </h1>
           <p className="font-['Karla'] text-[#121212] mt-2 text-lg">
-            Configura la Knowledge Base e gli Icebreakers per l'Assistente AI.
+            {t('adminHelp.subtitle', "Configura la Knowledge Base e gli Icebreakers per l'Assistente AI.")}
           </p>
         </div>
         <button
@@ -237,7 +237,7 @@ export default function AdminHelp() {
           className="bg-[#FF4F00] text-white px-6 py-3 rounded-full font-['Karla'] font-bold uppercase tracking-wider text-sm flex items-center gap-2 hover:bg-black transition-colors disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Salva Modifiche
+          {t('adminHelp.saveChanges', 'Salva Modifiche')}
         </button>
       </div>
 
@@ -249,7 +249,7 @@ export default function AdminHelp() {
             activeTab === 'public' ? "bg-[#121212] text-white" : "text-[#121212] hover:bg-[#F8F6F3]"
           )}
         >
-          Esperienza Pubblica
+          {t('adminHelp.publicExperience', 'Esperienza Pubblica')}
         </button>
         <button
           onClick={() => setActiveTab('writers')}
@@ -258,16 +258,16 @@ export default function AdminHelp() {
             activeTab === 'writers' ? "bg-[#121212] text-white" : "text-[#121212] hover:bg-[#F8F6F3]"
           )}
         >
-          Esperienza Writers
+          {t('adminHelp.writersExperience', 'Esperienza Writers')}
         </button>
       </div>
 
       <div className="bg-white p-6 rounded-[24px] border border-[#EAE3D9] space-y-6">
         <div>
-          <h2 className="text-2xl font-['Shamgod'] uppercase leading-[0.8] text-[#121212] mb-2">Knowledge Base</h2>
+          <h2 className="text-2xl font-['Shamgod'] uppercase leading-[0.8] text-[#121212] mb-2">{t('adminHelp.knowledgeBase', 'Knowledge Base')}</h2>
           <p className="font-['Karla'] text-[#121212]/70 text-sm mb-4">
-            Inserisci qui tutto il contesto generale e le informazioni di supporto in un unico testo (usa il Markdown). 
-            Queste informazioni verranno fornite al chatbot per istruirlo.
+            Enter all general context and support information here as a single text (use Markdown). 
+            This information will be provided to the chatbot to instruct it.
           </p>
           <textarea
             rows={15}
@@ -284,16 +284,16 @@ export default function AdminHelp() {
           <div className="border-t border-[#EAE3D9] pt-6">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-2xl font-['Shamgod'] uppercase leading-[0.8] text-[#121212] mb-2">Bottoni Esterni (Header Chat)</h2>
+                <h2 className="text-2xl font-['Shamgod'] uppercase leading-[0.8] text-[#121212] mb-2">External Buttons (Chat Header)</h2>
                 <p className="font-['Karla'] text-[#121212]/70 text-sm">
-                  Bottoni con link personalizzati che appaiono sopra la chat.
+                  Buttons with custom links that appear above the chat.
                 </p>
               </div>
               <button
                 onClick={addActionButton}
                 className="bg-[#121212] text-white px-4 py-2 rounded-full font-['Karla'] font-bold uppercase tracking-wider text-sm flex items-center gap-2 hover:bg-[#FF4F00] transition-colors"
               >
-                <Plus className="w-4 h-4" /> Aggiungi
+                <Plus className="w-4 h-4" /> {t('adminHelp.add', 'Aggiungi')}
               </button>
             </div>
 
@@ -308,7 +308,7 @@ export default function AdminHelp() {
                   </button>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Testo Bottone (IT)</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">{t('adminHelp.buttonTextIt', 'Testo Bottone (IT)')}</label>
                       <input
                         type="text"
                         value={ab.it}
@@ -357,16 +357,16 @@ export default function AdminHelp() {
         <div className="border-t border-[#EAE3D9] pt-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-2xl font-['Shamgod'] uppercase leading-[0.8] text-[#121212] mb-2">Icebreakers Esterni</h2>
+              <h2 className="text-2xl font-['Shamgod'] uppercase leading-[0.8] text-[#121212] mb-2">External Icebreakers</h2>
               <p className="font-['Karla'] text-[#121212]/70 text-sm">
-                Domande suggerite all'utente. Appariranno come card esterne da copiare. Inserisci OBBLIGATORIAMENTE italiano e inglese.
+                Suggested questions for the user. They will appear as external cards to be copied. ALWAYS insert both Italian and English.
               </p>
             </div>
             <button
               onClick={addIcebreaker}
               className="bg-[#121212] text-white px-4 py-2 rounded-full font-['Karla'] font-bold uppercase tracking-wider text-sm flex items-center gap-2 hover:bg-[#FF4F00] transition-colors"
             >
-              <Plus className="w-4 h-4" /> Aggiungi
+              <Plus className="w-4 h-4" /> {t('adminHelp.add', 'Aggiungi')}
             </button>
           </div>
 

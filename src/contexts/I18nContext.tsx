@@ -10,7 +10,7 @@ type Language = 'EN' | 'IT';
 interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language, skipRedirect?: boolean) => void;
-  t: (key: string, options?: any) => string;
+  t: any;
   showLanguagePrompt: boolean;
   setShowLanguagePrompt: (show: boolean) => void;
   proposedLang: string;

@@ -82,6 +82,7 @@ export default function Layout() {
     { to: "/app/payments", icon: CreditCard, label: "payments" },
     { to: "/app/contracts", icon: FileText, label: "contracts" },
     { to: "/app/help", icon: HelpCircle, label: "help" },
+    { to: "/app/profile", icon: Settings, label: "profile" },
   ];
 
   const adminOnlyNavItems = [

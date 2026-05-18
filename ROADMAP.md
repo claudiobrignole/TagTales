@@ -74,25 +74,12 @@ Usare ogni volta che si crea un nuovo prodotto TagTales su Ecwid.
 - Ottimizzazione Meta-Tag SEO (Title, Description, OpenGraph su tutte le pagine pubbliche).
 - Sitemap automatica (`/sitemap.xml`) e file `robots.txt` integrati nel backend Express.
 - Analisi incoerenze in naming e componenti (Artist → Writer completato).
-- **Internazionalizzazione URL (11 maggio 2026)**:
-  - Invertito l'ordine di `<BrowserRouter>` e `<I18nProvider>` in `App.tsx` per abilitare `useNavigate` e `useLocation` dentro il context.
-  - Creato `src/components/EnRouteWrapper.tsx`: forza la lingua EN su tutte le route `/en/*` tramite `setLanguage("EN", true)` senza scatenare loop di redirect.
-  - Aggiunta firma `skipRedirect?: boolean` a `setLanguage` in `I18nContext.tsx`.
-  - Duplicate tutte le route pubbliche con prefisso `/en/*` in `App.tsx` (home, writers, exhibitions, magazine con slug dinamici).
-  - Logica redirect automatico IT↔EN in `setLanguage`: naviga su `/en/[path]` scegliendo EN, rimuove il prefisso scegliendo IT. Guard attivo per escludere le route `/app/*` dal redirect.
-  - `LanguagePrompt` montato dentro `I18nProvider` in `App.tsx` (era importato ma non renderizzato).
-  - **SEO hreflang centralizzato** in `src/components/SEO.tsx`: genera automaticamente `<link rel="alternate" hrefLang="it">`, `<link rel="alternate" hrefLang="en">` e `<link rel="alternate" hrefLang="x-default">` per tutte le pagine pubbliche. Canonical URL pulito da trailing slash.
-- **Aggiornamenti Backend e Admin (13 maggio 2026)**:
-  - `express.static` ora funziona con `index: false` per impedire che l'HTML statico bypassi il percorso catch-all.
-  - Inserimento dei meta tag SEO lato server pienamente operativo: titolo, descrizione, parole chiave, og:title, og:description inseriti dinamicamente da Firestore per tutte le pagine principali (home, scrittori, mostre, rivista) e i percorsi dinamici (`writer/:id`, `exhibition/:id`, `magazine/:id`).
-  - Firebase Admin SDK inizializzato con la chiave dell'account di servizio codificata in Base64 (`FIREBASE_SERVICE_ACCOUNT_BASE64`) che punta al database Firestore corretto (`ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168`).
-  - Percorso `/sitemap.xml` attivo e generazione di una sitemap XML dinamica che include pagine statiche e URL dinamici di autore/mostra/articolo.
-  - Percorso `/robots.txt` attivo.
-  - Integrazione chat diretta: i writer possono interagire con l'amministrazione tramite il componente DirectChat, e l'amministratore riceve notifiche email via campanella con redirect ottimizzato al tab di chat dell'utente specifico (`/app/admin/users?chat={userId}`).
-- **Integrazione Archiviazione Contratti e UI Admin (15 maggio 2026)**:
-  - Implementazione per gli Admin dell'archiviazione di contratti firmati tramite link esterno (es. Google Docs eSignature, file su Drive), eliminando la firma fittizia in-app.
-  - Sostituzione della select multipla dei writer con un campo a ricerca nel form di archiviazione contratti per facilitare la selezione man mano che gli utenti crescono.
-  - Pulizia generale e rimozione di codice orfano/inutilizzato in `AdminContracts.tsx` e `Contracts.tsx`.
+- **Internazionalizzazione URL (11 maggio 2026)**
+- **Aggiornamenti Backend e Admin (13 maggio 2026)**
+- **Integrazione Archiviazione Contratti e UI Admin (15 maggio 2026)**
+- **Internazionalizzazione completa interfaccia Amministratore** (maggio 2026)
+- **Standardizzazione UI Dashboard Admin**: Allineamento header titoli (font Shamgod, dimensioni uniformi, spaziatura) su tutte le pagine di gestione (18 maggio 2026).
+- **Stilizzazione SEO Manager** (18 maggio 2026).
 
 
 
@@ -110,21 +97,21 @@ Task ordinati per blocco logico. Ogni blocco deve essere completato prima di apr
 ### Blocco 1 — Integrazione Ecwid (sblocca tutto il resto)
 
 - [x] **1.1** Completare la registrazione del webhook Ecwid e verificare la risposta del supporto.
-- [ ] **1.2** Verificare i nomi esatti degli attributi degli item (`artist_id`, `product_type`, `promo_active`) su un ordine reale via API Ecwid.
-- [ ] **1.3** Test end-to-end con un ordine reale (importo minimo): verificare la scrittura corretta su Firestore nelle collection `royalties` e `users/{artistId}`.
+- [x] **1.2** Verificare i nomi esatti degli attributi degli item (`artist_id`, `product_type`, `promo_active`) su un ordine reale via API Ecwid.
+- [x] **1.3** Test end-to-end con un ordine reale (importo minimo): verificare la scrittura corretta su Firestore nelle collection `royalties` e `users/{artistId}`.
 - [x] **1.4** Configurare ogni prodotto Ecwid dello store con gli attributi personalizzati. Attributi aggiunti al product type 0: `artist_id`, `product_type`, `promo_active`, `fee_override`. I 4 prodotti TagTales (t-shirt interne, IDs: 801191401, 801191674, 801191735, 801196475) configurati con `product_type: tshirt` senza artist_id (prodotti interni, nessuna royalty).
 
 
 ### Blocco 2 — Frontend e Autenticazione
 
-- [ ] **2.1** Verificare i flussi di registrazione e login artisti dall'interfaccia utente con Firebase Auth e custom claims.
-- [ ] **2.2** Testare la Dashboard Writer in produzione: dati vendita per prodotto, revenue, commissioni, accesso contratti, upload fatture, richiesta pagamento.
-- [ ] **2.3** Testare la Dashboard Admin in produzione: visualizzazione `pendingBalance` per artista, funzione `markArtistPaid` operativa.
-- [x] **2.4** Pulizia repository: spostare o rimuovere gli script di sviluppo dalla root (`translate_locales_v*.cjs`, `update_grids.cjs`, `update_layout.cjs`, `apply_updates.cjs`, `replace.cjs`, `populateData.ts`, ecc.).
+- [x] **2.1** Verificare i flussi di registrazione e login artisti dall'interfaccia utente con Firebase Auth e custom claims.
+- [x] **2.2** Testare la Dashboard Writer in produzione: dati vendita per prodotto, revenue, commissioni, accesso contratti, upload fatture, richiesta pagamento.
+- [x] **2.3** Testare la Dashboard Admin in produzione: visualizzazione `pendingBalance` per artista, funzione `markArtistPaid` operativa.
+- [x] **2.4** Pulizia repository: spostare o rimuovere gli script di sviluppo dalla root.
 - [x] **2.5** Internazionalizzazione URL: route `/en/*` duplicate, `EnRouteWrapper`, redirect automatico IT↔EN, hreflang in `SEO.tsx` (completato 11 maggio 2026).
-- [ ] **2.6** Aggiungere le route `/en/assistenza` e `/en/su-di-noi` seguendo lo stesso pattern delle route `/en/*` già implementate.
-- [ ] **2.7** Testare il comportamento del `LanguagePrompt` dopo il login: verificare che il redirect verso `/en/` scatti correttamente quando l'utente accetta la lingua EN dal prompt.
-- [ ] **2.8** Aggiungere al footer (o header pubblico) un selettore lingua visibile anche nelle pagine pubbliche, che sfrutti `setLanguage` con redirect URL automatico.
+- [x] **2.6** Aggiungere le route `/en/assistenza` e `/en/su-di-noi` seguendo lo stesso pattern delle route `/en/*` già implementate.
+- [x] **2.7** Testare il comportamento del `LanguagePrompt` dopo il login: verificare che il redirect verso `/en/` scatti correttamente quando l'utente accetta la lingua EN dal prompt.
+- [x] **2.8** Aggiungere al footer (o header pubblico) un selettore lingua visibile anche nelle pagine pubbliche, che sfrutti `setLanguage` con redirect URL automatico.
 
 
 ### Blocco 3 — Contenuto e Onboarding Artisti
@@ -161,7 +148,7 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 - [x] **6.1.1** Aggiungere snippet `gtag.js` (GA4) nel template HTML principale (`index.html`).
 - [x] **6.1.2** Integrare `react-ga4` nel progetto e agganciarlo al router: ogni cambio di route deve triggerare un evento `pageview`.
 - [x] **6.1.3** Definire e tracciare eventi personalizzati: `view_artist`, `view_artwork`, `ecwid_product_click`, `checkout_initiated`.
-- [ ] **6.1.4** Verificare l'attivazione su Google Analytics e collegare la property a Google Search Console.
+- [x] **6.1.4** Verificare l'attivazione su Google Analytics e collegare la property a Google Search Console.
 
 **File coinvolti:** `index.html`, `src/App.tsx`, nuovo `src/utils/analytics.ts`
 
@@ -169,9 +156,9 @@ Obiettivo: dotare TagTales di un sistema SEO completo e gestibile dall'admin, co
 
 ### Fase 6.2 — Google Search Console + Sitemap bilingue
 
-- [ ] **6.2.1** Verificare il dominio `tagtalesgallery.com` su Google Search Console (metodo DNS o file HTML).
+- [x] **6.2.1** Verificare il dominio `tagtalesgallery.com` su Google Search Console (metodo DNS o file HTML).
 - [x] **6.2.2** Controllare che la sitemap dinamica (`/sitemap.xml`) generata da Express includa tutte le route `/en/*` create con l'internazionalizzazione (completata l'11 maggio 2026).
-- [ ] **6.2.3** Inviare la sitemap a Google Search Console e monitorare l'indicizzazione.
+- [x] **6.2.3** Inviare la sitemap a Google Search Console e monitorare l'indicizzazione.
 
 **File coinvolti:** `server.ts` (funzione sitemap), verifica manuale su Search Console.
 
@@ -208,8 +195,8 @@ Questa è la funzionalità principale: un'interfaccia nel pannello Admin per ges
 
 **Pagine gestite:** `home`, `magazine`, `writers`, `exhibitions`
 
-- [ ] **6.4.1** Creare la collection Firestore `seoConfig` con i 4 documenti iniziali.
-- [ ] **6.4.2** Creare la pagina `SEOManager` nel pannello Admin con form per ogni pagina: titolo IT/EN, description IT/EN, upload immagine OG (→ Firebase Storage `og-images/{pageId}`), bottone "Suggerisci keywords con Gemini".
+- [x] **6.4.1** Creare la collection Firestore `seoConfig` con i 4 documenti iniziali.
+- [x] **6.4.2** Creare la pagina `SEOManager` nel pannello Admin con form per ogni pagina: titolo IT/EN, description IT/EN, upload immagine OG (→ Firebase Storage `og-images/{pageId}`), bottone "Suggerisci keywords con Gemini".
 - [x] **6.4.3** Implementare la Cloud Function `generateSEOKeywords` (callable): riceve il contenuto testuale della pagina e la lingua, chiama Gemini API, restituisce un array di 8-10 keywords consigliate.
 - [x] **6.4.4** Aggiornare il middleware Express (`server.ts`) per leggere `seoConfig/{pageId}` da Firestore e iniettare i meta-tag corretti nell'HTML prima di servire ogni pagina pubblica, in modo che i crawler (Google, Facebook, WhatsApp) ricevano i tag aggiornati anche se la SPA non è ancora idratata.
 
@@ -219,9 +206,9 @@ Questa è la funzionalità principale: un'interfaccia nel pannello Admin per ges
 
 ### Fase 6.5 — Widget Analytics nel pannello Admin
 
-- [ ] **6.5.1** Integrare la **Google Analytics Data API v1** tramite Service Account per mostrare nel pannello Admin i dati principali: sessioni, utenti attivi, pageview per pagina, fonti di traffico (ultimi 30 giorni).
-- [ ] **6.5.2** Aggiungere un widget "Traffico per pagina" nella Dashboard Admin che mostri le 10 pagine più visitate.
-- [ ] **6.5.3** Valutare l'integrazione dell'**Insights API Meta** per visualizzare le performance del Pixel (impression, reach, eventi tracciati) nel pannello Admin.
+- [x] **6.5.1** Integrare la **Google Analytics Data API v1** tramite Service Account per mostrare nel pannello Admin i dati principali: sessioni, utenti attivi, pageview per pagina, fonti di traffico (ultimi 30 giorni).
+- [x] **6.5.2** Aggiungere un widget "Traffico per pagina" nella Dashboard Admin che mostri le 10 pagine più visitate.
+- [x] **6.5.3** Valutare l'integrazione dell'**Insights API Meta** per visualizzare le performance del Pixel (impression, reach, eventi tracciati) nel pannello Admin.
 
 **Note:** Richiede un Service Account Google Cloud con permesso `roles/analyticsdata.viewer` sulla property GA4. Le credenziali vanno salvate come environment variable su Hostinger, mai nel repository.
 
@@ -229,16 +216,6 @@ Questa è la funzionalità principale: un'interfaccia nel pannello Admin per ges
 
 ***
 
-### Fase 6.6 — Collegamento Google Ads e Meta Ads
-
-- [ ] **6.6.1** Collegare la property GA4 all'account Google Ads tramite la console Google Analytics (operazione manuale, nessun codice richiesto).
-- [ ] **6.6.2** Importare le conversioni GA4 in Google Ads per il retargeting e l'ottimizzazione delle campagne.
-- [ ] **6.6.3** Nel pannello Admin aggiungere link diretti a Google Ads Dashboard e Meta Business Manager per accesso rapido alle campagne senza implementazione API completa.
-- [ ] **6.6.4** Con Meta Pixel attivo (Fase 6.3), creare Audience Personalizzate su Meta: visitatori pagine artisti, visitatori pagine opere, chi ha avviato checkout ma non acquistato.
-
-**Note:** Il collegamento Google Ads non richiede codice aggiuntivo se GA4 è configurato correttamente. Meta Ads usa automaticamente i dati del Pixel attivato nella Fase 6.3.
-
-***
 
 ### Ordine di esecuzione consigliato
 

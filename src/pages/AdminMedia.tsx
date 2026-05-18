@@ -91,11 +91,11 @@ export default function AdminMedia() {
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-[#121212] font-['Shamgod'] uppercase tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
             {t('nav.mediaLibrary', 'Libreria Media')}
-          </h2>
+          </h1>
           <p className="text-[#59554E] mt-2 font-['Karla']">
-            Gestisci tutte le immagini caricate sulla piattaforma.
+            {t('adminMedia.manageImages', 'Gestisci tutte le immagini caricate sulla piattaforma.')}
           </p>
         </div>
         <button
@@ -103,7 +103,7 @@ export default function AdminMedia() {
            className="bg-[#121212] text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest text-sm hover:bg-[#FF4F00] transition-colors flex items-center gap-2"
         >
           {showUpload ? <X size={20} /> : <UploadCloud size={20} />}
-          {showUpload ? 'Chiudi' : 'Carica Media'}
+          {showUpload ? t('adminMedia.close', 'Chiudi') : t('adminMedia.uploadMedia', 'Carica Media')}
         </button>
       </div>
 
@@ -114,7 +114,7 @@ export default function AdminMedia() {
         <input
           type="text"
           className="block w-full pl-10 pr-3 py-2 border border-[#EAE3D9] rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-[#FF4F00] focus:border-[#FF4F00] sm:text-sm transition-colors"
-          placeholder="Cerca per nome file o percorso..."
+          placeholder={t('adminMedia.searchPlaceholder', 'Cerca per nome file o percorso...')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -123,7 +123,7 @@ export default function AdminMedia() {
        {showUpload && (
           <div className="bg-white p-6 rounded-3xl border border-[#EAE3D9]">
              <ImageUpload 
-               label="Carica un file multimediale indipendente in archivio"
+               label={t('adminMedia.uploadIndependent', "Carica un file multimediale indipendente in archivio")}
                value=""
                onChange={(url) => { 
                   if(url) { 
@@ -167,7 +167,7 @@ export default function AdminMedia() {
             ))}
             {items.length === 0 && (
                 <div className="col-span-full py-10 text-center text-[#59554E] font-['Karla'] text-lg">
-                   Nessun media trovato nell'archivio.
+                   {t('adminMedia.noMedia', "Nessun media trovato nell'archivio.")}
                 </div>
             )}
           </div>
@@ -177,22 +177,22 @@ export default function AdminMedia() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full border border-[#EAE3D9] shadow-xl">
-            <h3 className="text-2xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-4">Conferma Eliminazione</h3>
+            <h3 className="text-2xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-4">{t('adminMedia.confirmDelete', 'Conferma Eliminazione')}</h3>
             <p className="text-[#59554E] mb-8 font-['Karla']">
-              Sei sicuro di voler eliminare permanentemente questa immagine? L'operazione non può essere annullata. Se l'immagine è usata in mostre o pagine, non sarà più visibile.
+              {t('adminMedia.deleteWarning', "Sei sicuro di voler eliminare permanentemente questa immagine? L'operazione non può essere annullata. Se l'immagine è usata in mostre o pagine, non sarà più visibile.")}
             </p>
             <div className="flex gap-4">
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 py-3 px-4 rounded-full font-bold uppercase tracking-widest text-[#121212] border-2 border-[#EAE3D9] hover:border-[#121212] transition-colors text-sm"
               >
-                Annulla
+                {t('adminMedia.cancel', 'Annulla')}
               </button>
               <button
                 onClick={handleDelete}
                 className="flex-1 py-3 px-4 rounded-full font-bold uppercase tracking-widest text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20 text-sm"
               >
-                Elimina
+                {t('adminMedia.delete', 'Elimina')}
               </button>
             </div>
           </div>

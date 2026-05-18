@@ -69,7 +69,7 @@ export default function AdminPayments() {
       setArtistRoyalties(royalties);
     } catch (err) {
       console.error('Error fetching royalties', err);
-      setError('Errore durante il caricamento delle royalties.');
+      setError(t('adminPayments.loadError', 'Errore durante il caricamento delle royalties.'));
     } finally {
       setLoadingRoyalties(false);
     }
@@ -103,17 +103,17 @@ export default function AdminPayments() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full text-[#59554E] py-20 font-['Karla'] font-bold uppercase tracking-wider">Caricamento...</div>;
+    return <div className="flex items-center justify-center h-full text-[#59554E] py-20 font-['Karla'] font-bold uppercase tracking-wider">{t('adminPayments.loading', 'Caricamento...')}</div>;
   }
 
   return (
     <div className="w-full space-y-8 font-['Karla']">
       <header className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight text-[#121212] mb-2 font-['Shamgod'] uppercase leading-none text-[8vw] md:text-[60px]">
-          {selectedArtist ? 'DETTAGLIO PAGAMENTO' : t('payments.allPaymentsTitle')}
+        <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-normal text-[#121212] mb-4">
+          {selectedArtist ? 'DETTAGLIO PAGAMENTO' : t('payments.allPaymentsTitle', 'PAGAMENTI RECENTI')}
         </h1>
         <p className="text-[#59554E] text-lg font-['Karla']">
-          {selectedArtist ? `Royalties in attesa per ${selectedArtist.artistName || selectedArtist.email}` : 'Lista degli artisti con saldo in attesa di pagamento.'}
+          {selectedArtist ? `Royalties in attesa per ${selectedArtist.artistName || selectedArtist.email}` : t('adminPayments.subtitle', 'Lista degli artisti con saldo in attesa di pagamento.')}
         </p>
       </header>
 
@@ -136,7 +136,7 @@ export default function AdminPayments() {
           <div className="p-6 border-b border-[#EAE3D9] flex items-center justify-between bg-[#F2EEE8]/30">
             <h2 className="text-xl font-bold text-[#121212] flex items-center gap-3 font-['Karla'] uppercase tracking-wider">
               <CreditCard className="text-[#FF4F00]" />
-              Artisti da Pagare
+              {t('adminPayments.artistsToPay', 'Artisti da Pagare')}
             </h2>
           </div>
           
@@ -144,10 +144,10 @@ export default function AdminPayments() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#EAE3D9] bg-[#F2EEE8]/50">
-                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">Nome / Alias</th>
-                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">Email</th>
-                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">Saldo In Attesa</th>
-                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">Azioni</th>
+                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">{t('adminPayments.nameAlias', 'Nome / Alias')}</th>
+                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">{t('adminPayments.email', 'Email')}</th>
+                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">{t('adminPayments.pendingBalance', 'Saldo In Attesa')}</th>
+                  <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">{t('adminPayments.actions', 'Azioni')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EAE3D9]">
@@ -175,7 +175,7 @@ export default function AdminPayments() {
                 {artists.length === 0 && (
                   <tr>
                     <td colSpan={4} className="p-8 text-center text-[#59554E] font-['Karla']">
-                      Nessun artista con saldo in attesa.
+                      {t('adminPayments.noPending', 'Nessun artista con saldo in attesa.')}
                     </td>
                   </tr>
                 )}
@@ -202,17 +202,17 @@ export default function AdminPayments() {
             </div>
             
             {loadingRoyalties ? (
-              <div className="p-8 text-center text-[#59554E] font-['Karla'] font-bold uppercase tracking-wider">Caricamento...</div>
+              <div className="p-8 text-center text-[#59554E] font-['Karla'] font-bold uppercase tracking-wider">{t('adminPayments.loading', 'Caricamento...')}</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[#EAE3D9] bg-[#F2EEE8]/50">
-                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">Data Ordine</th>
-                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">Prodotto</th>
-                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">Q.tà</th>
-                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">Promo</th>
-                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">Fee Totale</th>
+                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">{t('adminPayments.orderDate', 'Data Ordine')}</th>
+                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider font-['Karla']">{t('adminPayments.product', 'Prodotto')}</th>
+                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">{t('adminPayments.quantity', 'Q.tà')}</th>
+                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">{t('adminPayments.promo', 'Promo')}</th>
+                      <th className="p-4 text-xs font-bold text-[#59554E] uppercase tracking-wider text-right font-['Karla']">{t('adminPayments.totalFee', 'Fee Totale')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#EAE3D9]">
@@ -242,7 +242,7 @@ export default function AdminPayments() {
                     {artistRoyalties.length === 0 && (
                       <tr>
                         <td colSpan={5} className="p-8 text-center text-[#59554E] font-['Karla']">
-                          Nessuna royalty in attesa per questo artista. (L'importo potrebbe derivare da uno stato incoerente)
+                          {t('adminPayments.noPendingArtist', "Nessuna royalty in attesa per questo artista. (L'importo potrebbe derivare da uno stato incoerente)")}
                         </td>
                       </tr>
                     )}
@@ -274,7 +274,7 @@ export default function AdminPayments() {
               )}
             >
               <Check size={20} />
-              {markingPaid ? 'Salvataggio in corso...' : `Segna come Pagato (${Number(selectedArtist.pendingBalance).toFixed(2)} EUR)`}
+              {markingPaid ? t('adminPayments.saving', 'Salvataggio in corso...') : `${t('adminPayments.markPaid', 'Segna come Pagato')} (${Number(selectedArtist.pendingBalance).toFixed(2)} EUR)`}
             </button>
           </div>
         </div>

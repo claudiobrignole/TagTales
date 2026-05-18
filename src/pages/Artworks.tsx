@@ -154,14 +154,7 @@ export default function Artworks() {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'in_attesa': return 'In attesa';
-      case 'prima_revisione': return 'Prima revisione';
-      case 'seconda_revisione': return 'Seconda revisione';
-      case 'terza_revisione': return 'Terza revisione';
-      case 'approvata': return 'Approvato';
-      default: return status || 'In attesa';
-    }
+    return t(`artworks.statusLabels.${status}`) || status || t('artworks.statusLabels.in_attesa');
   };
   
   const getStatusColor = (status: string) => {
@@ -191,7 +184,7 @@ export default function Artworks() {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
         <div>
           <h1 className="text-4xl md:text-6xl font-['Shamgod'] uppercase leading-[0.8] tracking-tight text-[#121212] mb-4">
-            {t('myArtworks', 'Le mie opere')}
+            {t('artworks.myArtworks')}
           </h1>
           <p className="text-[#59554E] text-lg">
             {isAdmin ? t('artworks.subtitleAdmin') : t('artworks.subtitleWriter')}
@@ -203,7 +196,7 @@ export default function Artworks() {
             className="flex items-center gap-2 px-6 py-3 bg-[#121212] text-white rounded-full font-bold hover:bg-[#FF4F00] transition-colors shrink-0 uppercase text-xs tracking-widest"
           >
             <Plus size={20} />
-            <span>Nuovo Media Link</span>
+            <span>{t('artworks.newMediaLink')}</span>
           </button>
         )}
       </header>
@@ -215,19 +208,19 @@ export default function Artworks() {
             <div className="w-20 h-20 bg-[#F2EEE8] rounded-full flex items-center justify-center mb-6">
               <Video size={32} />
             </div>
-            <h3 className="text-2xl font-bold text-[#121212] mb-2">Nessun progetto trovato</h3>
-            <p className="max-w-md">Attualmente non ci sono materiali audio/video in elenco.</p>
+            <h3 className="text-2xl font-bold text-[#121212] mb-2">{t('artworks.noProjectsFound')}</h3>
+            <p className="max-w-md">{t('artworks.noMaterialsMessage')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-[#EAE3D9] bg-[#F2EEE8]/50">
-                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Progetto / Titolo</th>
-                  {isAdmin && <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Writer</th>}
-                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Data</th>
-                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">Status</th>
-                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider text-right">Azioni</th>
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">{t('artworks.projectTitle')}</th>
+                  {isAdmin && <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">{t('artworks.writer')}</th>}
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">{t('artworks.date')}</th>
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider">{t('artworks.status')}</th>
+                  <th className="p-4 font-bold text-sm text-[#59554E] uppercase tracking-wider text-right">{t('artworks.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EAE3D9]">
@@ -272,14 +265,14 @@ export default function Artworks() {
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors uppercase tracking-widest"
                         >
                           <ExternalLink size={14} />
-                          <span>Apri Drive</span>
+                          <span>{t('artworks.openDrive')}</span>
                         </a>
                       )}
                       {isAdmin && (
                         <button
                           onClick={() => setItemToDelete(item.id)}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
-                          title="Elimina"
+                          title={t('artworks.delete')}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -297,7 +290,7 @@ export default function Artworks() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center shrink-0">
-              <h2 className="text-xl font-bold text-[#121212]">Nuovo Progetto Media</h2>
+              <h2 className="text-xl font-bold text-[#121212]">{t('artworks.newProjectMedia')}</h2>
               <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-[#F2EEE8] rounded-full transition-colors">
                 <X size={24} className="text-[#59554E]" />
               </button>
@@ -305,26 +298,26 @@ export default function Artworks() {
             
             <form onSubmit={handleCreateDriveLink} className="p-6 space-y-6 overflow-y-auto">
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">Titolo Progetto / Opera</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">{t('artworks.projectTitle')}</label>
                 <input 
                   type="text" 
                   value={newArtwork.title}
                   onChange={(e) => setNewArtwork({...newArtwork, title: e.target.value})}
                   required
                   className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none" 
-                  placeholder="Es. Video Intervista / Making of..." 
+                  placeholder={t('artworks.projectTitlePlaceholder')}
                 />
               </div>
               
               <div className="space-y-4">
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">Seleziona Writer</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">{t('artworks.selectWriter')}</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#59554E]" size={18} />
                   <input
                     type="text"
                     value={writerSearch}
                     onChange={(e) => setWriterSearch(e.target.value)}
-                    placeholder="Cerca nome..."
+                    placeholder={t('artworks.searchNamePlaceholder')}
                     className="w-full pl-10 pr-4 py-3 bg-white border border-[#EAE3D9] rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none"
                   />
                 </div>
@@ -353,13 +346,13 @@ export default function Artworks() {
                     </label>
                   ))}
                   {writers.filter(w => (w.fullName || '').toLowerCase().includes(writerSearch.toLowerCase())).length === 0 && (
-                    <div className="p-4 text-center text-sm text-[#59554E]">Nessun writer trovato</div>
+                    <div className="p-4 text-center text-sm text-[#59554E]">{t('artworks.noWriterFound')}</div>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">Link Cartella Google Drive</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#121212]">{t('artworks.googleDriveLink')}</label>
                 <input 
                   type="url" 
                   value={newArtwork.driveLink}
@@ -376,14 +369,14 @@ export default function Artworks() {
                   onClick={() => setShowUploadModal(false)}
                   className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-[#121212] bg-[#F2EEE8] hover:bg-[#EAE3D9] transition-colors"
                 >
-                  {t('common.cancel')}
+                  {t('artworks.cancel')}
                 </button>
                 <button 
                   type="submit"
                   disabled={uploading || !newArtwork.writerId}
                   className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-white bg-[#FF4F00] hover:bg-[#E64700] transition-colors disabled:opacity-50"
                 >
-                  {uploading ? "Creazione..." : "Crea Link"}
+                  {uploading ? t('artworks.creating') : t('artworks.createLink')}
                 </button>
               </div>
             </form>
@@ -398,22 +391,22 @@ export default function Artworks() {
               <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 size={32} />
               </div>
-              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">Conferma Eliminazione</h2>
+              <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">{t('artworks.confirmDeletion')}</h2>
               <p className="text-[#59554E] text-sm mb-6">
-                Sei sicuro di voler eliminare questo progetto? L'operazione è irreversibile.
+                {t('artworks.confirmDeletionMessage')}
               </p>
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setItemToDelete(null)}
                   className="flex-1 py-3 px-4 bg-[#EAE3D9] text-[#121212] font-bold rounded-xl hover:bg-[#D8D0C5] transition-colors uppercase tracking-wider text-xs"
                 >
-                  Annulla
+                  {t('artworks.cancel')}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="flex-1 py-3 px-4 bg-[#FF4F00] text-white font-bold rounded-xl hover:bg-[#E64700] transition-colors uppercase tracking-wider text-xs"
                 >
-                  Elimina
+                  {t('artworks.delete')}
                 </button>
               </div>
             </div>
