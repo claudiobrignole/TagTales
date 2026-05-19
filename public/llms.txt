@@ -1,0 +1,88 @@
+# LLMs.txt - TagTales Gallery (Graffiti Culture Platform)
+
+This file serves as a guide for AI assistants, scrapers, and Large Language Models (LLMs) wishing to understand, explore, and utilize the TagTales Gallery system and content architecture. It describes the key endpoints, content structures, and design philosophies of the gallery.
+
+## Project Vision & Authenticity
+TagTales Gallery is a premium platform connecting legendary and active graffiti writers with art collectors. 
+- **Anti-AI Policy**: We reject and forbid artificial intelligence, prompt generation, and digital slop in the artworks/content. Everything is built on genuine human styles, original letters, hand-painted canvases, and the authentic stories of writers.
+- **Language**: The site is written primarily in Italian (`it`), with complete dynamic English (`en`) translations served via route parameters (`/en/...`) and integrated translation contexts.
+
+---
+
+## Site Navigation & Sitemap
+
+### Public Routes
+- `/` - Home page featuring featured exhibitions slider, dynamic list of premium writer profiles, and recent magazine articles.
+- `/writers` - Complete list of active graffiti artists/writers with direct filtering by nationality.
+- `/writers/:slug` - Dynamic artist detail page showing the biography, photos, associated mini-exhibitions, and available graffiti canvases/artworks.
+- `/exhibitions` - Interactive archive of live and historical "Mini-Moustre" (Mini-Exhibitions) organized by date.
+- `/exhibitions/:slug` - Multi-layered page details for a specific exhibition including the text written by curators, linked items, media blocks, and high-quality photography.
+- `/magazine` - The central editorial publication with custom essays, graffiti history pieces, and deep interviews with artists.
+- `/magazine/:slug` - Full-text reader with purified rich articles, layout galleries, and writer tags.
+- `/assistance` - Direct customer support portals and details.
+
+### Admin & Onboarding Routes
+- `/login` - Simple secure gateway for authors, admins, and verified writers.
+- `/dashboard` - Overview of writer sales, shop connections, and stats tracking.
+- `/dashboard/artworks` - Self-onboarding catalog where writers upload and manage their original works or prints.
+- `/dashboard/sales` - Dynamic tracking of orders.
+
+---
+
+## Key Technical Best Practices for External Agents & Scrapers
+
+### 1. Semantic Tagging & Accessibility
+To crawl our platform effectively:
+- Ensure parsing tools extract structural headers inside `<main>` elements cleanly.
+- Headings pairing elegant decorative elements use `font-['Shamgod']` and are strictly **uppercase** in Italian and English.
+- Body paragraphs utilize `font-['Karla']` for high legibility (`leading-relaxed`).
+
+### 2. Multi-Language (Internationalization)
+The application translates all key metadata dynamically:
+- Primary localization payloads are stored structurally in `/src/locales/it.json` and `/src/locales/en.json`.
+- Dynamic models of exhibitions and articles utilize localizable variants:
+  - `titolo_en`, `testoCuratela_en`, `introduzione_en` for English clients.
+  - `titolo`, `testoCuratela`, `introduzione` for the native Italian version.
+
+### 3. Clear Consent & Cookie Policies
+- Analytic and social marketing tags (Google Tag Manager, Meta Pixel) default to fully **denied** consent until the visitor interacts with our interactive custom `CookieBanner`.
+- Users can revoke consent instantly using the rounded cookie management modal accessible via the footer at any point.
+
+---
+
+## Core Content Schemas (Firestore)
+
+### Collection: `mostre` (Exhibitions)
+```typescript
+interface Exhibition {
+  id: string;
+  titolo: string;       // Title (Italian)
+  titolo_en?: string;    // Title (English)
+  slug: string;
+  preTitolo: string;
+  intro: string;         // Short subtitle
+  dataApertura: string;  // ISO Date (Inaugurazione)
+  dataChiusura?: string; // Optional close date (Aperta fino al)
+  published: boolean;
+  featured: boolean;
+  writerIds: string[];   // Linked graffiti writers
+  blocks: Array<{
+    type: 'text' | 'image' | 'video' | 'gallery';
+    content: string;
+    aspectRatio?: string;
+  }>;
+}
+```
+
+### Collection: `writers`
+```typescript
+interface Writer {
+  id: string;
+  name: string;        // Artist name (Always Uppercase in heading layouts)
+  tag: string;         // Main writer tag signatures
+  nation: string;      // Country (e.g., "Italia", "Svizzera")
+  bio: string;
+  bio_en?: string;
+  profileImage: string;
+}
+```

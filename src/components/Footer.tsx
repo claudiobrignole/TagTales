@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Globe } from "lucide-react";
+import { Globe, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
@@ -39,7 +39,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#121212] flex-col text-white py-12 px-[25px] md:px-[25px] relative z-10 overflow-hidden">
       <div className="w-full relative z-10">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 mb-20">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 mb-[35px]">
           <div className="w-full lg:w-1/3">
             <img
               src="/TagTales-tagline-bianco-medium.png"
@@ -50,41 +50,53 @@ export default function Footer() {
               {t('footer.description', 'La storia di ogni writer inizia con una tag. TagTales Gallery connette graffiti writers e collezionisti attraverso mini mostre: opere originali, stampe in edizione limitata, print-on-demand. Zero intelligenza artificiale, solo stile originale.')}
             </p>
 
-            <div className="relative inline-block">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative inline-block">
+                <button
+                  onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                  className="flex items-center gap-2 hover:text-[#FF4F00] transition-colors focus:outline-none text-white border border-white/20 px-4 md:px-6 py-2 md:py-3 rounded-lg"
+                >
+                  <Globe size={20} />
+                  <span className="font-bold text-sm md:text-base lg:text-lg">
+                    {currentLang}
+                  </span>
+                </button>
+                <AnimatePresence>
+                  {langDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute bottom-full left-0 mb-2 bg-[#F2EEE8] shadow-xl rounded-xl border border-[#EAE3D9] overflow-hidden min-w-[120px] z-50 text-[#121212]"
+                    >
+                      {languages.map((lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => handleLangChange(lang)}
+                          className={
+                            "w-full text-left px-4 md:px-5 py-2 md:py-3 text-sm lg:text-lg transition-colors block font-bold " +
+                            (currentLang === lang
+                              ? "bg-[#FF4F00] text-white"
+                              : "hover:bg-white text-[#121212]")
+                          }
+                        >
+                          {lang}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <button
-                onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                className="flex items-center gap-2 hover:text-[#FF4F00] transition-colors focus:outline-none text-white border border-white/20 px-4 md:px-6 py-2 md:py-3 rounded-lg"
+                onClick={() => window.dispatchEvent(new Event('open-cookie-settings'))}
+                className="flex items-center gap-2 hover:text-[#FF4F00] transition-colors focus:outline-none text-white border border-white/20 px-4 md:px-6 py-2 md:py-3 rounded-lg cursor-pointer"
               >
-                <Globe size={20} />
-                <span className="font-bold text-sm md:text-base lg:text-lg">
-                  {currentLang}
+                <Shield size={20} />
+                <span className="font-bold text-sm md:text-base lg:text-lg uppercase">
+                  {currentLang === 'EN' ? 'Cookies' : 'Cookie'}
                 </span>
               </button>
-              <AnimatePresence>
-                {langDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute bottom-full left-0 mb-2 bg-[#F2EEE8] shadow-xl rounded-xl border border-[#EAE3D9] overflow-hidden min-w-[120px] z-50 text-[#121212]"
-                  >
-                    {languages.map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => handleLangChange(lang)}
-                        className={
-                          "w-full text-left px-4 md:px-5 py-2 md:py-3 text-sm lg:text-lg transition-colors block font-bold " +
-                          (currentLang === lang
-                            ? "bg-[#FF4F00] text-white"
-                            : "hover:bg-white text-[#121212]")
-                        }
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </div>
 
@@ -194,8 +206,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center text-sm mt-12 gap-4 border-t border-white/20 pt-8 text-center md:text-left">
-          <p className="font-medium text-white w-full text-center md:w-auto">
+        <div className="border-t border-white/20 pt-8 text-center">
+          <p className="font-medium text-white/80 w-full text-center">
             © {new Date().getFullYear()} TagTales Gallery by Brignole | {t('footer.country')}
           </p>
         </div>

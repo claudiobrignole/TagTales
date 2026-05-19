@@ -28,6 +28,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     const images: {url: string, ecwidLink?: string, contactLink?: string, contactType?: string, fallbackUrl?: string, blockType: string, id: string}[] = [];
     if (!blocks) return images;
     blocks.forEach(block => {
+      if (!block) return;
+      if (block.hidden) return; // Skip hidden blocks
       if (block.type === 'image_fullscreen' && block.images?.[0]?.url) {
         images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, contactType: block.images[0].contactType, contactLink: block.images[0].contactLink, fallbackUrl: block.images[0].fallbackUrl, blockType: block.type, id: `${block.id}_0` });
       } else if (block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') {
@@ -62,6 +64,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   return (
     <div className="w-full space-y-0">
       {blocks.map((block) => {
+        if (!block) return null;
+        if (block.hidden) return null; // Skip rendering hidden blocks completely
+
         // --- TEXT BLOCK (Quote) ---
         if (block.type === 'text') {
           const isBlack = block.backgroundColor === 'black';
@@ -70,7 +75,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             <div 
               key={block.id} 
               className={clsx(
-                "w-full px-[25px] md:px-[50px] py-16 md:py-24",
+                "w-full px-[25px] md:px-[50px] py-[50px]",
                 isBlack ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]"
               )}
             >
@@ -89,7 +94,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             <div 
               key={block.id} 
               className={clsx(
-                "w-full px-[25px] md:px-[50px] py-16 md:py-24 flex",
+                "w-full px-[25px] md:px-[50px] py-[50px] flex",
                 alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-start',
                 isBlack ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]"
               )}
@@ -125,7 +130,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                       href={img.ecwidLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                      className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {t('exhibition.buy', 'Acquista')}
@@ -133,7 +138,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   ) : (
                     <button 
                       onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img.contactType, img.contactLink)); }}
-                      className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                      className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                     >
                       {t('exhibitionInquiry.title', 'Richiedi info')}
                     </button>
@@ -162,7 +167,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             <div 
               key={block.id} 
               className={clsx(
-                "w-full px-[25px] md:px-[50px] py-16 md:py-24",
+                "w-full px-[25px] md:px-[50px] py-[50px]",
                 isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]"
               )}
             >
@@ -186,13 +191,13 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             <div 
               key={block.id} 
               className={clsx(
-                "w-full flex flex-col md:flex-row h-auto md:h-[80vh] gap-[15px] md:gap-[25px] p-[15px] md:p-[25px]",
+                "w-full flex flex-col md:flex-row h-auto gap-[15px] md:gap-[25px] px-[25px] md:px-[50px] py-[35px]",
                 isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]"
               )}
             >
               {/* Image 1 */}
               <div 
-                className={clsx("w-full md:w-1/2 relative h-[50vh] md:h-full bg-black/5", img1.url ? "cursor-pointer" : "")} 
+                className={clsx("w-full md:w-1/2 relative bg-black/5 aspect-square", img1.url ? "cursor-pointer" : "")} 
                 onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
               >
                 {img1.url && (
@@ -210,14 +215,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                         target="_blank" 
                         rel="noopener noreferrer" 
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                        className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
                         {t('exhibition.buy', 'Acquista')}
                       </a>
                     ) : (
                       <button 
                          onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img1.contactType, img1.contactLink)); }}
-                         className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                         className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
                         {t('exhibitionInquiry.title', 'Richiedi info')}
                       </button>
@@ -236,7 +241,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
               </div>
               {/* Image 2 */}
               <div 
-                className={clsx("w-full md:w-1/2 relative h-[50vh] md:h-full bg-black/5", img2.url ? "cursor-pointer" : "")} 
+                className={clsx("w-full md:w-1/2 relative bg-black/5 aspect-square", img2.url ? "cursor-pointer" : "")} 
                 onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
               >
                 {img2.url && (
@@ -254,14 +259,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                         target="_blank" 
                         rel="noopener noreferrer" 
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                        className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
                         {t('exhibition.buy', 'Acquista')}
                       </a>
                     ) : (
                       <button 
                          onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img2.contactType, img2.contactLink)); }}
-                         className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                         className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
                         {t('exhibitionInquiry.title', 'Richiedi info')}
                       </button>
@@ -295,7 +300,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             <div 
               key={block.id} 
               className={clsx(
-                "w-full px-[25px] md:px-[50px] py-16 md:py-32 flex justify-center",
+                "w-full px-[25px] md:px-[50px] pt-[80px] md:pt-[150px] pb-[50px] md:pb-[100px] flex justify-center",
                 isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]"
               )}
             >
@@ -306,9 +311,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 >
                   {img1.url && (
                     isVideo(img1.url) ? (
-                      <video src={img1.url} poster={img1.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] object-cover" />
+                      <video src={img1.url} poster={img1.fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover" />
                     ) : (
-                      <img src={img1.url} alt="Mostra Creative 1" className="w-full aspect-[4/5] object-cover" />
+                      <img src={img1.url} alt="Mostra Creative 1" className="w-full h-auto object-cover" />
                     )
                   )}
                   {(img1.ecwidLink || img1.contactLink) && (
@@ -319,14 +324,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                           target="_blank" 
                           rel="noopener noreferrer" 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
                           {t('exhibition.buy', 'Acquista')}
                         </a>
                       ) : (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img1.contactType, img1.contactLink)); }}
-                          className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
                           {t('exhibitionInquiry.title', 'Richiedi info')}
                         </button>
@@ -344,14 +349,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   )}
                 </div>
                 <div 
-                  className={clsx("md:mt-24 relative block w-full", img2.url ? "cursor-pointer" : "")} 
+                  className={clsx("relative block w-full md:mt-24", img2.url ? "cursor-pointer" : "")} 
                   onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
                 >
                   {img2.url && (
                     isVideo(img2.url) ? (
-                      <video src={img2.url} poster={img2.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] object-cover" />
+                      <video src={img2.url} poster={img2.fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover" />
                     ) : (
-                      <img src={img2.url} alt="Mostra Creative 2" className="w-full aspect-[4/5] object-cover" />
+                      <img src={img2.url} alt="Mostra Creative 2" className="w-full h-auto object-cover" />
                     )
                   )}
                   {(img2.ecwidLink || img2.contactLink) && (
@@ -362,14 +367,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                           target="_blank" 
                           rel="noopener noreferrer" 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
                           {t('exhibition.buy', 'Acquista')}
                         </a>
                       ) : (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img2.contactType, img2.contactLink)); }}
-                          className="inline-flex bg-white text-[#121212] px-6 py-3 rounded-full uppercase font-bold tracking-widest text-xs md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-md border-none"
+                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
                           {t('exhibitionInquiry.title', 'Richiedi info')}
                         </button>

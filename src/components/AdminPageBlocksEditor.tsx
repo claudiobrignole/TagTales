@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Image as ImageIcon, HelpCircle, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, HelpCircle, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { Reorder } from 'motion/react';
 import clsx from 'clsx';
 import ImageUpload from './ImageUpload';
@@ -30,6 +30,7 @@ export interface PageBlock {
   qa?: { question: string; answer: string; question_en?: string; answer_en?: string }[];
   accordionItems?: { title: string; content: string; title_en?: string; content_en?: string }[];
   sectionId?: 'hero' | 'magazine' | 'mostre' | 'writers' | 'newsletter';
+  hidden?: boolean;
 }
 
 interface Props {
@@ -171,28 +172,51 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
           <Reorder.Item 
             key={block.id} 
             value={block}
-            className="border border-[#EAE3D9] bg-white rounded-2xl p-6 flex flex-col gap-4 shadow-sm relative group transition-all hover:border-[#FF4F00]/30"
+            className={clsx(
+              "border rounded-2xl p-6 flex flex-col gap-4 relative group transition-all duration-200",
+              block.hidden 
+                ? "bg-[#FAF8F5] opacity-65 border-dashed border-[#FF4F00]/30 shadow-none" 
+                : "border-[#EAE3D9] bg-white shadow-sm hover:border-[#FF4F00]/30"
+            )}
           >
-            <div className="absolute top-4 right-4 flex items-center gap-1">
+            <div className={clsx(
+              "absolute top-4 right-4 flex items-center gap-1 transition-opacity",
+              block.hidden ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}>
+              <button 
+                type="button" 
+                onClick={() => updateBlock(block.id, { hidden: !block.hidden })} 
+                className={`p-2 rounded transition-colors ${block.hidden ? "text-[#FF4F00] hover:bg-[#FF4F00]/10" : "text-gray-400 hover:text-[#121212] hover:bg-[#F2EEE8]"}`}
+                title={block.hidden ? "Rendi visibile" : "Nascondi blocco"}
+              >
+                {block.hidden ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
               <div className="cursor-grab active:cursor-grabbing p-2 text-[#59554E] hover:text-[#FF4F00] transition-colors"><GripVertical size={18} /></div>
               <div className="w-px h-5 bg-[#EAE3D9] mx-2"></div>
               <button type="button" onClick={() => removeBlock(block.id)} className="p-2 text-red-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
             </div>
 
-            <div className="text-[10px] font-bold uppercase text-[#FF4F00] tracking-[0.2em] mb-2 flex items-center gap-2">
+            <div className="text-[10px] font-bold uppercase text-[#FF4F00] tracking-[0.2em] mb-2 flex items-center gap-2 flex-wrap">
               <span className="w-2 h-2 bg-[#FF4F00] rounded-full"></span>
-              {block.type === 'text' && 'Citazione'}
-              {block.type === 'paragraph' && 'Testo / Paragrafo'}
-              {block.type === 'large_title' && 'Titolo Gigante (Shamgod)'}
-              {block.type === 'text_with_image_half' && 'Testo e Immagine (Metà)'}
-              {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
-              {block.type === 'image_width_paragraph' && 'Immagine (Larghezza Paragrafo)'}
-              {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
-              {block.type === 'video_embed' && 'Video Embed'}
-              {block.type === 'qa_module' && 'Modulo FAQ (Q&A)'}
-              {block.type === 'accordion' && 'Accordion (Menu a tendina)'}
-              {block.type === 'contact_form' && 'Modulo Contatti (Email)'}
-              {block.type === 'home_section' && `Sezione Predefinita: ${block.sectionId?.toUpperCase()}`}
+              <span>
+                {block.type === 'text' && 'Citazione'}
+                {block.type === 'paragraph' && 'Testo / Paragrafo'}
+                {block.type === 'large_title' && 'Titolo Gigante (Shamgod)'}
+                {block.type === 'text_with_image_half' && 'Testo e Immagine (Metà)'}
+                {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
+                {block.type === 'image_width_paragraph' && 'Immagine (Larghezza Paragrafo)'}
+                {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
+                {block.type === 'video_embed' && 'Video Embed'}
+                {block.type === 'qa_module' && 'Modulo FAQ (Q&A)'}
+                {block.type === 'accordion' && 'Accordion (Menu a tendina)'}
+                {block.type === 'contact_form' && 'Modulo Contatti (Email)'}
+                {block.type === 'home_section' && `Sezione Predefinita: ${block.sectionId?.toUpperCase()}`}
+              </span>
+              {block.hidden && (
+                <span className="bg-[#FF4F00] text-white px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase ml-2">
+                  Nascosto / Bozza
+                </span>
+              )}
             </div>
 
             {(block.type === 'text' || block.type === 'paragraph' || block.type === 'large_title') && (

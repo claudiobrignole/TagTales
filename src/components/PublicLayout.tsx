@@ -3,6 +3,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import LanguagePrompt from "./LanguagePrompt";
 import BackToTop from "./BackToTop";
+import CookieBanner from "./CookieBanner";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -28,6 +29,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       </main>
       
       <BackToTop />
+      <CookieBanner />
       <Footer />
     </div>
   );

@@ -93,6 +93,15 @@ export default function PublicExhibitionDetail() {
     testoCuratela: getLocalizedField(rawExhibitionData, 'testoCuratela', lang) || getLocalizedField(rawExhibitionData, 'descrizione', lang) || getLocalizedField(rawExhibitionData, 'description', lang) || ""
   } : null;
 
+  const isValidDate = (d: any) => {
+    if (!d) return false;
+    if (typeof d !== 'string') return false;
+    const trimmed = d.trim();
+    if (trimmed === '' || trimmed === 'undefined' || trimmed === 'null') return false;
+    const parsed = Date.parse(trimmed);
+    return !isNaN(parsed);
+  };
+
   if (loading) {
     return (
       <PublicLayout>
@@ -130,7 +139,7 @@ export default function PublicExhibitionDetail() {
           image={exhibition.bannerHero} 
         />
       )}
-      <div className="pb-32">
+      <div className="pb-[25px]">
         <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
           {exhibition.bannerHero && exhibition.bannerHero.trim() !== '' && (
             exhibition.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
@@ -190,7 +199,7 @@ export default function PublicExhibitionDetail() {
               >
                 {exhibition.intro || exhibition.sottotitolo}
               </motion.p>
-              {exhibition.dataApertura && (
+              {isValidDate(exhibition.dataApertura) && (
                 <motion.p
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -199,7 +208,7 @@ export default function PublicExhibitionDetail() {
                 >
                   {lang === 'EN' ? 'Opening ' : 'Inaugurazione '}
                   {new Date(exhibition.dataApertura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  {exhibition.dataChiusura && (
+                  {isValidDate(exhibition.dataChiusura) && (
                     <>
                       {lang === 'EN' ? ' - Open until ' : ' - Aperta fino al '}
                       {new Date(exhibition.dataChiusura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}

@@ -483,7 +483,7 @@ export default function PublicHome() {
                           ) ||
                           featuredExhibitions[currentSlide].title}
                       </motion.h1>
-                      <motion.p className="text-[clamp(16px,2.5vw,28px)] font-medium mb-6 md:mb-12 max-w-lg md:max-w-2xl leading-snug">
+                      <motion.p className="text-[clamp(16px,2.5vw,28px)] font-medium mb-6 md:mb-12 max-w-lg md:max-w-2xl leading-snug uppercase">
                         {getLocalizedField(
                           featuredExhibitions[currentSlide],
                           "intro",
@@ -1072,11 +1072,15 @@ export default function PublicHome() {
         </div>
       ) : (
         <div className="flex flex-col">
-          {blocks.map((block, i) => (
-            <React.Fragment key={block.id || i}>
-              {renderBlock(block)}
-            </React.Fragment>
-          ))}
+          {blocks.map((block, i) => {
+            if (!block) return null;
+            if (block.hidden) return null;
+            return (
+              <React.Fragment key={block.id || i}>
+                {renderBlock(block)}
+              </React.Fragment>
+            );
+          })}
         </div>
       )}
     </PublicLayout>

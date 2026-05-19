@@ -145,13 +145,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRouteWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#F2EEE8]">Loading...</div>;
-  }
-  if (!user) {
-    return <Navigate to="/coming-soon" />;
-  }
   return <>{children}</>;
 }
 
@@ -181,7 +174,7 @@ export default function App() {
           <LanguagePrompt />
           <RouteTracker />
           <Routes>
-            <Route path="/coming-soon" element={<ComingSoon />} />
+            <Route path="/coming-soon" element={<Navigate to="/" replace />} />
             <Route 
               path="/en" 
               element={

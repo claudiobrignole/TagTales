@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -23,6 +23,7 @@ export interface ExhibitionBlock {
   alignment?: 'left' | 'center' | 'right';
   images?: { url: string; ecwidLink?: string; contactType?: 'email' | 'whatsapp' | 'link'; contactLink?: string; fallbackUrl?: string; caption?: string; caption_en?: string; captionColor?: 'white' | 'black'; captionPosition?: 'top-left' | 'bottom-left' }[];
   videoUrl?: string;
+  hidden?: boolean;
 }
 
 interface Props {
@@ -99,21 +100,36 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
       </div>
       <div className="space-y-6">
         {blocks.map((block, index) => (
-          <div key={block.id} className="border border-[#EAE3D9] bg-white rounded-xl p-4 flex flex-col gap-4 shadow-sm relative group">
-            <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div key={block.id} className={`border p-4 flex flex-col gap-4 rounded-xl relative group transition-all duration-200 ${block.hidden ? 'bg-[#FAF8F5] opacity-65 border-dashed border-[#FF4F00]/30 shadow-none' : 'bg-white border-[#EAE3D9] shadow-sm'}`}>
+            <div className={`absolute top-4 right-4 flex items-center gap-1 transition-opacity ${block.hidden ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+              <button 
+                type="button" 
+                onClick={() => updateBlock(block.id, { hidden: !block.hidden })} 
+                className={`p-1.5 rounded transition-colors ${block.hidden ? "text-[#FF4F00] hover:bg-[#FF4F00]/10" : "text-gray-400 hover:text-[#121212] hover:bg-[#F2EEE8]"}`}
+                title={block.hidden ? "Rendi visibile" : "Nascondi blocco"}
+              >
+                {block.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
               <button type="button" onClick={() => moveBlock(index, -1)} disabled={index === 0} className="p-1.5 text-gray-400 hover:text-[#121212] disabled:opacity-30"><ArrowUp size={16} /></button>
               <button type="button" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} className="p-1.5 text-gray-400 hover:text-[#121212] disabled:opacity-30"><ArrowDown size={16} /></button>
               <div className="w-px h-4 bg-gray-200 mx-1"></div>
               <button type="button" onClick={() => removeBlock(block.id)} className="p-1.5 text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
             </div>
 
-            <div className="text-xs font-bold uppercase text-[#59554E] tracking-wider mb-2">
-              {block.type === 'text' && 'Blocco Quote'}
-              {block.type === 'paragraph' && 'Blocco Paragrafo'}
-              {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
-              {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
-              {block.type === 'images_side_by_side_creative' && 'Due Immagini Sfalsate (Creative)'}
-              {block.type === 'video_embed' && 'Video Embed (YouTube/Vimeo)'}
+            <div className="text-xs font-bold uppercase text-[#59554E] tracking-wider mb-2 flex items-center gap-2">
+              <span>
+                {block.type === 'text' && 'Blocco Quote'}
+                {block.type === 'paragraph' && 'Blocco Paragrafo'}
+                {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
+                {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
+                {block.type === 'images_side_by_side_creative' && 'Due Immagini Sfalsate (Creative)'}
+                {block.type === 'video_embed' && 'Video Embed (YouTube/Vimeo)'}
+              </span>
+              {block.hidden && (
+                <span className="bg-[#FF4F00] text-white px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase">
+                  Nascosto / Bozza
+                </span>
+              )}
             </div>
 
             {(block.type === 'text' || block.type === 'paragraph') && (

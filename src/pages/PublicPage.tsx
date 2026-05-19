@@ -342,7 +342,11 @@ export default function PublicPage({ id: propId }: { id?: string }) {
             <div className="flex flex-col">
                 {data.blocks && data.blocks.length > 0 ? (
                   <div className="flex flex-col">
-                    {data.blocks.map(renderBlock)}
+                    {data.blocks.map((block: any, idx: number) => {
+                      if (!block) return null;
+                      if (block.hidden) return null;
+                      return renderBlock(block, idx);
+                    })}
                   </div>
                 ) : (
                   <div className="max-w-4xl mx-auto px-6 pb-32">
