@@ -335,7 +335,7 @@ export default function AdminPages() {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-8">
+              <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-8 admin-pages-form block-editor-container">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-white p-8 rounded-3xl border border-[#EAE3D9]">
                     <div className="space-y-4">
                         <label className="block text-xs font-bold text-[#59554E] uppercase tracking-[0.2em]">ID Pagina *</label>

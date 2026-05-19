@@ -875,6 +875,14 @@
     "statusDraft": "Draft",
     "statusPublished": "Published"
   },
+  "exhibition": {
+    "buy": "Buy"
+  },
+  "exhibitionInquiry": {
+    "title": "Info Request",
+    "desc": "This artwork is sold directly by the artist; please contact the artist or one of his representatives for more information",
+    "btn": "Contact"
+  },
   "adminWriters": {
     "saveError": "Error saving writer.",
     "deleteError": "Error deleting writer: ",

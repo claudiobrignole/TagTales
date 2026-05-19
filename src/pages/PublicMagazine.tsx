@@ -7,7 +7,6 @@ import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { getLocalizedField } from "../utils/localization";
-import { Grid3x3, Maximize } from "lucide-react";
 import { IMAGE_RADIUS } from "../constants/theme";
 
 import PublicLayout from "../components/PublicLayout";
@@ -24,7 +23,6 @@ export default function PublicMagazine() {
   const [hiddenFilterBar, setHiddenFilterBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"fullscreen" | "grid">("fullscreen");
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() || 0;
@@ -139,20 +137,6 @@ export default function PublicMagazine() {
               className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm flex-1 max-w-[300px]"
             />
           </div>
-          <button
-            onClick={() =>
-              setViewMode((prev) =>
-                prev === "fullscreen" ? "grid" : "fullscreen",
-              )
-            }
-            className="text-white border border-white/30 hover:bg-white hover:text-[#121212] p-2 rounded-full transition-colors shrink-0 ml-4 hidden md:block"
-          >
-            {viewMode === "fullscreen" ? (
-              <Grid3x3 size={20} />
-            ) : (
-              <Maximize size={20} />
-            )}
-          </button>
         </div>
       </motion.div>
 
@@ -171,25 +155,11 @@ export default function PublicMagazine() {
               {t("common.noResultsFound", "Nessun articolo trovato.")}
             </p>
           ) : (
-            <div
-              className={clsx(
-                "w-full pb-32",
-                viewMode === "grid"
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px]"
-                  : "flex flex-col gap-16",
-              )}
-            >
+            <div className="w-full pb-32 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px]">
               {filteredArticles.map((article) => {
                 const articleContent = (
                   <>
-                    <div
-                      className={clsx(
-                        "overflow-hidden border-hidden",
-                        viewMode === "grid"
-                          ? `${IMAGE_RADIUS.MD} aspect-[4/3]`
-                          : `${IMAGE_RADIUS.LG} aspect-[2/1] w-full`,
-                      )}
-                    >
+                    <div className={`overflow-hidden border-hidden ${IMAGE_RADIUS.MD} aspect-[4/3]`}>
                       {article.immagineCopertina &&
                       article.immagineCopertina.trim() !== "" ? (
                         <img
@@ -207,12 +177,7 @@ export default function PublicMagazine() {
                       )}
                     </div>
 
-                    <div
-                      className={clsx(
-                        "flex flex-col flex-1 px-2 md:px-0",
-                        viewMode === "fullscreen" && "max-w-4xl mx-auto w-full",
-                      )}
-                    >
+                    <div className="flex flex-col flex-1 px-2 md:px-0">
                       {(getLocalizedField(article, "preTitolo", lang) ||
                         article.preTitolo) && (
                         <p className="font-['Karla'] font-bold text-[12px] md:text-[14px] uppercase tracking-widest text-[#FF4F00] mb-2 leading-none">
@@ -221,14 +186,7 @@ export default function PublicMagazine() {
                         </p>
                       )}
 
-                      <h2
-                        className={clsx(
-                          "font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9] mb-2 md:mb-4",
-                          viewMode === "grid"
-                            ? "text-[40px] md:text-[50px]"
-                            : "text-[50px] md:text-[80px]",
-                        )}
-                      >
+                      <h2 className="font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9] mb-2 md:mb-4 text-[40px] md:text-[50px]">
                         {getLocalizedField(article, "titolo", lang) ||
                           article.titolo}
                       </h2>
@@ -236,14 +194,7 @@ export default function PublicMagazine() {
                       {(getLocalizedField(article, "sottotitolo", lang) ||
                         article.sottotitolo ||
                         article.sommario) && (
-                        <p
-                          className={clsx(
-                            "font-['Karla'] text-white/60 leading-[1.35] mb-6",
-                            viewMode === "grid"
-                              ? "text-lg line-clamp-3"
-                              : "text-xl md:text-2xl",
-                          )}
-                        >
+                        <p className="font-['Karla'] text-white/60 leading-[1.35] mb-6 text-lg line-clamp-3">
                           {getLocalizedField(article, "sottotitolo", lang) ||
                             article.sottotitolo ||
                             article.sommario}

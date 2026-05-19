@@ -120,7 +120,7 @@ const AccordionItem: React.FC<{ item: any; isBlack: boolean }> = ({
           >
             <div
               className={clsx(
-                "pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit",
+                "pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit",
                 isBlack ? "prose-invert text-white/70" : "text-[#59554E]",
               )}
               dangerouslySetInnerHTML={{
@@ -178,7 +178,7 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
         {((block.text && block.text !== "<p><br></p>") ||
           (block.text_en && block.text_en !== "<p><br></p>")) && (
           <div
-            className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit mb-8"
+            className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit mb-8", block.backgroundColor === 'black' ? "prose-invert text-white" : "")}
             dangerouslySetInnerHTML={{
               __html: cleanHtml(
                 getLocalizedField(block, "text", i18n.language) || block.text,
@@ -585,7 +585,7 @@ export default function PublicHome() {
             </div>
             <div className="mt-20 flex justify-center w-full">
               <Link
-                to="/mostre"
+                to="/exhibitions"
                 className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
               >
                 {t("home.allExhibitions", "TUTTE LE MOSTRE")}{" "}
@@ -836,7 +836,10 @@ export default function PublicHome() {
           >
             <div className="max-w-4xl w-full mx-auto min-w-0">
               <div
-                className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] italic text-3xl md:text-5xl leading-tight text-inherit"
+                className={clsx(
+                  "prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] italic text-3xl md:text-5xl leading-tight text-inherit",
+                  block.backgroundColor === "black" ? "prose-invert text-white" : ""
+                )}
                 dangerouslySetInnerHTML={{
                   __html: cleanHtml(
                     getLocalizedField(block, "text", lang) || block.text,
@@ -875,7 +878,10 @@ export default function PublicHome() {
           >
             <div className="max-w-4xl mx-auto w-full min-w-0">
               <div
-                className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit !text-xl md:!text-2xl opacity-80"
+                className={clsx(
+                  "prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit !text-xl md:!text-2xl opacity-80",
+                  block.backgroundColor === "black" ? "prose-invert text-white" : ""
+                )}
                 dangerouslySetInnerHTML={{
                   __html: cleanHtml(
                     getLocalizedField(block, "text", lang) || block.text,
@@ -898,7 +904,7 @@ export default function PublicHome() {
           >
             <div
               className={clsx(
-                "max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center",
+                "max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center md:items-start",
                 block.imagePosition === "right"
                   ? "md:flex-row-reverse"
                   : "md:flex-row",
@@ -911,7 +917,10 @@ export default function PublicHome() {
                   </h3>
                 )}
                 <div
-                  className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit !text-xl leading-[1.35]"
+                  className={clsx(
+                    "prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit !text-xl leading-[1.35]",
+                    block.backgroundColor === "black" ? "prose-invert text-white" : ""
+                  )}
                   dangerouslySetInnerHTML={{
                     __html: cleanHtml(
                       getLocalizedField(block, "text", lang) || block.text,
@@ -998,7 +1007,7 @@ export default function PublicHome() {
                   key={idx}
                   src={img.url}
                   alt=""
-                  className="w-full aspect-[4/5] object-cover rounded-2xl"
+                  className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-2xl"
                 />
               ))}
             </div>

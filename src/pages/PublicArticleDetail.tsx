@@ -14,6 +14,7 @@ import { trackViewArtwork } from "../utils/analytics";
 import clsx from "clsx";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import { IMAGE_RADIUS } from "../constants/theme";
 
 export default function PublicArticleDetail() {
   const { slug } = useParams();
@@ -22,6 +23,8 @@ export default function PublicArticleDetail() {
 
   const [rawData, setRawData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -62,6 +65,27 @@ export default function PublicArticleDetail() {
           if (typeof (window as any).fbq === 'function') {
             (window as any).fbq('track', 'ViewContent', { content_type: 'article', content_ids: [articleDoc.id] });
           }
+
+          // Fetch related articles
+          const isPublished = (d: any) => d.published !== false && d.isPublished !== false;
+          const snapshotArticles = await getDocs(collection(db, "articoli"));
+          let articlesData = snapshotArticles.docs
+            .map((doc) => {
+              const docData = doc.data();
+              return {
+                id: doc.id,
+                ...docData,
+                img: docData.immagineCopertina || docData.coverImageUrl,
+                title: docData.titolo || docData.title,
+                tag: docData.tag?.[0] || docData.tags?.[0] || "ARTICOLO",
+              };
+            })
+            .filter(isPublished)
+            .filter((a) => a.id !== articleDoc.id) as any[];
+
+          // Shuffle and pick 2
+          articlesData = articlesData.sort(() => 0.5 - Math.random());
+          setRelatedArticles(articlesData.slice(0, 2));
         }
       } catch (error) {
         console.error("Error fetching article:", error);
@@ -221,7 +245,7 @@ export default function PublicArticleDetail() {
             )}
             
             <div
-              className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-xl leading-[1.4] text-[#121212]"
+              className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-xl leading-[1.4] text-[#121212]"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(
                   cleanHtml((getLocalizedField(article, 'contenuto', lang) || article.contenuto || "").replace(/<p>\s*<\/p>/gi, "<p><br></p>")),
@@ -260,6 +284,61 @@ export default function PublicArticleDetail() {
                       />
                     </div>
                   ))}
+              </div>
+            </div>
+          )}
+
+          {relatedArticles.length > 0 && (
+            <div className="mt-12 md:mt-16">
+              <h3 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase mb-8 md:mb-10 text-[#121212]">
+                {lang === 'EN' ? 'You might also read...' : 'Puoi leggere anche...'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[15px] md:gap-[25px]">
+                {relatedArticles.map((relArticle: any, i) => (
+                  <Link
+                    key={i}
+                    to={`/magazine/${relArticle.slug || relArticle.id}`}
+                    className="group cursor-pointer flex flex-col gap-4"
+                  >
+                    <div
+                      className={clsx(
+                        "aspect-[4/3] bg-[#2A2A2A] overflow-hidden",
+                        IMAGE_RADIUS.MD,
+                      )}
+                    >
+                      {relArticle.img && (
+                        <img
+                          src={relArticle.img}
+                          alt={relArticle.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col flex-1 px-2 md:px-0">
+                      {(getLocalizedField(relArticle, "preTitolo", lang) ||
+                        relArticle.preTitolo) && (
+                        <p className="font-['Karla'] font-bold text-[12px] md:text-[14px] uppercase tracking-widest text-[#FF4F00] mb-2 leading-none">
+                          {getLocalizedField(relArticle, "preTitolo", lang) ||
+                            relArticle.preTitolo}
+                        </p>
+                      )}
+                      <h3 className="font-['Shamgod'] uppercase text-[#121212] group-hover:text-[#FF4F00] transition-colors leading-[0.9] text-[30px] md:text-[40px] mb-2 md:mb-4">
+                        {getLocalizedField(relArticle, "titolo", lang) ||
+                          getLocalizedField(relArticle, "title", lang) ||
+                          relArticle.title}
+                      </h3>
+                      {(getLocalizedField(relArticle, "sottotitolo", lang) ||
+                        relArticle.sottotitolo ||
+                        relArticle.sommario) && (
+                        <p className="font-['Karla'] text-[#121212] opacity-80 leading-[1.35] text-base md:text-lg line-clamp-3">
+                          {getLocalizedField(relArticle, "sottotitolo", lang) ||
+                            relArticle.sottotitolo ||
+                            relArticle.sommario}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           )}

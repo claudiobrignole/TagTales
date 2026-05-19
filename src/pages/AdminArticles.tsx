@@ -561,18 +561,7 @@ export default function AdminArticles() {
                   <label className="block text-sm font-bold text-[#59554E] mb-2">
                     Contenuto * (Immagini e video possono essere inseriti qui)
                   </label>
-                <div className="bg-white border border-[#EAE3D9] rounded-xl relative">
-                  <style>
-                    {`
-                      .ql-toolbar.ql-snow {
-                        position: sticky;
-                        top: 0;
-                        z-index: 1000;
-                        background-color: white;
-                        border-bottom: 1px solid #EAE3D9;
-                      }
-                    `}
-                  </style>
+                <div className="bg-white border border-[#EAE3D9] rounded-xl relative quill-wrapper-override">
                   <ReactQuill
                     theme="snow"
                     value={formData.contenuto}
@@ -581,7 +570,7 @@ export default function AdminArticles() {
                     }
                     modules={{
                       toolbar: [
-                        [{ header: [2, 3, 4, false] }],
+                        [{ header: [1, 2, 3, 4, false] }],
                         [
                           "bold",
                           "italic",

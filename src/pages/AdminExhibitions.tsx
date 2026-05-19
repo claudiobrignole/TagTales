@@ -54,8 +54,8 @@ export default function AdminExhibitions() {
     blocks: [] as any[],
     bannerHero: "",
     bannerHeroFallback: "",
-    galleria: [] as string[],
     dataApertura: "",
+    dataChiusura: "",
     published: false,
     featured: false,
     artistaIds: [] as string[],
@@ -143,8 +143,8 @@ export default function AdminExhibitions() {
         blocks: [],
         bannerHero: "",
         bannerHeroFallback: "",
-        galleria: [] as string[],
         dataApertura: "",
+        dataChiusura: "",
         published: false,
         featured: false,
         artistaIds: [],
@@ -209,12 +209,12 @@ export default function AdminExhibitions() {
       setSaveProgress(85);
       setSaveStatus(t('adminExhibitions.savingDb', "Salvataggio su database..."));
 
-      const payload = {
+      const payload = JSON.parse(JSON.stringify({
         ...translatedData,
         slug_en: formData.slug_en || formData.slug,
         blocks: translatedBlocks,
         updatedAt: new Date().toISOString(),
-      };
+      }));
 
       if (editingId) {
         await updateDoc(doc(db, "mostre", editingId), payload);
@@ -559,14 +559,13 @@ export default function AdminExhibitions() {
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                       placeholder="es. tag-tales-exhibition"
                     />
-                    <p className="text-xs text-[#59554E] mt-1">Lascia vuoto per usare lo slug italiano anche in inglese.</p>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-[#59554E] mb-2">
-                      Sottotitolo / Intro
+                       Sottotitolo / Intro
                     </label>
                     <textarea
-                      rows={5}
+                      rows={1}
                       value={formData.intro}
                       onChange={(e) =>
                         setFormData({ ...formData, intro: e.target.value })
@@ -600,6 +599,28 @@ export default function AdminExhibitions() {
                       className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#59554E] mb-2">
+                      Aperta fino a (Opzionale)
+                    </label>
+                    <input
+                      type="date"
+                      value={
+                        (formData as any).dataChiusura
+                          ? (formData as any).dataChiusura.split("T")[0]
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          dataChiusura: e.target.value
+                            ? new Date(e.target.value).toISOString()
+                            : "",
+                        } as any)
+                      }
+                      className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-[#EAE3D9]">
@@ -618,13 +639,6 @@ export default function AdminExhibitions() {
                       folder="exhibitions"
                     />
                   )}
-
-                  <MultiImageUpload
-                    label="Galleria Immagini (Fallback / Vecchio formato)"
-                    values={formData.galleria}
-                    onChange={(urls) => setFormData({ ...formData, galleria: urls })}
-                    folder="exhibitions"
-                  />
 
                   <AdminExhibitionBlocksEditor 
                     blocks={formData.blocks}

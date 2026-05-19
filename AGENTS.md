@@ -47,7 +47,7 @@
 
 Regola 1: Sanificazione Obbligatoria (Data Purify). Ogni volta che si renderizza contenuto HTML proveniente dal database/ReactQuill, è TASSATIVO passare il contenuto attraverso la funzione cleanHtml (da src/utils/cleanHtml.ts) prima di iniettarlo in dangerouslySetInnerHTML. Questo previene la rottura del layout eliminando Non-Breaking Spaces (&nbsp;, \u00A0) e Soft Hyphens.
 
-Regola 2: Il 'Golden Wrapper' Tailwind. Il contenitore del testo prose DEVE utilizzare ESATTAMENTE questa base intoccabile: className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla']". Qualsiasi variazione sui margini (my-2) o sul wrap (whitespace-pre-wrap) è vietata.
+Regola 2: Il 'Golden Wrapper' Tailwind. Il contenitore del testo prose DEVE utilizzare ESATTAMENTE questa base intoccabile: className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla']". Qualsiasi variazione sui margini (my-2, my-4) o sul wrap (whitespace-pre-wrap) è vietata.
 
 Regola 3: Divieto Assoluto di Hack CSS. È SEVERAMENTE VIETATO tentare di alterare il word-break o la sillabazione tramite: tag <style> iniettati nei componenti, varianti arbitrarie complesse come [&_*]:[word-break:...], o override globali in index.css.
 

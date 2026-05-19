@@ -32,25 +32,19 @@ export default function PublicExhibitionDetail() {
         
         let docSnap: any = null;
         
-        // 1. Se lingua EN, cerca prima per slug_en
-        if (lang === 'EN') {
-          const qEn = query(collection(db, "mostre"), where("slug_en", "==", slug), limit(1));
-          const snapEn = await getDocs(qEn);
-          if (!snapEn.empty) {
-            docSnap = snapEn.docs[0];
-          }
+        // 1. Cerca per slug o slug_en
+        const q = query(collection(db, "mostre"), where("slug", "==", slug), limit(1));
+        const qEn = query(collection(db, "mostre"), where("slug_en", "==", slug), limit(1));
+        
+        const [snap, snapEn] = await Promise.all([getDocs(q), getDocs(qEn)]);
+        
+        if (!snap.empty) {
+          docSnap = snap.docs[0];
+        } else if (!snapEn.empty) {
+          docSnap = snapEn.docs[0];
         }
 
-        // 2. Fallback: cerca per slug italiano
-        if (!docSnap) {
-          const q = query(collection(db, "mostre"), where("slug", "==", slug), limit(1));
-          const slugSnap = await getDocs(q);
-          if (!slugSnap.empty) {
-            docSnap = slugSnap.docs[0];
-          }
-        }
-
-        // 3. Ultimo fallback: cerca per ID diretto
+        // 2. Ultimo fallback: cerca per ID diretto
         if (!docSnap) {
           const docRef = doc(db, "mostre", slug);
           const idSnap = await getDoc(docRef);
@@ -117,7 +111,7 @@ export default function PublicExhibitionDetail() {
             Mostra non trovata
           </h1>
           <Link
-            to="/mostre"
+            to="/exhibitions"
             className="text-[#FF4F00] font-bold uppercase tracking-widest hover:underline"
           >
             {t('nav.backToExhibitions', 'Torna alle Mostre')}
@@ -159,7 +153,7 @@ export default function PublicExhibitionDetail() {
           )}
 
           <Link
-            to="/mostre"
+            to="/exhibitions"
             className="absolute top-[80px] md:top-[100px] left-6 md:left-[25px] lg:left-20 z-10 text-white hover:text-[#FF4F00] font-bold uppercase tracking-widest text-sm transition-colors"
           >
             &larr; {t('nav.allExhibitions', 'Tutte le Mostre')}
@@ -204,7 +198,13 @@ export default function PublicExhibitionDetail() {
                   className="mt-4 text-sm font-['Karla'] font-bold text-[#FF4F00] uppercase tracking-widest"
                 >
                   {lang === 'EN' ? 'Opening ' : 'Inaugurazione '}
-                  {new Date(exhibition.dataApertura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  {new Date(exhibition.dataApertura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  {exhibition.dataChiusura && (
+                    <>
+                      {lang === 'EN' ? ' - Open until ' : ' - Aperta fino al '}
+                      {new Date(exhibition.dataChiusura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </>
+                  )}
                 </motion.p>
               )}
             </motion.div>

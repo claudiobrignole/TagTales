@@ -219,7 +219,7 @@ export default function PublicWriterDetail() {
           className="max-w-4xl mx-auto"
         >
           <div className="flex flex-col gap-12 min-w-0">
-            <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-xl leading-relaxed text-inherit">
+            <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-xl leading-relaxed text-inherit">
               {cleanHtml(writer.bioBreve) ? (
                 <div dangerouslySetInnerHTML={{ __html: cleanHtml(writer.bioBreve) }} />
               ) : (

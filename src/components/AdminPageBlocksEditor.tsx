@@ -8,6 +8,7 @@ import 'react-quill-new/dist/quill.snow.css';
 
 const quillModules = {
   toolbar: [
+    [{ header: [1, 2, 3, 4, false] }],
     ['bold', 'italic'],
     [{ 'list': 'bullet' }],
     [{ 'align': [] }],
@@ -207,7 +208,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                       placeholder="TITOLO GIGANTE..."
                     />
                   ) : (
-                    <div className="bg-[#F8F6F3] rounded-xl overflow-hidden border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
+                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all relative">
                       <ReactQuill 
                         theme="snow" 
                         value={block.text || ''} 
@@ -229,7 +230,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                       placeholder="LARGE TITLE..."
                     />
                   ) : (
-                    <div className="bg-[#F8F6F3] rounded-xl overflow-hidden border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
+                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
                       <ReactQuill 
                         theme="snow" 
                         value={block.text_en || ''} 
@@ -271,7 +272,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Testo (IT)</label>
-                    <div className="bg-[#F8F6F3] rounded-xl overflow-hidden border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
+                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
                       <ReactQuill 
                         theme="snow" 
                         value={block.text || ''} 
@@ -283,7 +284,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Text (EN)</label>
-                    <div className="bg-[#F8F6F3] rounded-xl overflow-hidden border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
+                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
                       <ReactQuill 
                         theme="snow" 
                         value={block.text_en || ''} 
@@ -355,7 +356,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Testo Introduttivo (IT)</label>
-                    <div className="bg-[#F8F6F3] rounded-xl overflow-hidden border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
+                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
                       <ReactQuill 
                         theme="snow" 
                         value={block.text || ''} 
@@ -367,7 +368,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Intro Text (EN)</label>
-                    <div className="bg-[#F8F6F3] rounded-xl overflow-hidden border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
+                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
                       <ReactQuill 
                         theme="snow" 
                         value={block.text_en || ''} 
@@ -416,7 +417,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Contenuto (IT)</label>
-                        <div className="bg-white rounded-lg overflow-hidden border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
+                        <div className="bg-white rounded-lg quill-wrapper-override border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
                           <ReactQuill 
                             theme="snow" 
                             value={item.content || ''} 
@@ -428,7 +429,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                       </div>
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Content (EN)</label>
-                        <div className="bg-white rounded-lg overflow-hidden border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
+                        <div className="bg-white rounded-lg quill-wrapper-override border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
                           <ReactQuill 
                             theme="snow" 
                             value={item.content_en || ''} 
@@ -502,7 +503,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[10px] font-bold uppercase text-[#59554E] mb-2">Risposta (IT)</label>
-                        <div className="bg-white rounded-lg overflow-hidden border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
+                        <div className="bg-white rounded-lg quill-wrapper-override border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
                           <ReactQuill 
                             theme="snow" 
                             value={item.answer || ''} 
@@ -514,7 +515,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold uppercase text-[#59554E] mb-2">Answer (EN)</label>
-                        <div className="bg-white rounded-lg overflow-hidden border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
+                        <div className="bg-white rounded-lg quill-wrapper-override border border-[#EAE3D9] focus-within:border-[#FF4F00] transition-all">
                           <ReactQuill 
                             theme="snow" 
                             value={item.answer_en || ''} 

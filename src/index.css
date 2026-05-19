@@ -95,12 +95,31 @@ img {
   font-size: 1.125rem;
 }
 .ql-toolbar.ql-snow {
+  position: sticky;
+  top: 73px;
+  z-index: 50;
   border: none !important;
   border-bottom: 1px solid #eae3d9 !important;
   background-color: #f8f6f3;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 .ql-container.ql-snow {
   border: none !important;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.quill-wrapper-override {
+  overflow: visible !important;
+}
+.admin-pages-form .ql-toolbar.ql-snow {
+  top: 0 !important;
+}
+.bg-white .ql-toolbar.ql-snow {
+  background-color: white;
+}
+.focus-within\:bg-white:focus-within .ql-toolbar.ql-snow {
+  background-color: white;
 }
 
 /* Article Detail Overrides */

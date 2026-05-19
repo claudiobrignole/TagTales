@@ -1,6 +1,18 @@
 import React from 'react';
 import { Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon } from 'lucide-react';
 import ImageUpload from './ImageUpload';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, 4, false] }],
+    ['bold', 'italic'],
+    [{ 'list': 'bullet' }],
+    [{ 'align': [] }],
+    ['clean']
+  ],
+};
 
 export interface ExhibitionBlock {
   id: string;
@@ -8,7 +20,8 @@ export interface ExhibitionBlock {
   text?: string;
   text_en?: string;
   backgroundColor?: 'black' | 'light';
-  images?: { url: string; ecwidLink?: string; fallbackUrl?: string }[];
+  alignment?: 'left' | 'center' | 'right';
+  images?: { url: string; ecwidLink?: string; contactType?: 'email' | 'whatsapp' | 'link'; contactLink?: string; fallbackUrl?: string; caption?: string; caption_en?: string; captionColor?: 'white' | 'black'; captionPosition?: 'top-left' | 'bottom-left' }[];
   videoUrl?: string;
 }
 
@@ -58,13 +71,17 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     onChange(newBlocks);
   };
 
-  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink' | 'fallbackUrl', value: string) => {
+  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'bottom-left' }>) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
-      newImages[imageIndex] = { ...newImages[imageIndex], [field]: value };
+      newImages[imageIndex] = { ...newImages[imageIndex], ...updates };
       return { ...b, images: newImages };
     }));
+  };
+
+  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink' | 'contactType' | 'contactLink' | 'fallbackUrl' | 'caption' | 'caption_en' | 'captionColor' | 'captionPosition', value: string) => {
+    updateImageFields(blockId, imageIndex, { [field]: value as any });
   };
 
   return (
@@ -80,7 +97,6 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
           <button type="button" onClick={() => addBlock('video_embed')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Video</button>
         </div>
       </div>
-
       <div className="space-y-6">
         {blocks.map((block, index) => (
           <div key={block.id} className="border border-[#EAE3D9] bg-white rounded-xl p-4 flex flex-col gap-4 shadow-sm relative group">
@@ -102,23 +118,34 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
 
             {(block.type === 'text' || block.type === 'paragraph') && (
               <div className="space-y-4">
-                <textarea
-                  value={block.text || ''}
-                  onChange={e => updateBlock(block.id, { text: e.target.value })}
-                  rows={4}
-                  className="w-full bg-white border border-[#EAE3D9] rounded-xl px-4 py-3 text-lg"
-                  placeholder="Inserisci il testo qui..."
-                />
+                <div className="bg-white border border-[#EAE3D9] rounded-xl relative quill-wrapper-override">
+                  <ReactQuill
+                    theme="snow"
+                    value={block.text || ''}
+                    onChange={content => updateBlock(block.id, { text: content })}
+                    modules={quillModules}
+                    placeholder="Inserisci il testo qui..."
+                  />
+                </div>
                 <div className="flex gap-4 items-center">
                   <span className="text-sm font-medium">Sfondo:</span>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" checked={block.backgroundColor === 'light'} onChange={() => updateBlock(block.id, { backgroundColor: 'light' })} />
-                    Chiaro (Testo Scuro)
+                    Chiaro
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" checked={block.backgroundColor === 'black'} onChange={() => updateBlock(block.id, { backgroundColor: 'black' })} />
-                    Scuro (Testo Chiaro)
+                    Scuro
                   </label>
+                </div>
+                <div className="flex gap-4 items-center">
+                  <span className="text-sm font-medium">Allineamento:</span>
+                  {(['left', 'center', 'right'] as const).map(align => (
+                    <label key={align} className="flex items-center gap-2 text-sm">
+                      <input type="radio" checked={(block.alignment || 'left') === align} onChange={() => updateBlock(block.id, { alignment: align })} />
+                      {align.charAt(0).toUpperCase() + align.slice(1)}
+                    </label>
+                  ))}
                 </div>
               </div>
             )}
@@ -181,14 +208,80 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                         </div>
                       )}
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Link prodotto Ecwid (Opzionale)</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Didascalia (IT)</label>
                         <input
-                          type="url"
-                          value={img.ecwidLink || ''}
-                          onChange={e => updateImage(block.id, imgIndex, 'ecwidLink', e.target.value)}
-                          placeholder="https://..."
+                          type="text"
+                          value={img.caption || ''}
+                          onChange={e => updateImage(block.id, imgIndex, 'caption', e.target.value)}
                           className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Didascalia (EN)</label>
+                        <input
+                          type="text"
+                          value={img.caption_en || ''}
+                          onChange={e => updateImage(block.id, imgIndex, 'caption_en', e.target.value)}
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Colore Didascalia</label>
+                          <select value={img.captionColor || 'white'} onChange={e => updateImage(block.id, imgIndex, 'captionColor', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm">
+                            <option value="white">Bianco</option>
+                            <option value="black">Nero</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Posizione</label>
+                          <select value={img.captionPosition || 'top-left'} onChange={e => updateImage(block.id, imgIndex, 'captionPosition', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm">
+                            <option value="top-left">In alto a sinistra</option>
+                            <option value="bottom-left">In basso a sinistra</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-gray-100">
+                        <label className="block text-xs font-medium text-[#121212] mb-2 uppercase tracking-wide">Opzioni di Vendita</label>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Ecwid Store Link</label>
+                            <input
+                              type="url"
+                              value={img.ecwidLink || ''}
+                              onChange={e => updateImageFields(block.id, imgIndex, { ecwidLink: e.target.value, contactLink: '', contactType: undefined })}
+                              placeholder="https://..."
+                              disabled={!!img.contactLink}
+                              className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                            />
+                          </div>
+
+                          <div className="border-t border-gray-100 pt-3 relative">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-2 text-xs text-gray-400">OPPURE</div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1 mt-2">Contatto Diretto</label>
+                            <div className="flex gap-2">
+                              <select 
+                                value={img.contactType || 'email'} 
+                                onChange={e => updateImage(block.id, imgIndex, 'contactType', e.target.value)}
+                                disabled={!!img.ecwidLink}
+                                className="w-1/3 border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                              >
+                                <option value="email">Email</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="link">Link Generico</option>
+                              </select>
+                              <input
+                                type="text"
+                                value={img.contactLink || ''}
+                                onChange={e => updateImageFields(block.id, imgIndex, { contactLink: e.target.value, ecwidLink: '' })}
+                                placeholder={img.contactType === 'whatsapp' ? 'es. +393331234567' : img.contactType === 'email' ? 'es. info@email.com' : 'es. https://...'}
+                                disabled={!!img.ecwidLink}
+                                className="w-2/3 border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}

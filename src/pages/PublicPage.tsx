@@ -48,7 +48,7 @@ const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
           {getLocalizedField(block, 'title', i18n.language) || block.title || 'Inviaci un messaggio'}
         </h3>
         {((block.text && block.text !== '<p><br></p>') || (block.text_en && block.text_en !== '<p><br></p>')) && (
-          <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit mb-8" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', i18n.language) || block.text) }} />
+          <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit mb-8", block.backgroundColor === 'black' ? 'prose-invert text-white' : '')} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', i18n.language) || block.text) }} />
         )}
         
         {sent ? (
@@ -169,7 +169,7 @@ export default function PublicPage({ id: propId }: { id?: string }) {
         return (
           <section key={block.id} className={clsx(`flex justify-center text-center px-6 ${isFirst ? 'pb-20 md:pb-32' : 'py-20 md:py-32'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
             <div className="max-w-4xl w-full mx-auto min-w-0">
-              <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] italic text-3xl md:text-5xl leading-tight text-inherit" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+              <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] italic text-3xl md:text-5xl leading-tight text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white" : "")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
             </div>
           </section>
         );
@@ -185,21 +185,21 @@ export default function PublicPage({ id: propId }: { id?: string }) {
         return (
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
             <div className="max-w-4xl mx-auto w-full min-w-0">
-              <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] !text-xl leading-[1.35] text-inherit" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+              <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] !text-xl leading-[1.35] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white" : "")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
             </div>
           </section>
         );
       case 'text_with_image_half':
         return (
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
-            <div className={clsx("max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center", block.imagePosition === 'right' ? "md:flex-row-reverse" : "md:flex-row")}>
+            <div className={clsx("max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center md:items-start", block.imagePosition === 'right' ? "md:flex-row-reverse" : "md:flex-row")}>
               <div className="w-full md:w-1/2 space-y-6 min-w-0">
                 {(getLocalizedField(block, 'title', lang) || block.title) && (
                   <h3 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase">
                     {getLocalizedField(block, 'title', lang) || block.title}
                   </h3>
                 )}
-                <div className="prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit !text-xl leading-[1.35]" dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+                <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit !text-xl leading-[1.35]", block.backgroundColor === 'black' ? "prose-invert text-white" : "")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
               </div>
               <div className="w-full md:w-1/2 min-w-0">
                 {block.images?.[0]?.url && (
@@ -251,9 +251,9 @@ export default function PublicPage({ id: propId }: { id?: string }) {
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
               {block.images?.map((img: any, idx: number) => (
                 isVideo(img.url) ? (
-                  <video key={idx} src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] object-cover rounded-3xl" />
+                  <video key={idx} src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-3xl" />
                 ) : (
-                  <img key={idx} src={img.url} alt="" className="w-full aspect-[4/5] object-cover rounded-3xl" />
+                  <img key={idx} src={img.url} alt="" className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-3xl" />
                 )
               ))}
             </div>
@@ -280,7 +280,7 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className={clsx("pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white/70" : "text-[#59554E]")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(item, 'answer', lang) || item.answer) }} />
+                        <div className={clsx("pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white/70" : "text-[#59554E]")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(item, 'answer', lang) || item.answer) }} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -310,7 +310,7 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className={clsx("pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white/70" : "text-[#59554E]")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(item, 'content', lang) || item.content) }} />
+                        <div className={clsx("pb-8 prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white/70" : "text-[#59554E]")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(item, 'content', lang) || item.content) }} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -346,7 +346,7 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                   </div>
                 ) : (
                   <div className="max-w-4xl mx-auto px-6 pb-32">
-                    <div className="prose max-w-4xl w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-relaxed font-['Karla'] text-[#121212]">
+                    <div className="prose max-w-4xl w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-[#121212]">
                       {cleanHtml(getLocalizedField(data, 'contenuto', lang))}
                     </div>
                   </div>

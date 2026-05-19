@@ -890,6 +890,14 @@
     "statusDraft": "Bozza",
     "statusPublished": "Pubblicata"
   },
+  "exhibition": {
+    "buy": "Acquista"
+  },
+  "exhibitionInquiry": {
+    "title": "Richiedi info",
+    "desc": "Questa opera è venduta direttamente dall'artista; richiedi informazioni direttamente a lui o a un suo rappresentante",
+    "btn": "Contatta"
+  },
   "adminWriters": {
     "saveError": "Errore durante il salvataggio del writer.",
     "deleteError": "Errore nell'eliminazione del writer: ",
