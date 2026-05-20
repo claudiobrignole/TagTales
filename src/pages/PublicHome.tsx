@@ -292,37 +292,13 @@ export default function PublicHome() {
   const [newsletterGdpr, setNewsletterGdpr] = useState(false);
   const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterGdpr) {
-      alert("Devi accettare l'informativa sulla privacy.");
-      return;
-    }
-    setNewsletterStatus("loading");
-    try {
-      const response = await fetch("/api/newsletter/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: newsletterEmail,
-          firstName: newsletterName,
-        }),
-      });
-
-      if (response.ok) {
-        setNewsletterStatus("success");
-        setNewsletterEmail("");
-        setNewsletterName("");
-        setNewsletterGdpr(false);
-      } else {
-        setNewsletterStatus("error");
-      }
-    } catch (err) {
-      console.error(err);
-      setNewsletterStatus("error");
-    }
+  const handleNewsletterSubmit = () => {
+    setNewsletterStatus("success");
+    setTimeout(() => {
+      setNewsletterEmail("");
+      setNewsletterName("");
+      setNewsletterGdpr(false);
+    }, 100);
   };
 
   useEffect(() => {
@@ -787,6 +763,9 @@ export default function PublicHome() {
                 )}
               </p>
               <div className="w-full max-w-lg text-left">
+                {/* Invisible iframe to capture SendFox submission without page refresh */}
+                <iframe name="sendfox_iframe" id="sendfox_iframe" style={{ display: "none" }} />
+                
                 {newsletterStatus === "success" ? (
                   <div className="bg-green-50 text-green-800 p-8 rounded-3xl text-center border border-green-200 shadow-sm animate-in fade-in duration-300">
                     <h4 className="text-2xl font-bold font-['Karla'] mb-2 uppercase">
@@ -798,21 +777,18 @@ export default function PublicHome() {
                   </div>
                 ) : (
                   <form
+                    action="https://sendfox.com/form/m5egn8/mnkywx"
+                    method="POST"
+                    target="sendfox_iframe"
                     onSubmit={handleNewsletterSubmit}
                     className="sendfox-form flex flex-col gap-6"
                   >
-                    {newsletterStatus === "error" && (
-                      <div className="bg-red-50 text-red-700 p-4 rounded-2xl text-center border border-red-100 font-medium">
-                        {t("newsletterError", "Errore durante l'iscrizione. Riprova.")}
-                      </div>
-                    )}
                     <input
                       type="text"
                       name="first_name"
                       required
                       value={newsletterName}
                       onChange={(e) => setNewsletterName(e.target.value)}
-                      disabled={newsletterStatus === "loading"}
                       className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
                       placeholder={t("home.newsletterName", "Nome")}
                     />
@@ -822,7 +798,6 @@ export default function PublicHome() {
                       required
                       value={newsletterEmail}
                       onChange={(e) => setNewsletterEmail(e.target.value)}
-                      disabled={newsletterStatus === "loading"}
                       className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
                       placeholder={t("home.newsletterEmail", "Email")}
                     />
@@ -835,7 +810,6 @@ export default function PublicHome() {
                         required
                         checked={newsletterGdpr}
                         onChange={(e) => setNewsletterGdpr(e.target.checked)}
-                        disabled={newsletterStatus === "loading"}
                         className="mt-1 w-5 h-5 accent-[#FF4F00] cursor-pointer"
                       />
                       <label
@@ -848,19 +822,22 @@ export default function PublicHome() {
                         )}
                       </label>
                     </div>
+                    {/* Honeypot field for SendFox bot protection */}
+                    <div style={{ position: "absolute", left: "-5000px" }} aria-hidden="true">
+                      <input
+                        type="text"
+                        name="a_password"
+                        tabIndex={-1}
+                        defaultValue=""
+                        autoComplete="off"
+                      />
+                    </div>
                     <button
                       type="submit"
-                      disabled={newsletterStatus === "loading"}
-                      className="mt-8 inline-flex items-center justify-center gap-4 btn-text bg-[#121212] text-white py-4 px-12 rounded-full hover:bg-[#FF4F00] transition-colors uppercase cursor-pointer disabled:opacity-50"
+                      className="mt-8 inline-flex items-center justify-center gap-4 btn-text bg-[#121212] text-white py-4 px-12 rounded-full hover:bg-[#FF4F00] transition-colors uppercase cursor-pointer"
                     >
-                      {newsletterStatus === "loading" ? (
-                        <span>{t("common.loading", "Iscrizione in corso...")}</span>
-                      ) : (
-                        <>
-                          {t("home.newsletterBtn", "Iscriviti")}{" "}
-                          <ArrowRight size={24} />
-                        </>
-                      )}
+                      {t("home.newsletterBtn", "Iscriviti")}{" "}
+                      <ArrowRight size={24} />
                     </button>
                   </form>
                 )}

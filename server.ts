@@ -49,43 +49,6 @@ async function startServer() {
     });
   });
 
-  app.post("/api/newsletter/subscribe", async (req, res) => {
-    try {
-      const { email, firstName } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: "Email is required" });
-      }
-
-      // We send a request to the SendFox form submit endpoint to mimic the embed form
-      const formParams = new URLSearchParams();
-      formParams.append("email", email);
-      formParams.append("first_name", firstName || "");
-      formParams.append("gdpr", "1");
-      formParams.append("a_password", ""); // honeypot
-
-      const response = await fetch("https://sendfox.com/form/m5egn8/mnkywx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
-        },
-        body: formParams.toString(),
-      });
-
-      if (response.ok) {
-        res.json({ success: true });
-      } else {
-        const errorText = await response.text();
-        console.error("SendFox proxy error status:", response.status, errorText);
-        res.status(400).json({ error: "Subscription endpoint returned non-ok status" });
-      }
-    } catch (error: any) {
-      console.error("Newsletter subscription error in backend:", error);
-      res.status(500).json({ error: error.message || "Internal server error" });
-    }
-  });
-
   app.post("/api/translate", async (req, res) => {
     try {
       const { text, targetLanguages, context } = req.body;
