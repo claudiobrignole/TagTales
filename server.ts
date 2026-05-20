@@ -113,7 +113,14 @@ async function startServer() {
     try {
       const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
       if (!sendfoxToken) {
-        return res.json({ lists: [] });
+        return res.json({ 
+          lists: [
+            { id: 11, name: "Lista Generale TagTales", contacts_count: 3 },
+            { id: 22, name: "Collezionisti Opere Originali", contacts_count: 1 },
+            { id: 33, name: "Lista Newsletter Inglese (EN)", contacts_count: 0 }
+          ],
+          simulated: true 
+        });
       }
 
       const response = await fetch("https://api.sendfox.com/lists", {
@@ -130,9 +137,241 @@ async function startServer() {
       }
 
       const data = await response.json();
-      res.json({ lists: data.data || [] });
+      res.json({ lists: data.data || [], simulated: false });
     } catch (error: any) {
       console.error("Fetch lists error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.get("/api/newsletter/contacts", async (req, res) => {
+    try {
+      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      if (!sendfoxToken) {
+        return res.json({
+          contacts: [
+            { id: 101, email: "collector.milano@art.it", first_name: "Alessandro", lists: [11, 22], status: "active", created_at: "2026-05-18T10:00:00.000000Z" },
+            { id: 102, email: "phase2.legend@graff.ch", first_name: "Phase2 Tribute", lists: [11], status: "active", created_at: "2026-05-19T14:30:00.000000Z" },
+            { id: 103, email: "spray_lover@gmail.com", first_name: "Marco", lists: [11], status: "unsubscribed", created_at: "2026-05-15T09:12:00.000000Z" },
+            { id: 104, email: "claudio@brignole.ch", first_name: "Claudio", lists: [11, 22], status: "active", created_at: "2026-05-10T12:00:00.000000Z" },
+          ],
+          simulated: true
+        });
+      }
+
+      const response = await fetch("https://api.sendfox.com/contacts", {
+        headers: {
+          "Authorization": `Bearer ${sendfoxToken}`,
+          "Accept": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("SendFox fetch contacts error:", errorText);
+        return res.status(response.status).json({ error: "Failed to fetch contacts from SendFox" });
+      }
+
+      const data = await response.json();
+      res.json({ 
+        contacts: data.data || [], 
+        total: data.total || (data.data ? data.data.length : 0),
+        simulated: false 
+      });
+    } catch (error: any) {
+      console.error("Fetch contacts error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.post("/api/newsletter/lists", async (req, res) => {
+    try {
+      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "List name is required" });
+      }
+
+      if (!sendfoxToken) {
+        return res.json({
+          success: true,
+          data: { id: Math.floor(Math.random() * 1000) + 100, name: name, contacts_count: 0 },
+          simulated: true
+        });
+      }
+
+      const response = await fetch("https://api.sendfox.com/lists", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${sendfoxToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return res.status(response.status).json({ error: `Failed to create list: ${errorText}` });
+      }
+
+      const data = await response.json();
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("Create list error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.get("/api/newsletter/campaigns", async (req, res) => {
+    try {
+      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      if (!sendfoxToken) {
+        return res.json({
+          campaigns: [
+            { id: 501, name: "Lancio nuova Minimostra: Phase2", subject: "In anteprima le leggende del Writing di New York", status: "Sent", stats: { sent: 154, open_rate: "54%", click_rate: "12%" } },
+            { id: 502, name: "Intervista a Rae Martini: Milano Graffiti", subject: "Rae Martini si racconta su TagTales Gallery", status: "Draft" },
+          ],
+          simulated: true
+        });
+      }
+
+      const response = await fetch("https://api.sendfox.com/campaigns", {
+        headers: {
+          "Authorization": `Bearer ${sendfoxToken}`,
+          "Accept": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("SendFox fetch campaigns error:", errorText);
+        return res.status(response.status).json({ error: "Failed to fetch campaigns" });
+      }
+
+      const data = await response.json();
+      res.json({ campaigns: data.data || [], simulated: false });
+    } catch (error: any) {
+      console.error("Fetch campaigns error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.post("/api/newsletter/campaigns", async (req, res) => {
+    try {
+      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const { name, subject, body, list_id } = req.body;
+
+      if (!name || !subject || !body) {
+        return res.status(400).json({ error: "Name, subject, and body are required to create a campaign." });
+      }
+
+      if (!sendfoxToken) {
+        return res.json({
+          success: true,
+          data: { id: Math.floor(Math.random() * 1000) + 1000, name, subject, body, list_id, status: "Draft" },
+          simulated: true
+        });
+      }
+
+      let finalHtml = body;
+      if (!finalHtml.includes("{{unsubscribe_url}}")) {
+        // Automatically inject mandatory SendFox unsubscribe link
+        finalHtml += `<br/><br/><hr style="border:0;border-top:1px solid #eae3d9;margin:20px 0;"/><p style="font-size:11px;color:#666;text-align:center;">Ricevi questa email perché sei iscritto alla newsletter di TagTales Gallery.<br/><a href="{{unsubscribe_url}}" style="color:#ff4f00;text-decoration:underline;">Disiscriviti</a> per non ricevere più comunicazioni.</p>`;
+      }
+
+      const response = await fetch("https://api.sendfox.com/campaigns", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${sendfoxToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          title: name, 
+          subject: subject, 
+          html: finalHtml, 
+          from_name: process.env.SENDFOX_FROM_NAME || "TagTales Gallery",
+          from_email: process.env.SENDFOX_FROM_EMAIL || "info@tagtales.gallery",
+          lists: list_id ? [parseInt(list_id, 10)] : [] 
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("SendFox campaign creation failed:", errorText);
+        return res.status(response.status).json({ error: `Failed to create campaign: ${errorText}` });
+      }
+
+      const data = await response.json();
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("Create campaign error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.post("/api/newsletter/automation/suggest", async (req, res) => {
+    try {
+      const { type, writerName, exhibitionName, topic, extraContext } = req.body;
+      const ai = getAi();
+      
+      let prompt = "";
+      if (type === "writer") {
+        prompt = `Scrivi una newsletter coinvolgente in lingua italiana per presentare il writer "${writerName}".
+Concentrati sulla storia del graffiti writing, lo stile puro, l'energia della cultura hip-hop / street, ed evita espressioni artificiali generiche. 
+Argomento e dettagli extra: ${topic || ""} ${extraContext || ""}. 
+Assicurati di includere un Oggetto dell'email accattivante (Oggetto: ...) ed un corpo del messaggio con saluti amichevoli nello spirito di TagTales Gallery. Non usare riferimenti a contenuti generati da intelligenze artificiali, solo storie umane ed arte originale.`;
+      } else if (type === "exhibition") {
+        prompt = `Scrivi una newsletter promozionale per il lancio della mini-mostra "${exhibitionName}" del writer "${writerName}".
+La mini-mostra si tiene su TagTales Gallery e contiene opere originali, stampe e poster limited edition.
+Argomento e dettagli extra: ${topic || ""} ${extraContext || ""}.
+Scrivi in lingua italiana. Includi un Oggetto dell'email d'impatto (Oggetto: ...) e un invito all'azione a visitare la mini-mostra per collezionare pezzi iconici firmati dal writer.`;
+      } else {
+        prompt = `Scrivi una newsletter speciale in lingua italiana per gli iscritti di TagTales Gallery sull'argomento: "${topic || "Cultura Graffiti"}".
+Dettagli extra: ${extraContext || ""}.
+Usa uno stile street, autentico e diretto. Includi un Oggetto dell'email (Oggetto: ...) e un corpo dell'email completo.`;
+      }
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      const text = response.text || "";
+      res.json({ text });
+    } catch (error: any) {
+      console.error("Gemini suggestion error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.post("/api/newsletter/automation/report", async (req, res) => {
+    try {
+      const { contactsCount, listsCount, activeCount, unsubscribeCount, sampleEmails } = req.body;
+      const ai = getAi();
+
+      const prompt = `Fornisci un report strategico in formato Markdown (lingua italiana) per analizzare la crescita e l'engagement della mailing list di TagTales Gallery.
+Dati correnti:
+- Iscritti totali: ${contactsCount}
+- Liste attive: ${listsCount}
+- Contatti attivi: ${activeCount}
+- Disiscritti: ${unsubscribeCount}
+- Esempi di iscritti/domini: ${sampleEmails ? sampleEmails.join(", ") : "Nessuno"}
+
+Il report dovrebbe contenere tre sezioni:
+1. **Analisi dello Stato Attuale**: un riepilogo critico ma incoraggiante della composizione dei contatti (es. collezionisti vs appassionati).
+2. **Strategie ed Idee di Segmentazione**: consiglia come raggruppare i contatti per aumentare le vendite di stampe digitali o quadri originali dei graffiti moderni.
+3. **Puntate Ideali della Newsletter**: dai 3 idee pratiche d'invio newsletter con relativi argomenti (es. interviste storiche repentine, offerte lampo firmate).
+
+Ritorna SOLO il testo Markdown strutturato con titoli ed elenchi puntati.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      res.json({ report: response.text || "" });
+    } catch (error: any) {
+      console.error("Gemini report error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
     }
   });

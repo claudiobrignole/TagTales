@@ -105,6 +105,8 @@ export default function PublicArticleDetail() {
     contenuto: getLocalizedField(rawData, 'contenuto', lang) || rawData.contenuto
   } : null;
 
+  const coverImage = article ? (article.immagineCopertina || article.coverImageUrl) : null;
+
   if (loading) {
     return (
       <PublicLayout>
@@ -139,20 +141,20 @@ export default function PublicArticleDetail() {
         <SEO 
           title={getLocalizedField(article, 'titolo', lang) || article.titolo} 
           description={getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo} 
-          image={article.immagineCopertina} 
+          image={coverImage} 
           article={true}
         />
       )}
       <div className="pb-32">
         <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
-          {article.immagineCopertina &&
-            article.immagineCopertina.trim() !== "" && (
-              <LazyImage
-                src={article.immagineCopertina}
-                alt={article.titolo}
-                className="absolute inset-0 opacity-80"
-              />
-            )}
+          {coverImage && coverImage.trim() !== "" && (
+            <LazyImage
+              src={coverImage}
+              alt={article.titolo}
+              className="opacity-80"
+              wrapperClassName="absolute inset-0 w-full h-full"
+            />
+          )}
 
           <Link
             to="/magazine"

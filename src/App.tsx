@@ -40,6 +40,7 @@ import AdminArticles from "./pages/AdminArticles";
 import AdminPages from "./pages/AdminPages";
 import AdminMedia from "./pages/AdminMedia";
 import AdminSEO from "./pages/admin/SEOManager";
+import AdminNewsletter from "./pages/admin/AdminNewsletter";
 import NotFound from "./pages/NotFound";
 import EnRouteWrapper from "./components/EnRouteWrapper";
 
@@ -385,6 +386,7 @@ export default function App() {
               <Route path="admin/articles" element={<AdminArticles />} />
               <Route path="admin/pages" element={<AdminPages />} />
               <Route path="admin/seo" element={<AdminSEO />} />
+              <Route path="admin/newsletter" element={<AdminNewsletter />} />
               <Route path="admin/faq" element={<AdminHelp />} />
               <Route path="profile" element={<Profile />} />
               <Route path="help" element={<Help />} />

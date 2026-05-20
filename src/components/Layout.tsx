@@ -24,6 +24,7 @@ import {
   Languages,
   Globe,
   ImageIcon,
+  Mail,
 } from "lucide-react";
 import clsx from "clsx";
 import NotificationsDropdown from "./NotificationsDropdown";
@@ -98,6 +99,7 @@ export default function Layout() {
     { to: "/app/admin/articles", icon: FileText, label: "manageMagazine" },
     { to: "/app/admin/pages", icon: FileText, label: "managePages" },
     { to: "/app/admin/seo", icon: Globe, label: "manageSEO" },
+    { to: "/app/admin/newsletter", icon: Mail, label: "manageNewsletter" },
     { to: "/app/admin/faq", icon: HelpCircle, label: "helpFaq" },
   ];
 

@@ -157,7 +157,8 @@ export default function PublicExhibitionDetail() {
               <LazyImage
                 src={exhibition.bannerHero}
                 alt={exhibition.titolo}
-                className="absolute inset-0 opacity-80"
+                className="opacity-80"
+                wrapperClassName="absolute inset-0 w-full h-full"
               />
             )
           )}
