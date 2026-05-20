@@ -216,21 +216,6 @@ export default function NotificationsDropdown() {
                 <span className="text-xs text-[#59554E] font-medium">
                   {format(new Date(selectedNotification.createdAt), 'PPpp', { locale })}
                 </span>
-                {selectedNotification.link && selectedNotification.link !== '#' && (
-                  <button
-                    onClick={() => {
-                      setSelectedNotification(null);
-                      setIsOpen(false);
-                      const targetLink = selectedNotification.link.startsWith('/app')
-                        ? selectedNotification.link
-                        : `/app${selectedNotification.link.startsWith('/') ? '' : '/'}${selectedNotification.link}`;
-                      navigate(targetLink);
-                    }}
-                    className="text-sm font-bold text-[#FF4F00] hover:underline"
-                  >
-                    {t('notifications.viewDetails')}
-                  </button>
-                )}
               </div>
             </div>
             <div className="p-4 border-t border-[#EAE3D9] bg-gray-50 flex justify-end">

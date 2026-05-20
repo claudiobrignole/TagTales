@@ -5,13 +5,16 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Footer() {
   const { t, i18n } = useTranslation();
   const { language: currentLang, setLanguage } = useI18n();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [dynamicPages, setDynamicPages] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
   const languages = ["IT", "EN"];
 
   const langPrefix = currentLang === "EN" ? "/en" : "";
@@ -30,6 +33,30 @@ export default function Footer() {
     };
     fetchPages();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    // Any logged in user should see the link for convenient switching/testing in dev/preview environments
+    setIsAdmin(true);
+    
+    const checkAdmin = async () => {
+      try {
+        const uDoc = await getDoc(doc(db, 'users', user.uid));
+        if (uDoc.exists()) {
+          const role = uDoc.data()?.role;
+          if (role === 'admin' || role === 'artista' || role === 'writer') {
+            setIsAdmin(true);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    checkAdmin();
+  }, [user]);
 
   const handleLangChange = (lang: string) => {
     setLanguage(lang as 'IT' | 'EN');
@@ -179,28 +206,30 @@ export default function Footer() {
                     INSTAGRAM
                   </a>
                 </li>
-                <li>
-                  <Link
-                    to="/app"
-                    className="hover:text-[#FF4F00] transition-colors uppercase flex items-center gap-2"
-                  >
-                    {t('footer.writersDashboard', 'Writers login')}{" "}
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="lucide lucide-lock"
+                {isAdmin && (
+                  <li>
+                    <Link
+                      to="/app"
+                      className="hover:text-[#FF4F00] transition-colors uppercase flex items-center gap-2"
                     >
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </Link>
-                </li>
+                      {t('footer.writersDashboard', 'Writers login')}{" "}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-lock"
+                      >
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </Link>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

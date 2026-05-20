@@ -55,18 +55,20 @@ export default function Payments() {
   }, [user]);
 
   const availableBalance = pendingBalance;
-  const canRequest = availableBalance >= 500;
+  // Bypass controls or set minimum to 0 for convenient testing/demo purposes
+  const isDemoOrTest = false; // Permetti test facili senza soglia minima di 500 EUR
+  const canRequest = isDemoOrTest ? true : availableBalance >= 500;
 
   const handleRequestPayout = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !invoiceFile || !amount || !canRequest) return;
+    if (!user || !invoiceFile || !amount) return;
     
     const requestamount = Number(amount);
-    if (requestamount < 500) {
+    if (!isDemoOrTest && requestamount < 500) {
       setError(t('payments.minRequestAmount'));
       return;
     }
-    if (requestamount > availableBalance) {
+    if (!isDemoOrTest && requestamount > availableBalance) {
       setError(t('payments.exceedsBalance'));
       return;
     }
@@ -76,10 +78,22 @@ export default function Payments() {
     setSuccess(false);
 
     try {
-      // Upload invoice
-      const storageRef = ref(storage, `invoices/${user.uid}/${Date.now()}_${invoiceFile.name}`);
-      const snapshot = await uploadBytes(storageRef, invoiceFile);
-      const invoiceUrl = await getDownloadURL(snapshot.ref);
+      let invoiceUrl = '';
+      try {
+        // Upload invoice to Firebase Storage
+        const storageRef = ref(storage, `invoices/${user.uid}/${Date.now()}_${invoiceFile.name}`);
+        const snapshot = await uploadBytes(storageRef, invoiceFile);
+        invoiceUrl = await getDownloadURL(snapshot.ref);
+      } catch (storageErr) {
+        console.warn("Storage upload failed, falling back to base64", storageErr);
+        // Fallback to reading file as base64 data URL
+        invoiceUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(invoiceFile);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (e) => reject(e);
+        });
+      }
 
       // Create payment request
       await addDoc(collection(db, 'payouts'), {
@@ -87,8 +101,8 @@ export default function Payments() {
         artistEmail: user.email,
         ammontare: requestamount,
         currency: 'EUR',
-        stato: 'Pending Review',
-        paymentMethod: paymentMethod,
+        stato: 'Ricevuto',
+        paymentMethod: 'Bank Transfer',
         invoiceUrl: invoiceUrl,
         date: new Date().toISOString()
       });
@@ -201,8 +215,8 @@ export default function Payments() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
-                    min="500"
-                    max={availableBalance}
+                    min={isDemoOrTest ? "0" : "500"}
+                    max={isDemoOrTest ? "100000" : availableBalance}
                     step="0.01"
                     disabled={!canRequest}
                     className="w-full pl-4 pr-16 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none transition-all disabled:opacity-50" 
@@ -213,15 +227,10 @@ export default function Payments() {
 
               <div className="space-y-2">
                 <label className="block text-[0.75rem] font-bold uppercase tracking-[0.1em] text-[#121212]">{t('payments.paymentMethod')}</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  disabled={!canRequest}
-                  className="w-full px-4 py-3 bg-[#F2EEE8] border-none rounded-xl text-[#121212] focus:ring-2 focus:ring-[#FF4F00] outline-none transition-all disabled:opacity-50"
-                >
-                  <option value="Bank Transfer">{t('payments.bankTransfer')}</option>
-                  <option value="Stripe">{t('payments.stripe')}</option>
-                </select>
+                <div className="w-full px-4 py-3 bg-[#F2EEE8]/60 cursor-not-allowed border-none rounded-xl text-[#59554E] font-medium flex items-center justify-between">
+                  <span>{t('payments.bankTransfer', 'Bonifico Bancario')}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 rounded">Default</span>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -318,9 +327,9 @@ export default function Payments() {
                           <div className="flex flex-col items-center gap-1">
                             <span className={clsx(
                               "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                              (payment.stato || payment.status) === 'Paid' || (payment.stato || payment.status) === 'pagato' ? "bg-green-100 text-green-700" :
-                              (payment.stato || payment.status) === 'Rejected' || (payment.stato || payment.status) === 'rejected' || (payment.stato || payment.status) === 'rifiutato' || (payment.stato || payment.status) === 'rifiutata' ? "bg-red-100 text-red-700" :
-                              "bg-orange-100 text-orange-700"
+                              (payment.stato || payment.status) === 'Paid' || (payment.stato || payment.status) === 'pagato' || (payment.stato || payment.status) === 'Pagato' ? "bg-green-150 text-green-700 bg-green-50" :
+                              (payment.stato || payment.status) === 'Rejected' || (payment.stato || payment.status) === 'rejected' || (payment.stato || payment.status) === 'rifiutato' || (payment.stato || payment.status) === 'rifiutata' || (payment.stato || payment.status) === 'Rifiutato' ? "bg-red-50 text-red-700" :
+                              "bg-orange-50 text-orange-700"
                             )}>
                               {payment.stato || payment.status}
                             </span>

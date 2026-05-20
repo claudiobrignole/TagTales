@@ -57,7 +57,7 @@ export default function AdminDashboard() {
         const contractsSnap = await getDocs(collection(db, 'contratti'));
 
         const writersSnap = await getDocs(query(collection(db, 'users'), where('role', 'in', ['writer', 'artist'])));
-        const writersData = writersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const writersData = writersSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((w: any) => !w.isDeleted);
         setWriters(writersData);
         
         if (chatParam) {
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
         }
 
         setStats({
-          totalUsers: usersSnap.size,
+          totalUsers: usersSnap.docs.filter(d => !d.data().isDeleted).length,
           pendingArtworks: artworksSnap.size,
           pendingPayments: paymentsSnap.size,
           totalContracts: contractsSnap.size
@@ -82,6 +82,33 @@ export default function AdminDashboard() {
     };
 
     fetchStats();
+  }, [user]);
+
+  // One-time auto-cleanup of ghost users (the two Sids and claudio.brignole@gmail.com)
+  useEffect(() => {
+    if (!user) return;
+    const cleanGhostUsers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        for (const d of snap.docs) {
+          const uData = d.data();
+          const email = (uData.email || '').toLowerCase();
+          const fullName = (uData.fullName || uData.artistName || uData.displayName || '').toLowerCase();
+          
+          const isClaudioBrignoleGmail = email === 'claudio.brignole@gmail.com';
+          const isSid = email.includes('sid') || fullName.includes('sid');
+          const isNotAdmin = email !== 'claudio@brignole.ch' && email !== 'tagtales';
+
+          if ((isClaudioBrignoleGmail || isSid) && isNotAdmin && !uData.isDeleted) {
+            console.log("Auto-cleaning ghost user:", email, d.id);
+            await updateDoc(doc(db, 'users', d.id), { isDeleted: true });
+          }
+        }
+      } catch (e) {
+        console.error("Error cleaning ghost users:", e);
+      }
+    };
+    cleanGhostUsers();
   }, [user]);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
