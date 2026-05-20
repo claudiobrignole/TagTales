@@ -294,16 +294,37 @@ export default function PublicHome() {
   const [newsletterGdpr, setNewsletterGdpr] = useState(false);
   const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
-  const handleNewsletterSubmit = () => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim() || !newsletterName.trim()) return;
+
     setNewsletterStatus("loading");
-    // Give browser 1.2 seconds to process the post request through the hidden iframe fully
-    // before showing success message and clearing form values.
-    setTimeout(() => {
-      setNewsletterStatus("success");
-      setNewsletterEmail("");
-      setNewsletterName("");
-      setNewsletterGdpr(false);
-    }, 1200);
+    try {
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: newsletterEmail.trim(),
+          first_name: newsletterName.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setNewsletterStatus("success");
+        setNewsletterEmail("");
+        setNewsletterName("");
+        setNewsletterGdpr(false);
+      } else {
+        console.error("Subscription failed:", data.error || data);
+        setNewsletterStatus("error");
+      }
+    } catch (err) {
+      console.error("Subscription error:", err);
+      setNewsletterStatus("error");
+    }
   };
 
   useEffect(() => {
@@ -768,9 +789,6 @@ export default function PublicHome() {
                 )}
               </p>
               <div className="w-full max-w-lg text-left">
-                {/* Invisible iframe to capture SendFox submission without page refresh */}
-                <iframe name="sendfox_iframe" id="sendfox_iframe" style={{ display: "none" }} />
-                
                 {newsletterStatus === "success" && (
                   <div className="bg-green-50 text-green-800 p-8 rounded-3xl text-center border border-green-200 shadow-sm mb-6 animate-in fade-in duration-300">
                     <h4 className="text-2xl font-bold font-['Karla'] mb-2 uppercase">
@@ -782,15 +800,21 @@ export default function PublicHome() {
                   </div>
                 )}
 
+                {newsletterStatus === "error" && (
+                  <div className="bg-red-50 text-red-800 p-8 rounded-3xl text-center border border-red-200 shadow-sm mb-6 animate-in fade-in duration-300">
+                    <h4 className="text-2xl font-bold font-['Karla'] mb-2 uppercase">
+                      {t("common.error", "Scusa!")}
+                    </h4>
+                    <p className="font-['Karla'] text-lg">
+                      {t("newsletterError", "Si è verificato un errore durante l'iscrizione. Per favore riprova più tardi.")}
+                    </p>
+                  </div>
+                )}
+
                 <form
-                  action="https://sendfox.com/form/m5egn8/mnkywx"
-                  method="POST"
-                  target="sendfox_iframe"
                   onSubmit={handleNewsletterSubmit}
                   className={`sendfox-form flex flex-col gap-6 ${newsletterStatus === "success" ? "hidden" : ""}`}
                   id="mnkywx"
-                  data-async="true"
-                  data-recaptcha="true"
                 >
                   <input
                     type="text"

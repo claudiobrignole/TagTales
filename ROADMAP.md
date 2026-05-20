@@ -80,6 +80,11 @@ Usare ogni volta che si crea un nuovo prodotto TagTales su Ecwid.
 - **Internazionalizzazione completa interfaccia Amministratore** (maggio 2026)
 - **Standardizzazione UI Dashboard Admin**: Allineamento header titoli (font Shamgod, dimensioni uniformi, spaziatura) su tutte le pagine di gestione (18 maggio 2026).
 - **Stilizzazione SEO Manager** (18 maggio 2026).
+- **Integrazione Newsletter SendFox & Automazione Webhook (Punto C)** (maggio 2026):
+  - Creazione API server-side `/api/newsletter/subscribe` per l'iscrizione diretta tramite Token SendFox.
+  - Sostituzione del form iframe in `PublicHome.tsx` con un modulo controllato via AJAX, dotato di messaggi di successo ed errore personalizzati.
+  - Sviluppo di un banner interattivo all'interno di `SupportChat.tsx` (Chat AI) per l'iscrizione semplice degli utenti durante la conversazione.
+  - Implementazione del **Punto C** nel webhook Ecwid (`ecwidWebhook.ts`): auto-iscrizione immediata del cliente su SendFox se in fase di pagamento su Ecwid viene espresso il consenso al marketing (`opt_in` o `opt_in_from_checkout`).
 
 
 

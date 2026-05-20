@@ -49,6 +49,94 @@ async function startServer() {
     });
   });
 
+  app.post("/api/newsletter/subscribe", async (req, res) => {
+    try {
+      const { email, first_name, lists } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      if (!sendfoxToken) {
+        console.warn("SendFox API Token is not configured. Falling back to local success simulation.");
+        return res.json({ 
+          success: true, 
+          simulated: true, 
+          message: "Mailing list subscription simulated successfully (SENDFOX_ACCESS_TOKEN is missing)." 
+        });
+      }
+
+      // Use default list from environment variables if none passed and configured
+      let targetLists = lists;
+      if (!targetLists && process.env.SENDFOX_DEFAULT_LIST_ID) {
+        const defaultListId = parseInt(process.env.SENDFOX_DEFAULT_LIST_ID, 10);
+        if (!isNaN(defaultListId)) {
+          targetLists = [defaultListId];
+        }
+      }
+
+      const bodyPayload: any = {
+        email: email,
+      };
+      if (first_name) {
+        bodyPayload.first_name = first_name;
+      }
+      if (targetLists && Array.isArray(targetLists)) {
+        bodyPayload.lists = targetLists;
+      }
+
+      const response = await fetch("https://api.sendfox.com/contacts", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${sendfoxToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bodyPayload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("SendFox API error:", errorText);
+        return res.status(response.status).json({ error: `SendFox subscription failed: ${errorText}` });
+      }
+
+      const data = await response.json();
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("Newsletter subscription error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.get("/api/newsletter/lists", async (req, res) => {
+    try {
+      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      if (!sendfoxToken) {
+        return res.json({ lists: [] });
+      }
+
+      const response = await fetch("https://api.sendfox.com/lists", {
+        headers: {
+          "Authorization": `Bearer ${sendfoxToken}`,
+          "Accept": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("SendFox fetch lists error:", errorData);
+        return res.status(response.status).json({ error: "Failed to fetch lists from SendFox" });
+      }
+
+      const data = await response.json();
+      res.json({ lists: data.data || [] });
+    } catch (error: any) {
+      console.error("Fetch lists error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
   app.post("/api/translate", async (req, res) => {
     try {
       const { text, targetLanguages, context } = req.body;

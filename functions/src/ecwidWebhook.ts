@@ -8,6 +8,7 @@ import * as crypto from "crypto";
 const ecwidClientSecret = defineSecret("ECWID_CLIENT_SECRET");
 const ecwidStoreId = defineSecret("ECWID_STORE_ID");
 const ecwidToken = defineSecret("ECWID_SECRET_TOKEN");
+const sendfoxAccessTokenEn = defineSecret("SENDFOX_ACCESS_TOKEN");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -41,7 +42,7 @@ const getAttribute = (item: any, attrName: string): any => {
 };
 
 export const ecwidWebhook = onRequest(
-  { secrets: [ecwidClientSecret, ecwidStoreId, ecwidToken], invoker: "public", rawBody: true, minInstances: 1 } as any,
+  { secrets: [ecwidClientSecret, ecwidStoreId, ecwidToken, sendfoxAccessTokenEn], invoker: "public", rawBody: true, minInstances: 1 } as any,
   async (req: any, res: any) => {
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
@@ -230,6 +231,58 @@ export const ecwidWebhook = onRequest(
         }
       } catch (metaError) {
         logger.warn('Meta Conversions API error (non-blocking)', metaError);
+      }
+
+      // 3. SendFox Newsletter auto-subscription with marketing consent (Punto C)
+      try {
+        const sendfoxToken = sendfoxAccessTokenEn.value().trim();
+        const hasConsent = orderData.emailMarketingConsent && (
+          orderData.emailMarketingConsent.consentStatus === 'opt_in' ||
+          orderData.emailMarketingConsent.consentStatus === 'opt_in_from_checkout'
+        );
+
+        if (sendfoxToken && orderData.email && hasConsent) {
+          logger.info(`Customer ${orderData.email} gave marketing consent. Attempting SendFox subscription...`);
+          
+          const sendfoxPayload: any = {
+            email: orderData.email.trim(),
+          };
+
+          const nameParts = (orderData.billingPerson?.name || orderData.billingPerson?.firstName || "").trim();
+          if (nameParts) {
+            sendfoxPayload.first_name = nameParts;
+          }
+
+          const defaultListId = process.env.SENDFOX_DEFAULT_LIST_ID;
+          if (defaultListId) {
+            const listNum = parseInt(defaultListId, 10);
+            if (!isNaN(listNum)) {
+              sendfoxPayload.lists = [listNum];
+            }
+          }
+
+          const sendfoxRes = await fetch("https://api.sendfox.com/contacts", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${sendfoxToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(sendfoxPayload)
+          });
+
+          if (!sendfoxRes.ok) {
+            const errText = await sendfoxRes.text();
+            logger.warn(`SendFox API auto-enroll failure for ${orderData.email}:`, errText);
+          } else {
+            logger.info(`SendFox auto-enrollment completed successfully for ${orderData.email}`);
+          }
+        } else if (!sendfoxToken) {
+          logger.info("SendFox access token is not configured in Firebase Secrets, skipping auto-enroll flow.");
+        } else if (!hasConsent) {
+          logger.info(`Customer ${orderData.email} did not opt-in for marketing consent. Consent status: ${orderData.emailMarketingConsent?.consentStatus || 'none'}`);
+        }
+      } catch (sfError) {
+        logger.error("Non-blocking SendFox subscription error in webhook handler", sfError);
       }
 
       res.status(200).send("Webhook processed successfully");

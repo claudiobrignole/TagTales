@@ -31,6 +31,10 @@ export default function SupportChat({ mode = 'public' }: SupportChatProps) {
   const [actionButtons, setActionButtons] = useState<{ id: string, text: string, url: string }[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  const [showChatNewsletter, setShowChatNewsletter] = useState(true);
+  const [chatNewsletterEmail, setChatNewsletterEmail] = useState('');
+  const [chatNewsletterStatus, setChatNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
   useEffect(() => {
     async function fetchConfig() {
       try {
@@ -147,6 +151,73 @@ export default function SupportChat({ mode = 'public' }: SupportChatProps) {
 
       <div className="flex flex-col h-[calc(100dvh-350px)] lg:h-[calc(100dvh-370px)] min-h-[400px] w-full bg-white rounded-[32px] border border-[#EAE3D9] overflow-hidden shadow-none">
         
+        {showChatNewsletter && (
+          <div className="bg-[#FFF4E5] border-b border-[#F5E1C9] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 transition-all duration-300 relative">
+             <div className="text-left w-full md:w-auto pr-6">
+                <h4 className="font-['Shamgod'] text-[24px] leading-tight text-[#FF4F00] uppercase mb-1">
+                  {t('chat.newsletterTitle', 'LISTA PRIORITARIA')}
+                </h4>
+                <p className="font-['Karla'] text-xs text-gray-600 max-w-md">
+                  {t('chat.newsletterDesc', 'Iscriviti per ricevere aggiornamenti sulle minimostre, interviste ai writers e stampe in edizione limitata.')}
+                </p>
+             </div>
+             {chatNewsletterStatus === 'success' ? (
+               <div className="text-green-700 font-['Karla'] font-bold text-sm uppercase">
+                  {t('chat.newsletterSuccess', '✓ Iscritto con successo!')}
+               </div>
+             ) : (
+               <form 
+                 onSubmit={async (e) => {
+                   e.preventDefault();
+                   if (!chatNewsletterEmail.trim()) return;
+                   setChatNewsletterStatus('loading');
+                   try {
+                     const res = await fetch('/api/newsletter/subscribe', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({ email: chatNewsletterEmail.trim() })
+                     });
+                     const data = await res.json();
+                     if (res.ok && data.success) {
+                       setChatNewsletterStatus('success');
+                       setTimeout(() => setShowChatNewsletter(false), 2500);
+                     } else {
+                       setChatNewsletterStatus('error');
+                     }
+                   } catch {
+                     setChatNewsletterStatus('error');
+                   }
+                 }}
+                 className="flex items-center gap-2 w-full md:w-auto"
+               >
+                 <input 
+                   type="email" 
+                   required
+                   value={chatNewsletterEmail}
+                   onChange={(e) => setChatNewsletterEmail(e.target.value)}
+                   placeholder={t('chat.newsletterPlaceholder', 'Inserisci la tua email')}
+                   className="bg-white text-sm px-4 py-2 rounded-full outline-none focus:ring-1 focus:ring-[#FF4F00] font-['Karla'] w-full md:w-48 border border-[#EAE3D9]"
+                 />
+                 <button 
+                   type="submit"
+                   disabled={chatNewsletterStatus === 'loading'}
+                   className="bg-[#121212] text-white hover:bg-[#FF4F00] transition-colors font-['Karla'] font-bold uppercase text-[11px] tracking-wider py-2 px-4 rounded-full cursor-pointer shrink-0 disabled:opacity-50"
+                 >
+                   {chatNewsletterStatus === 'loading' ? t('common.loading', '...') : t('home.newsletterBtn', 'Iscriviti')}
+                 </button>
+               </form>
+             )}
+             <button 
+               type="button" 
+               onClick={() => setShowChatNewsletter(false)}
+               className="absolute top-2 right-2 text-gray-400 hover:text-black font-bold p-1 text-xs"
+               title="Chiudi"
+             >
+               ✕
+             </button>
+          </div>
+        )}
+
         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#F8F6F3]">
           {messages.map((msg, index) => (
             <div
