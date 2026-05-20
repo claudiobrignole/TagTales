@@ -11,6 +11,7 @@ import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import { getLocalizedField } from "../utils/localization";
 import { IMAGE_RADIUS } from "../constants/theme";
+import LazyImage from "../components/LazyImage";
 
 export default function PublicWriters() {
   const { t, i18n } = useTranslation();
@@ -183,10 +184,10 @@ export default function PublicWriters() {
                       {writer.fotoProfilo &&
                       writer.fotoProfilo.trim() !== "" ? (
                         <>
-                          <img
+                          <LazyImage
                             src={writer.fotoProfilo}
                             alt={nickname}
-                            className="w-full h-full object-cover opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
+                            className="opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
                         </>

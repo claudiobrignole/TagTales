@@ -15,6 +15,7 @@ import clsx from "clsx";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import { IMAGE_RADIUS } from "../constants/theme";
+import LazyImage from "../components/LazyImage";
 
 export default function PublicArticleDetail() {
   const { slug } = useParams();
@@ -146,10 +147,10 @@ export default function PublicArticleDetail() {
         <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
           {article.immagineCopertina &&
             article.immagineCopertina.trim() !== "" && (
-              <img
+              <LazyImage
                 src={article.immagineCopertina}
                 alt={article.titolo}
-                className="absolute inset-0 w-full h-full object-cover opacity-80"
+                className="absolute inset-0 opacity-80"
               />
             )}
 
@@ -277,10 +278,9 @@ export default function PublicArticleDetail() {
                       key={index}
                       className="rounded-3xl overflow-hidden border border-[#EAE3D9] shadow-md aspect-square md:aspect-video"
                     >
-                      <img
+                      <LazyImage
                         src={url}
                         alt={`${article.titolo} - ${index}`}
-                        className="w-full h-full object-cover"
                       />
                     </div>
                   ))}
@@ -307,10 +307,10 @@ export default function PublicArticleDetail() {
                       )}
                     >
                       {relArticle.img && (
-                        <img
+                        <LazyImage
                           src={relArticle.img}
                           alt={relArticle.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          className="group-hover:scale-105 transition-transform duration-700"
                         />
                       )}
                     </div>

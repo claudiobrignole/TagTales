@@ -17,6 +17,7 @@ import { getLocalizedField } from "../utils/localization";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import LazyImage from "../components/LazyImage";
 
 interface Exhibition {
   id: string;
@@ -332,10 +333,10 @@ export default function PublicExhibitions() {
                       className="absolute inset-0 w-full h-full object-cover opacity-80"
                     />
                   ) : (
-                    <img
+                    <LazyImage
                       src={ex.bannerHero}
                       alt={titolo}
-                      className="absolute inset-0 w-full h-full object-cover opacity-80"
+                      className="absolute inset-0 opacity-80"
                     />
                   )
                 )}
@@ -431,10 +432,10 @@ export default function PublicExhibitions() {
                           className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
                         />
                       ) : (
-                        <img
+                        <LazyImage
                           src={ex.bannerHero}
                           alt={titolo}
-                          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                          className="grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
                         />
                       )
                     )}

@@ -37,6 +37,7 @@ import { IMAGE_RADIUS } from "../constants/theme";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import VideoEmbed from "../components/VideoEmbed";
+import LazyImage from "../components/LazyImage";
 
 interface Exhibition {
   id: string;
@@ -467,10 +468,10 @@ export default function PublicHome() {
                           className="w-full h-full object-cover opacity-80"
                         />
                       ) : (
-                        <img
+                        <LazyImage
                           src={(featuredExhibitions[currentSlide] as any).image}
                           alt={featuredExhibitions[currentSlide].title}
-                          className="w-full h-full object-cover opacity-80"
+                          className="opacity-80"
                         />
                       )
                     )}
@@ -575,10 +576,10 @@ export default function PublicHome() {
                           className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
                         />
                       ) : (
-                        <img
+                        <LazyImage
                           src={item.img}
                           alt={item.title}
-                          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                          className="grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
                         />
                       )
                     )}
@@ -631,10 +632,10 @@ export default function PublicHome() {
                     )}
                   >
                     {article.img && (
-                      <img
+                      <LazyImage
                         src={article.img}
                         alt={article.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="group-hover:scale-105 transition-transform duration-700"
                       />
                     )}
                   </div>
@@ -693,10 +694,10 @@ export default function PublicHome() {
                 >
                   <div className="aspect-square bg-white rounded-2xl overflow-hidden relative border border-[#EAE3D9]">
                     {writer.img && (
-                      <img
+                      <LazyImage
                         src={writer.img}
                         alt={writer.name}
-                        className="w-full h-full object-cover opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
+                        className="opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
@@ -961,10 +962,11 @@ export default function PublicHome() {
               </div>
               <div className="w-full md:w-1/2 min-w-0">
                 {block.images?.[0]?.url && (
-                  <img
+                  <LazyImage
                     src={block.images[0].url}
                     alt=""
-                    className="w-full h-auto object-cover rounded-3xl"
+                    className="w-full h-auto object-cover"
+                    wrapperClassName="w-full h-full rounded-3xl"
                   />
                 )}
               </div>
@@ -984,10 +986,11 @@ export default function PublicHome() {
           >
             <div className="max-w-4xl mx-auto">
               {block.images?.[0]?.url && (
-                <img
+                <LazyImage
                   src={block.images[0].url}
                   alt=""
-                  className="w-full h-auto object-cover rounded-3xl"
+                  className="w-full h-auto object-cover"
+                  wrapperClassName="w-full h-full rounded-3xl"
                 />
               )}
             </div>
@@ -1002,7 +1005,7 @@ export default function PublicHome() {
               block.backgroundColor === "black" ? "bg-[#121212]" : "bg-white",
             )}
           >
-            <img
+            <LazyImage
               src={block.images[0]?.url}
               alt=""
               className="w-full h-full object-cover"
@@ -1034,12 +1037,14 @@ export default function PublicHome() {
           >
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
               {block.images.map((img: any, idx: number) => (
-                <img
-                  key={idx}
-                  src={img.url}
-                  alt=""
-                  className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-2xl"
-                />
+                <div key={idx} className="w-full aspect-[4/5] md:aspect-square overflow-hidden rounded-2xl">
+                  <LazyImage
+                    key={idx}
+                    src={img.url}
+                    alt=""
+                    className="w-full h-full object-cover object-center"
+                  />
+                </div>
               ))}
             </div>
           </section>

@@ -3,6 +3,7 @@ import { storage, auth } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { UploadCloud, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import MediaPickerModal from './MediaPickerModal';
+import { compressImage } from '../utils/imageCompressor';
 
 interface ImageUploadProps {
   label: string;
@@ -35,11 +36,20 @@ export default function ImageUpload({ label, value, onChange, folder = 'uploads'
     setIsUploading(true);
     setProgress(0);
 
-    const fileExtension = file.name.split('.').pop();
+    let fileToUpload = file;
+    try {
+      if (file.type.startsWith('image/')) {
+        fileToUpload = await compressImage(file);
+      }
+    } catch (compressErr) {
+      console.error('Image compression failed, uploading original', compressErr);
+    }
+
+    const fileExtension = fileToUpload.name.split('.').pop() || 'webp';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
     const storageRef = ref(storage, `${folder}/${fileName}`);
 
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
 
     uploadTask.on(
       'state_changed',

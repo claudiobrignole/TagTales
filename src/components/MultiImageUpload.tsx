@@ -3,6 +3,7 @@ import { storage, auth } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { UploadCloud, X, Loader2, Plus, Image as ImageIcon } from 'lucide-react';
 import MediaPickerModal from './MediaPickerModal';
+import { compressImage } from '../utils/imageCompressor';
 
 interface MultiImageUploadProps {
   label: string;
@@ -30,19 +31,28 @@ export default function MultiImageUpload({ label, values, onChange, folder = 'up
     // Use a temporary array to accumulate URLs from THIS batch
     let currentUrls = [...values];
 
-    files.forEach((file: File) => {
+    for (const file of files) {
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        return;
+        continue;
       }
 
       const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       setUploadingFiles(prev => ({ ...prev, [fileId]: 0 }));
 
-      const fileExtension = file.name.split('.').pop();
+      let fileToUpload = file;
+      try {
+        if (file.type.startsWith('image/')) {
+          fileToUpload = await compressImage(file);
+        }
+      } catch (err) {
+        console.error('Compression failed for', file.name, err);
+      }
+
+      const fileExtension = fileToUpload.name.split('.').pop() || 'webp';
       const fileName = `${fileId}.${fileExtension}`;
       const storageRef = ref(storage, `${folder}/${fileName}`);
 
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
 
       uploadTask.on(
         'state_changed',
@@ -75,7 +85,7 @@ export default function MultiImageUpload({ label, values, onChange, folder = 'up
           }
         }
       );
-    });
+    }
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';

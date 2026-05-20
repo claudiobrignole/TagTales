@@ -11,6 +11,7 @@ import { IMAGE_RADIUS } from "../constants/theme";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import LazyImage from "../components/LazyImage";
 
 export default function PublicMagazine() {
   const { t, i18n } = useTranslation();
@@ -162,13 +163,13 @@ export default function PublicMagazine() {
                     <div className={`overflow-hidden border-hidden ${IMAGE_RADIUS.MD} aspect-[4/3]`}>
                       {article.immagineCopertina &&
                       article.immagineCopertina.trim() !== "" ? (
-                        <img
+                        <LazyImage
                           src={article.immagineCopertina}
                           alt={
                             getLocalizedField(article, "titolo", lang) ||
                             article.titolo
                           }
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          className="group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl font-['Shamgod'] text-white/20">

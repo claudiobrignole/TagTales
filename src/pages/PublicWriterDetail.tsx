@@ -14,6 +14,7 @@ import { trackViewArtist } from "../utils/analytics";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
+import LazyImage from "../components/LazyImage";
 
 export default function PublicWriterDetail() {
   const { slug } = useParams();
@@ -183,10 +184,10 @@ export default function PublicWriterDetail() {
       <div className="relative w-full h-[30vh] md:h-[40vh] min-h-[300px] flex flex-col items-center justify-center bg-[#121212] overflow-hidden -mt-[65px] lg:-mt-[75px] pt-[65px] lg:pt-[75px]">
         {writer.fotoProfilo && writer.fotoProfilo.trim() !== '' && (
           <div className="absolute inset-0 z-0">
-            <img
+            <LazyImage
               src={writer.fotoProfilo}
               alt={writer.nickname}
-              className="w-full h-full object-cover"
+              className="opacity-40"
             />
             <div className="absolute inset-0 bg-black/70"></div>
           </div>
@@ -288,7 +289,7 @@ export default function PublicWriterDetail() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
-                          <img src={ex.bannerHero} alt={ex.titolo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <LazyImage src={ex.bannerHero} alt={ex.titolo} className="group-hover:scale-105 transition-transform duration-500" />
                         )
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>

@@ -15,6 +15,7 @@ import { trackViewArtwork } from "../utils/analytics";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
+import LazyImage from "../components/LazyImage";
 
 export default function PublicExhibitionDetail() {
   const { slug } = useParams();
@@ -153,10 +154,10 @@ export default function PublicExhibitionDetail() {
                 className="absolute inset-0 w-full h-full object-cover opacity-80"
               />
             ) : (
-              <img
+              <LazyImage
                 src={exhibition.bannerHero}
                 alt={exhibition.titolo}
-                className="absolute inset-0 w-full h-full object-cover opacity-80"
+                className="absolute inset-0 opacity-80"
               />
             )
           )}
@@ -237,8 +238,8 @@ export default function PublicExhibitionDetail() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {exhibition.galleria.filter((url: string) => url && url.trim() !== '').map((url: string, index: number) => (
-                        <div key={index} className="rounded-2xl overflow-hidden border border-[#EAE3D9] shadow-sm">
-                          <img src={url} alt={`${exhibition.titolo} - ${index}`} className="w-full h-full object-cover" />
+                        <div key={index} className="aspect-video sm:aspect-square rounded-2xl overflow-hidden border border-[#EAE3D9] shadow-sm">
+                          <LazyImage src={url} alt={`${exhibition.titolo} - ${index}`} />
                         </div>
                       ))}
                     </div>
@@ -285,7 +286,7 @@ export default function PublicExhibitionDetail() {
                   <div key={artwork.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group">
                     <div className="aspect-[4/5] bg-[#F2EEE8] relative overflow-hidden">
                       {artwork.immagineHiRes && artwork.immagineHiRes.trim() !== '' ? (
-                        <img src={artwork.immagineHiRes} alt={artwork.titolo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <LazyImage src={artwork.immagineHiRes} alt={artwork.titolo} className="group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>
                       )}

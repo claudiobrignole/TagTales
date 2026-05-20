@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
 import Layout from "./components/Layout";
 import { trackPageView } from "./utils/analytics";
+import { initCacheVersion } from "./utils/cacheManager";
 import PublicHome from "./pages/PublicHome";
 import PublicWriters from "./pages/PublicWriters";
 import PublicWriterDetail from "./pages/PublicWriterDetail";
@@ -40,7 +41,6 @@ import AdminPages from "./pages/AdminPages";
 import AdminMedia from "./pages/AdminMedia";
 import AdminSEO from "./pages/admin/SEOManager";
 import NotFound from "./pages/NotFound";
-import ComingSoon from "./pages/ComingSoon";
 import EnRouteWrapper from "./components/EnRouteWrapper";
 
 import LanguagePrompt from "./components/LanguagePrompt";
@@ -159,6 +159,7 @@ function RouteTracker() {
 
 export default function App() {
   useEffect(() => {
+    initCacheVersion();
     const handleContextMenu = (e: MouseEvent) => {
       if ((e.target as HTMLElement).tagName === 'IMG') {
         e.preventDefault();

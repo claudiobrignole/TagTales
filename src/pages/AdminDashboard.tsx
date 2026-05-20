@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, getDocs, where, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { Users, Palette, CreditCard, FileText, Globe, Loader2, Search } from 'lucide-react';
+import { Users, Palette, CreditCard, FileText, Globe, Loader2, Search, RefreshCw } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../contexts/I18nContext';
 import { translateText, translateObjectFields } from '../utils/translate';
 import DirectChat from '../components/DirectChat';
+import { triggerGlobalCacheReset } from '../utils/cacheManager';
+import PageSpeedInsights from '../components/PageSpeedInsights';
 
 export default function AdminDashboard() {
   const { t } = useI18n();
@@ -33,6 +35,24 @@ export default function AdminDashboard() {
     total: 0,
     status: ''
   });
+
+  const [resettingCache, setResettingCache] = useState(false);
+  const [cacheResetStatus, setCacheResetStatus] = useState('');
+
+  const handleCacheReset = async () => {
+    setResettingCache(true);
+    setCacheResetStatus('');
+    try {
+      await triggerGlobalCacheReset();
+      setCacheResetStatus(t('adminDashboard.cacheResetSuccess', 'Cache resettata con successo su tutti i dispositivi!'));
+      setTimeout(() => setCacheResetStatus(''), 5000);
+    } catch (err: any) {
+      console.error(err);
+      setCacheResetStatus(t('adminDashboard.cacheResetError', 'Errore durante il reset della cache.'));
+    } finally {
+      setResettingCache(false);
+    }
+  };
 
   useEffect(() => {
     if (chatParam && writers.length > 0) {
@@ -411,6 +431,43 @@ export default function AdminDashboard() {
           )}
         </button>
       </div>
+
+      <div className="mt-8 bg-white p-6 rounded-3xl shadow-sm border border-[#EAE3D9]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-4 rounded-2xl bg-amber-50 text-amber-600">
+            <RefreshCw size={24} className={resettingCache ? "animate-spin" : ""} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-[#121212]">{t('adminDashboard.cacheClearTitle', 'Controllo Cache Immagini')}</h2>
+            <p className="text-sm text-[#59554E] mt-1">
+              {t('adminDashboard.cacheClearDesc', 'Forza tutti i browser degli utenti a ricaricare le immagini aggiornate. Utile se hai ricaricato o modificato quadri o copertine e non li vedi ancora aggiornati.')}
+            </p>
+          </div>
+        </div>
+
+        {cacheResetStatus && (
+          <div className={`mb-4 text-sm font-medium p-4 rounded-xl border ${cacheResetStatus.includes('success') || cacheResetStatus.includes('successo') ? 'text-green-700 bg-green-50 border-green-100' : 'text-red-700 bg-red-50 border-red-100'}`}>
+            {cacheResetStatus}
+          </div>
+        )}
+
+        <button
+          onClick={handleCacheReset}
+          disabled={resettingCache}
+          className="flex items-center gap-2 px-6 py-3 bg-[#121212] text-white rounded-xl font-bold hover:bg-[#FF4F00] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed text-xs tracking-wider"
+        >
+          {resettingCache ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              {t('adminDashboard.cacheResetting', 'Svuotamento cache...')}
+            </>
+          ) : (
+            t('adminDashboard.cacheResetButton', 'Reset Cache Globale')
+          )}
+        </button>
+      </div>
+
+      <PageSpeedInsights />
 
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
