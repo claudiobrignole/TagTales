@@ -69,46 +69,58 @@ export default function Header() {
       }
       try {
         const results: any[] = [];
+        const queryLower = searchQuery.toLowerCase();
 
-        // Search Exhibitions
-        const qEx = query(
-          collection(db, "mostre"),
-          where("published", "==", true),
-          limit(5),
-        );
+        // 1. Search Exhibitions (mostre)
+        const qEx = query(collection(db, "mostre"));
         const snapEx = await getDocs(qEx);
         snapEx.docs.forEach((doc) => {
           const data = doc.data();
-          const localizedTitle =
-            getLocalizedField(data, "titolo", currentLang) || data.titolo;
+          // Filter if explicitly set to unpublished
+          if (data.published === false || data.isPublished === false) return;
+          
+          const titleIt = data.titolo || data.title || "";
+          const titleEn = data.titolo_en || data.title_en || "";
+          const introIt = data.intro || data.sottotitolo || data.subtitle || "";
+          const introEn = data.intro_en || data.sottotitolo_en || "";
+          
+          const localizedTitle = getLocalizedField(data, "titolo", currentLang) || titleIt;
+
           if (
-            data.titolo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            data.titolo_en?.toLowerCase().includes(searchQuery.toLowerCase())
+            titleIt.toLowerCase().includes(queryLower) ||
+            titleEn.toLowerCase().includes(queryLower) ||
+            introIt.toLowerCase().includes(queryLower) ||
+            introEn.toLowerCase().includes(queryLower)
           ) {
             results.push({
               id: doc.id,
               title: localizedTitle,
-              type: "Mostra",
+              type: t("common.exhibition", "Mostra"),
               image: data.bannerHero,
               link: `/exhibitions/${data.slug || doc.id}`,
             });
           }
         });
 
-        // Search Artists
-        const qWr = query(
-          collection(db, "scrittori"),
-          where("stato", "==", "attivo"),
-          limit(5),
-        );
+        // 2. Search Writers (scrittori)
+        const qWr = query(collection(db, "scrittori"));
         const snapWr = await getDocs(qWr);
         snapWr.docs.forEach((doc) => {
           const data = doc.data();
-          const localizedNickname =
-            getLocalizedField(data, "nickname", currentLang) || data.nickname;
+          if (data.stato === "inattivo") return;
+          
+          const nickname = data.nickname || "";
+          const nicknameEn = data.nickname_en || "";
+          const bioIt = data.bio || "";
+          const bioEn = data.bio_en || "";
+          
+          const localizedNickname = getLocalizedField(data, "nickname", currentLang) || nickname;
+
           if (
-            data.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            data.nickname_en?.toLowerCase().includes(searchQuery.toLowerCase())
+            nickname.toLowerCase().includes(queryLower) ||
+            nicknameEn.toLowerCase().includes(queryLower) ||
+            bioIt.toLowerCase().includes(queryLower) ||
+            bioEn.toLowerCase().includes(queryLower)
           ) {
             results.push({
               id: doc.id,
@@ -120,15 +132,43 @@ export default function Header() {
           }
         });
 
+        // 3. Search Articles (articoli / magazine)
+        const qAr = query(collection(db, "articoli"));
+        const snapAr = await getDocs(qAr);
+        snapAr.docs.forEach((doc) => {
+          const data = doc.data();
+          if (data.published === false || data.isPublished === false) return;
+
+          const titleIt = data.titolo || data.title || "";
+          const titleEn = data.titolo_en || data.title_en || "";
+          const autor = data.autore || "";
+          
+          const localizedTitle = getLocalizedField(data, "titolo", currentLang) || titleIt;
+
+          if (
+            titleIt.toLowerCase().includes(queryLower) ||
+            titleEn.toLowerCase().includes(queryLower) ||
+            autor.toLowerCase().includes(queryLower)
+          ) {
+            results.push({
+              id: doc.id,
+              title: localizedTitle,
+              type: t("common.article", "Articolo"),
+              image: data.immagineCopertina || data.coverImageUrl || data.coverImage,
+              link: `/magazine/${data.slug || doc.id}`,
+            });
+          }
+        });
+
         setSearchResults(results);
       } catch (error) {
         console.error("Search error:", error);
       }
     };
 
-    const timeoutId = setTimeout(performSearch, 500);
+    const timeoutId = setTimeout(performSearch, 400);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, currentLang]);
 
   return (
     <>

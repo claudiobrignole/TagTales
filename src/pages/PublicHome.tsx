@@ -287,6 +287,44 @@ export default function PublicHome() {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [pageData, setPageData] = useState<any>(null);
 
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterName, setNewsletterName] = useState("");
+  const [newsletterGdpr, setNewsletterGdpr] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterGdpr) {
+      alert("Devi accettare l'informativa sulla privacy.");
+      return;
+    }
+    setNewsletterStatus("loading");
+    try {
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: newsletterEmail,
+          firstName: newsletterName,
+        }),
+      });
+
+      if (response.ok) {
+        setNewsletterStatus("success");
+        setNewsletterEmail("");
+        setNewsletterName("");
+        setNewsletterGdpr(false);
+      } else {
+        setNewsletterStatus("error");
+      }
+    } catch (err) {
+      console.error(err);
+      setNewsletterStatus("error");
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -749,67 +787,83 @@ export default function PublicHome() {
                 )}
               </p>
               <div className="w-full max-w-lg text-left">
-                <form
-                  method="post"
-                  action="https://sendfox.com/form/m5egn8/mnkywx"
-                  className="sendfox-form flex flex-col gap-6"
-                  id="mnkywx"
-                  data-async="true"
-                  data-recaptcha="true"
-                >
-                  <input
-                    type="text"
-                    name="first_name"
-                    required
-                    className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none"
-                    placeholder={t("home.newsletterName", "Nome")}
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none"
-                    placeholder={t("home.newsletterEmail", "Email")}
-                  />
-                  <div className="flex items-start gap-4 mt-4">
-                    <input
-                      type="checkbox"
-                      id="sendfox_gdpr"
-                      name="gdpr"
-                      value="1"
-                      required
-                      className="mt-1 w-5 h-5 accent-[#FF4F00]"
-                    />
-                    <label
-                      htmlFor="sendfox_gdpr"
-                      className="body-text text-base"
-                    >
-                      {t(
-                        "home.newsletterPrivacy",
-                        "Accetto di ricevere aggiornamenti e promozioni via e-mail.",
-                      )}
-                    </label>
+                {newsletterStatus === "success" ? (
+                  <div className="bg-green-50 text-green-800 p-8 rounded-3xl text-center border border-green-200 shadow-sm animate-in fade-in duration-300">
+                    <h4 className="text-2xl font-bold font-['Karla'] mb-2 uppercase">
+                      {t("common.success", "Grazie!")}
+                    </h4>
+                    <p className="font-['Karla'] text-lg">
+                      {t("newsletterSuccess", "Ti sei iscritto alla mailing list con successo.")}
+                    </p>
                   </div>
-                  <div
-                    style={{ position: "absolute", left: "-5000px" }}
-                    aria-hidden="true"
+                ) : (
+                  <form
+                    onSubmit={handleNewsletterSubmit}
+                    className="sendfox-form flex flex-col gap-6"
                   >
+                    {newsletterStatus === "error" && (
+                      <div className="bg-red-50 text-red-700 p-4 rounded-2xl text-center border border-red-100 font-medium">
+                        {t("newsletterError", "Errore durante l'iscrizione. Riprova.")}
+                      </div>
+                    )}
                     <input
                       type="text"
-                      name="a_password"
-                      tabIndex={-1}
-                      defaultValue=""
-                      autoComplete="off"
+                      name="first_name"
+                      required
+                      value={newsletterName}
+                      onChange={(e) => setNewsletterName(e.target.value)}
+                      disabled={newsletterStatus === "loading"}
+                      className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
+                      placeholder={t("home.newsletterName", "Nome")}
                     />
-                  </div>
-                  <button
-                    type="submit"
-                    className="mt-8 inline-flex items-center gap-4 btn-text bg-[#121212] text-white py-4 px-12 rounded-full hover:bg-[#FF4F00] transition-colors uppercase cursor-pointer"
-                  >
-                    {t("home.newsletterBtn", "Iscriviti")}{" "}
-                    <ArrowRight size={24} />
-                  </button>
-                </form>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      disabled={newsletterStatus === "loading"}
+                      className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
+                      placeholder={t("home.newsletterEmail", "Email")}
+                    />
+                    <div className="flex items-start gap-4 mt-4">
+                      <input
+                        type="checkbox"
+                        id="sendfox_gdpr"
+                        name="gdpr"
+                        value="1"
+                        required
+                        checked={newsletterGdpr}
+                        onChange={(e) => setNewsletterGdpr(e.target.checked)}
+                        disabled={newsletterStatus === "loading"}
+                        className="mt-1 w-5 h-5 accent-[#FF4F00] cursor-pointer"
+                      />
+                      <label
+                        htmlFor="sendfox_gdpr"
+                        className="body-text text-base cursor-pointer selection:bg-transparent"
+                      >
+                        {t(
+                          "home.newsletterPrivacy",
+                          "Accetto di ricevere aggiornamenti e promozioni via e-mail.",
+                        )}
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={newsletterStatus === "loading"}
+                      className="mt-8 inline-flex items-center justify-center gap-4 btn-text bg-[#121212] text-white py-4 px-12 rounded-full hover:bg-[#FF4F00] transition-colors uppercase cursor-pointer disabled:opacity-50"
+                    >
+                      {newsletterStatus === "loading" ? (
+                        <span>{t("common.loading", "Iscrizione in corso...")}</span>
+                      ) : (
+                        <>
+                          {t("home.newsletterBtn", "Iscriviti")}{" "}
+                          <ArrowRight size={24} />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </section>
