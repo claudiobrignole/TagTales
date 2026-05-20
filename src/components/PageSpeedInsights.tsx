@@ -42,6 +42,7 @@ export default function PageSpeedInsights() {
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [isSimulated, setIsSimulated] = useState(false);
+  const [simulationReason, setSimulationReason] = useState<'sandbox' | 'api_error' | null>(null);
 
   // Automatic Weekly Optimization state
   const [optSettings, setOptSettings] = useState({
@@ -128,12 +129,18 @@ export default function PageSpeedInsights() {
     setLoading(true);
     setErrorMessage('');
     setIsSimulated(false);
+    setSimulationReason(null);
     
-    const isSandboxUrl = testUrl.includes('localhost') || 
-                         testUrl.includes('127.0.0.1') || 
-                         testUrl.includes('ais-dev') || 
-                         testUrl.includes('ais-pre') || 
-                         testUrl.includes('.run.app');
+    let normalizedUrl = testUrl.trim();
+    if (!/^https?:\/\//i.test(normalizedUrl)) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    const isSandboxUrl = normalizedUrl.includes('localhost') || 
+                         normalizedUrl.includes('127.0.0.1') || 
+                         normalizedUrl.includes('ais-dev') || 
+                         normalizedUrl.includes('ais-pre') || 
+                         normalizedUrl.includes('.run.app');
 
     if (isSandboxUrl) {
       // Sandboxed/local environment is private, PageSpeed API cannot visit it.
@@ -185,6 +192,7 @@ export default function PageSpeedInsights() {
             ]
           }
         });
+        setSimulationReason('sandbox');
         setIsSimulated(true);
         setLoading(false);
       }, 1500);
@@ -194,7 +202,7 @@ export default function PageSpeedInsights() {
     try {
       const fetchStrategy = async (strategy: 'mobile' | 'desktop'): Promise<PSIMetrics> => {
         const response = await fetch(
-          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(testUrl)}&strategy=${strategy}&category=performance`
+          `/api/pagespeed?url=${encodeURIComponent(normalizedUrl)}&strategy=${strategy}`
         );
         
         if (!response.ok) {
@@ -204,6 +212,9 @@ export default function PageSpeedInsights() {
         
         const data = await response.json();
         const lighthouse = data.lighthouseResult;
+        if (!lighthouse) {
+          throw new Error("Invalid response received from proxy: missing lighthouseResult");
+        }
         const score = Math.round((lighthouse.categories.performance.score || 0) * 100);
         
         const audits = lighthouse.audits;
@@ -303,6 +314,7 @@ export default function PageSpeedInsights() {
           ]
         }
       });
+      setSimulationReason('api_error');
       setIsSimulated(true);
     } finally {
       setLoading(false);
@@ -595,10 +607,18 @@ export default function PageSpeedInsights() {
               <div className="p-5 bg-[#FFAA00]/5 text-[#FFAA00] text-xs rounded-2xl border border-[#FFAA00]/15 flex flex-col gap-1.5 w-full">
                 <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#FF4F00]">
                   <AlertTriangle size={16} />
-                  Modalità Demo / Anteprima Attiva
+                  {simulationReason === 'sandbox' ? 'Modalità Demo / Anteprima Attiva' : 'API PageSpeed Temporaneamente Offline'}
                 </div>
                 <p className="text-[#59554E] leading-relaxed font-normal">
-                  L'indirizzo inserito è un ambiente di sviluppo locale o sandboxed (es. localhost o ais-dev). Dal momento che i server pubblici di Google PageSpeed Insights™ non possono raggiungere reti private o protette da credenziali, stiamo mostrando un report per smartphone e computer generato ad alta fedeltà per mostrare la diagnostica. Se inserisci l'URL pubblico di produzione (es: <strong>https://tagtalesgallery.com</strong>), verranno scansionati dati reali tramite le API in tempo reale.
+                  {simulationReason === 'sandbox' ? (
+                    <>
+                      L'indirizzo inserito è un ambiente di sviluppo locale o sandboxed (es. localhost o ais-dev). Dal momento che i server pubblici di Google PageSpeed Insights™ non possono raggiungere reti private o protette da credenziali, stiamo mostrando un report per smartphone e computer generato ad alta fedeltà per illustrare i parametri diagnostici. Se inserisci l'URL pubblico di produzione (es: <strong>https://tagtalesgallery.com</strong>), verranno scansionati dati reali tramite le API in tempo reale.
+                    </>
+                  ) : (
+                    <>
+                      Il servizio Google PageSpeed Insights™ ha riscontrato un errore (es. limite di quota API superato o timeout di risoluzione DNS). Viene visualizzato un report simulato ad alta fedeltà dell'indirizzo reale per permetterti di valutare i parametri diagnostici e i suggerimenti previsti per il tuo sito.
+                    </>
+                  )}
                 </p>
               </div>
             )}

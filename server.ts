@@ -687,6 +687,30 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
     }
   });
 
+  app.get("/api/pagespeed", async (req, res) => {
+    try {
+      const { url, strategy = "mobile" } = req.query;
+      if (!url) {
+        return res.status(400).json({ success: false, error: "Missing required parameter: url" });
+      }
+
+      const targetUrl = encodeURIComponent(String(url));
+      const psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${targetUrl}&strategy=${strategy}&category=performance`;
+
+      const response = await fetch(psiUrl);
+      if (!response.ok) {
+        const errDetails = await response.text();
+        return res.status(response.status).json({ success: false, error: `Google API Error: ${errDetails}` });
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (e: any) {
+      console.error("PageSpeed proxy error:", e);
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const firebaseConfig = getFirebaseConfig();
