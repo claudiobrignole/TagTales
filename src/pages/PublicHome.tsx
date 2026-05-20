@@ -10,6 +10,7 @@ import {
   ArrowRight,
   ChevronUp,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import {
   motion,
@@ -294,12 +295,15 @@ export default function PublicHome() {
   const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const handleNewsletterSubmit = () => {
-    setNewsletterStatus("success");
+    setNewsletterStatus("loading");
+    // Give browser 1.2 seconds to process the post request through the hidden iframe fully
+    // before showing success message and clearing form values.
     setTimeout(() => {
+      setNewsletterStatus("success");
       setNewsletterEmail("");
       setNewsletterName("");
       setNewsletterGdpr(false);
-    }, 100);
+    }, 1200);
   };
 
   useEffect(() => {
@@ -767,8 +771,8 @@ export default function PublicHome() {
                 {/* Invisible iframe to capture SendFox submission without page refresh */}
                 <iframe name="sendfox_iframe" id="sendfox_iframe" style={{ display: "none" }} />
                 
-                {newsletterStatus === "success" ? (
-                  <div className="bg-green-50 text-green-800 p-8 rounded-3xl text-center border border-green-200 shadow-sm animate-in fade-in duration-300">
+                {newsletterStatus === "success" && (
+                  <div className="bg-green-50 text-green-800 p-8 rounded-3xl text-center border border-green-200 shadow-sm mb-6 animate-in fade-in duration-300">
                     <h4 className="text-2xl font-bold font-['Karla'] mb-2 uppercase">
                       {t("common.success", "Grazie!")}
                     </h4>
@@ -776,72 +780,87 @@ export default function PublicHome() {
                       {t("newsletterSuccess", "Ti sei iscritto alla mailing list con successo.")}
                     </p>
                   </div>
-                ) : (
-                  <form
-                    action="https://sendfox.com/form/m5egn8/mnkywx"
-                    method="POST"
-                    target="sendfox_iframe"
-                    onSubmit={handleNewsletterSubmit}
-                    className="sendfox-form flex flex-col gap-6"
-                  >
+                )}
+
+                <form
+                  action="https://sendfox.com/form/m5egn8/mnkywx"
+                  method="POST"
+                  target="sendfox_iframe"
+                  onSubmit={handleNewsletterSubmit}
+                  className={`sendfox-form flex flex-col gap-6 ${newsletterStatus === "success" ? "hidden" : ""}`}
+                  id="mnkywx"
+                  data-async="true"
+                  data-recaptcha="true"
+                >
+                  <input
+                    type="text"
+                    id="sendfox_form_name"
+                    name="first_name"
+                    required
+                    value={newsletterName}
+                    onChange={(e) => setNewsletterName(e.target.value)}
+                    className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
+                    placeholder={t("home.newsletterName", "Nome")}
+                  />
+                  <input
+                    type="email"
+                    id="sendfox_form_email"
+                    name="email"
+                    required
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
+                    placeholder={t("home.newsletterEmail", "Email")}
+                  />
+                  <div className="flex items-start gap-4 mt-4">
+                    <input
+                      type="checkbox"
+                      id="sendfox_gdpr"
+                      name="gdpr"
+                      value="1"
+                      required
+                      checked={newsletterGdpr}
+                      onChange={(e) => setNewsletterGdpr(e.target.checked)}
+                      className="mt-1 w-5 h-5 accent-[#FF4F00] cursor-pointer"
+                    />
+                    <label
+                      htmlFor="sendfox_gdpr"
+                      className="body-text text-base cursor-pointer selection:bg-transparent"
+                    >
+                      {t(
+                        "home.newsletterPrivacy",
+                        "Accetto di ricevere aggiornamenti e promozioni via e-mail.",
+                      )}
+                    </label>
+                  </div>
+                  {/* Honeypot field for SendFox bot protection */}
+                  <div style={{ position: "absolute", left: "-5000px" }} aria-hidden="true">
                     <input
                       type="text"
-                      name="first_name"
-                      required
-                      value={newsletterName}
-                      onChange={(e) => setNewsletterName(e.target.value)}
-                      className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
-                      placeholder={t("home.newsletterName", "Nome")}
+                      name="a_password"
+                      tabIndex={-1}
+                      defaultValue=""
+                      autoComplete="off"
                     />
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      value={newsletterEmail}
-                      onChange={(e) => setNewsletterEmail(e.target.value)}
-                      className="w-full bg-transparent border-b-2 border-[#121212]/20 focus:border-[#FF4F00] py-3 outline-none transition-all"
-                      placeholder={t("home.newsletterEmail", "Email")}
-                    />
-                    <div className="flex items-start gap-4 mt-4">
-                      <input
-                        type="checkbox"
-                        id="sendfox_gdpr"
-                        name="gdpr"
-                        value="1"
-                        required
-                        checked={newsletterGdpr}
-                        onChange={(e) => setNewsletterGdpr(e.target.checked)}
-                        className="mt-1 w-5 h-5 accent-[#FF4F00] cursor-pointer"
-                      />
-                      <label
-                        htmlFor="sendfox_gdpr"
-                        className="body-text text-base cursor-pointer selection:bg-transparent"
-                      >
-                        {t(
-                          "home.newsletterPrivacy",
-                          "Accetto di ricevere aggiornamenti e promozioni via e-mail.",
-                        )}
-                      </label>
-                    </div>
-                    {/* Honeypot field for SendFox bot protection */}
-                    <div style={{ position: "absolute", left: "-5000px" }} aria-hidden="true">
-                      <input
-                        type="text"
-                        name="a_password"
-                        tabIndex={-1}
-                        defaultValue=""
-                        autoComplete="off"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="mt-8 inline-flex items-center justify-center gap-4 btn-text bg-[#121212] text-white py-4 px-12 rounded-full hover:bg-[#FF4F00] transition-colors uppercase cursor-pointer"
-                    >
-                      {t("home.newsletterBtn", "Iscriviti")}{" "}
-                      <ArrowRight size={24} />
-                    </button>
-                  </form>
-                )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={newsletterStatus === "loading"}
+                    className="mt-8 inline-flex items-center justify-center gap-4 btn-text bg-[#121212] text-white py-4 px-12 rounded-full hover:bg-[#FF4F00] transition-colors uppercase cursor-pointer disabled:opacity-50"
+                  >
+                    {newsletterStatus === "loading" ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        {t("home.newsletterLoading", "Invio in corso...")}
+                      </>
+                    ) : (
+                      <>
+                        {t("home.newsletterBtn", "Iscriviti")}{" "}
+                        <ArrowRight size={24} />
+                      </>
+                    )}
+                  </button>
+                </form>
               </div>
             </div>
           </section>
