@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
@@ -11,37 +11,40 @@ import Layout from "./components/Layout";
 import { trackPageView } from "./utils/analytics";
 import { initCacheVersion } from "./utils/cacheManager";
 import PublicHome from "./pages/PublicHome";
-import PublicWriters from "./pages/PublicWriters";
-import PublicWriterDetail from "./pages/PublicWriterDetail";
-import PublicExhibitions from "./pages/PublicExhibitions";
-import PublicExhibitionDetail from "./pages/PublicExhibitionDetail";
-import PublicMagazine from "./pages/PublicMagazine";
-import PublicArticleDetail from "./pages/PublicArticleDetail";
-import PublicPage from "./pages/PublicPage";
-import PublicAssistance from "./pages/PublicAssistance";
-import Populate from "./pages/Populate";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
-import Artworks from "./pages/Artworks";
-import Sales from "./pages/Sales";
-import Payments from "./pages/Payments";
-import Contracts from "./pages/Contracts";
-import AdminContracts from "./pages/AdminContracts";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminUsers from "./pages/AdminUsers";
-import AdminPayments from "./pages/AdminPayments";
-import AdminSales from "./pages/AdminSales";
-import Help from "./pages/Help";
-import AdminHelp from "./pages/AdminHelp";
-import AdminWriters from "./pages/AdminWriters";
-import AdminExhibitions from "./pages/AdminExhibitions";
-import AdminArticles from "./pages/AdminArticles";
-import AdminPages from "./pages/AdminPages";
-import AdminMedia from "./pages/AdminMedia";
-import AdminSEO from "./pages/admin/SEOManager";
-import AdminNewsletter from "./pages/admin/AdminNewsletter";
-import NotFound from "./pages/NotFound";
+
+// Lazy-loaded pages to reduce initial bundle size and boost performance
+const PublicWriters = React.lazy(() => import("./pages/PublicWriters"));
+const PublicWriterDetail = React.lazy(() => import("./pages/PublicWriterDetail"));
+const PublicExhibitions = React.lazy(() => import("./pages/PublicExhibitions"));
+const PublicExhibitionDetail = React.lazy(() => import("./pages/PublicExhibitionDetail"));
+const PublicMagazine = React.lazy(() => import("./pages/PublicMagazine"));
+const PublicArticleDetail = React.lazy(() => import("./pages/PublicArticleDetail"));
+const PublicPage = React.lazy(() => import("./pages/PublicPage"));
+const PublicAssistance = React.lazy(() => import("./pages/PublicAssistance"));
+const Populate = React.lazy(() => import("./pages/Populate"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const Artworks = React.lazy(() => import("./pages/Artworks"));
+const Sales = React.lazy(() => import("./pages/Sales"));
+const Payments = React.lazy(() => import("./pages/Payments"));
+const Contracts = React.lazy(() => import("./pages/Contracts"));
+const AdminContracts = React.lazy(() => import("./pages/AdminContracts"));
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
+const AdminPayments = React.lazy(() => import("./pages/AdminPayments"));
+const AdminSales = React.lazy(() => import("./pages/AdminSales"));
+const Help = React.lazy(() => import("./pages/Help"));
+const AdminHelp = React.lazy(() => import("./pages/AdminHelp"));
+const AdminWriters = React.lazy(() => import("./pages/AdminWriters"));
+const AdminExhibitions = React.lazy(() => import("./pages/AdminExhibitions"));
+const AdminArticles = React.lazy(() => import("./pages/AdminArticles"));
+const AdminPages = React.lazy(() => import("./pages/AdminPages"));
+const AdminMedia = React.lazy(() => import("./pages/AdminMedia"));
+const AdminSEO = React.lazy(() => import("./pages/admin/SEOManager"));
+const AdminNewsletter = React.lazy(() => import("./pages/admin/AdminNewsletter"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+
 import EnRouteWrapper from "./components/EnRouteWrapper";
 
 import LanguagePrompt from "./components/LanguagePrompt";
@@ -175,7 +178,13 @@ export default function App() {
         <I18nProvider>
           <LanguagePrompt />
           <RouteTracker />
-          <Routes>
+          <Suspense fallback={
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#F2EEE8] font-['Karla'] p-6 text-center">
+              <div className="w-8 h-8 border-4 border-[#FF4F00] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-[#59554E] text-sm uppercase tracking-wider font-bold">Caricamento...</p>
+            </div>
+          }>
+            <Routes>
             <Route path="/coming-soon" element={<Navigate to="/" replace />} />
             <Route 
               path="/en" 
@@ -393,6 +402,7 @@ export default function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </I18nProvider>
       </BrowserRouter>
     </AuthProvider>

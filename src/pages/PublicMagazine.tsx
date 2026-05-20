@@ -170,6 +170,10 @@ export default function PublicMagazine() {
                             article.titolo
                           }
                           className="group-hover:scale-105 transition-transform duration-700"
+                          loading="lazy"
+                          width={800}
+                          height={600}
+                          style={{ objectFit: "cover" }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl font-['Shamgod'] text-white/20">

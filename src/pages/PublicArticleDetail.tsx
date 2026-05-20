@@ -153,6 +153,10 @@ export default function PublicArticleDetail() {
               alt={article.titolo}
               className="opacity-80"
               wrapperClassName="absolute inset-0 w-full h-full"
+              loading="eager"
+              width={1920}
+              height={1080}
+              style={{ objectFit: "cover" }}
             />
           )}
 
@@ -283,6 +287,10 @@ export default function PublicArticleDetail() {
                       <LazyImage
                         src={url}
                         alt={`${article.titolo} - ${index}`}
+                        loading="lazy"
+                        width={800}
+                        height={450}
+                        style={{ objectFit: "cover" }}
                       />
                     </div>
                   ))}
@@ -313,6 +321,10 @@ export default function PublicArticleDetail() {
                           src={relArticle.img}
                           alt={relArticle.title}
                           className="group-hover:scale-105 transition-transform duration-700"
+                          loading="lazy"
+                          width={800}
+                          height={600}
+                          style={{ objectFit: "cover" }}
                         />
                       )}
                     </div>

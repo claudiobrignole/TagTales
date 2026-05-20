@@ -13,6 +13,7 @@ export default function LazyImage({
   alt,
   className = '',
   wrapperClassName = '',
+  loading = 'lazy',
   ...props
 }: LazyImageProps) {
   const bustedSrc = getBustedUrl(src);
@@ -78,7 +79,7 @@ export default function LazyImage({
         className={`w-full h-full object-cover transition-all duration-700 ease-out select-none ${
           isLoaded ? 'opacity-100 scale-100 filter-none' : 'opacity-0 scale-105 blur-sm'
         } ${className}`}
-        loading="lazy"
+        loading={loading}
         referrerPolicy="no-referrer"
         {...props}
       />

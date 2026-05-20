@@ -497,6 +497,10 @@ export default function PublicHome() {
                           src={(featuredExhibitions[currentSlide] as any).image}
                           alt={featuredExhibitions[currentSlide].title}
                           className="opacity-80"
+                          loading="eager"
+                          width={1920}
+                          height={1080}
+                          style={{ objectFit: "cover" }}
                         />
                       )
                     )}
@@ -605,6 +609,10 @@ export default function PublicHome() {
                           src={item.img}
                           alt={item.title}
                           className="grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                          loading="lazy"
+                          width={800}
+                          height={800}
+                          style={{ objectFit: "cover" }}
                         />
                       )
                     )}
@@ -661,6 +669,10 @@ export default function PublicHome() {
                         src={article.img}
                         alt={article.title}
                         className="group-hover:scale-105 transition-transform duration-700"
+                        loading="lazy"
+                        width={800}
+                        height={600}
+                        style={{ objectFit: "cover" }}
                       />
                     )}
                   </div>
@@ -723,6 +735,10 @@ export default function PublicHome() {
                         src={writer.img}
                         alt={writer.name}
                         className="opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
+                        loading="lazy"
+                        width={400}
+                        height={400}
+                        style={{ objectFit: "cover" }}
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
@@ -1010,6 +1026,10 @@ export default function PublicHome() {
                     alt=""
                     className="w-full h-auto object-cover"
                     wrapperClassName="w-full h-full rounded-3xl"
+                    loading="lazy"
+                    width={800}
+                    height={600}
+                    style={{ objectFit: "cover" }}
                   />
                 )}
               </div>
@@ -1034,6 +1054,10 @@ export default function PublicHome() {
                   alt=""
                   className="w-full h-auto object-cover"
                   wrapperClassName="w-full h-full rounded-3xl"
+                  loading="lazy"
+                  width={1200}
+                  height={675}
+                  style={{ objectFit: "cover" }}
                 />
               )}
             </div>
@@ -1052,6 +1076,10 @@ export default function PublicHome() {
               src={block.images[0]?.url}
               alt=""
               className="w-full h-full object-cover"
+              loading="lazy"
+              width={1920}
+              height={1080}
+              style={{ objectFit: "cover" }}
             />
           </section>
         );
@@ -1086,6 +1114,10 @@ export default function PublicHome() {
                     src={img.url}
                     alt=""
                     className="w-full h-full object-cover object-center"
+                    loading="lazy"
+                    width={800}
+                    height={800}
+                    style={{ objectFit: "cover" }}
                   />
                 </div>
               ))}

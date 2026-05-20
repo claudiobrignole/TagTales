@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, getDocs, where, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, getDocs, where, doc, getDoc, updateDoc, getCountFromServer } from 'firebase/firestore';
 import { Users, Palette, CreditCard, FileText, Globe, Loader2, Search, RefreshCw } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../contexts/I18nContext';
@@ -71,10 +71,24 @@ export default function AdminDashboard() {
           return;
         }
 
-        const usersSnap = await getDocs(collection(db, 'users'));
-        const artworksSnap = await getDocs(query(collection(db, 'opere'), where('statoApprovazione', '==', 'in_attesa')));
-        const paymentsSnap = await getDocs(query(collection(db, 'payouts'), where('stato', '==', 'in_attesa')));
-        const contractsSnap = await getDocs(collection(db, 'contratti'));
+        const allUsersCountPromise = getCountFromServer(collection(db, 'users'));
+        const deletedUsersCountPromise = getCountFromServer(query(collection(db, 'users'), where('isDeleted', '==', true)));
+        const artworksCountPromise = getCountFromServer(query(collection(db, 'opere'), where('statoApprovazione', '==', 'in_attesa')));
+        const paymentsCountPromise = getCountFromServer(query(collection(db, 'payouts'), where('stato', '==', 'in_attesa')));
+        const contractsCountPromise = getCountFromServer(collection(db, 'contratti'));
+
+        const [allUsersCountRes, deletedUsersCountRes, artworksCountRes, paymentsCountRes, contractsCountRes] = await Promise.all([
+          allUsersCountPromise,
+          deletedUsersCountPromise,
+          artworksCountPromise,
+          paymentsCountPromise,
+          contractsCountPromise
+        ]);
+
+        const totalUsersCount = allUsersCountRes.data().count - deletedUsersCountRes.data().count;
+        const pendingArtworksCount = artworksCountRes.data().count;
+        const pendingPaymentsCount = paymentsCountRes.data().count;
+        const totalContractsCount = contractsCountRes.data().count;
 
         const writersSnap = await getDocs(query(collection(db, 'users'), where('role', 'in', ['writer', 'artist'])));
         const writersData = writersSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((w: any) => !w.isDeleted);
@@ -89,10 +103,10 @@ export default function AdminDashboard() {
         }
 
         setStats({
-          totalUsers: usersSnap.docs.filter(d => !d.data().isDeleted).length,
-          pendingArtworks: artworksSnap.size,
-          pendingPayments: paymentsSnap.size,
-          totalContracts: contractsSnap.size
+          totalUsers: totalUsersCount,
+          pendingArtworks: pendingArtworksCount,
+          pendingPayments: pendingPaymentsCount,
+          totalContracts: totalContractsCount
         });
       } catch (error) {
         console.error("Error fetching admin stats:", error);
@@ -104,32 +118,7 @@ export default function AdminDashboard() {
     fetchStats();
   }, [user]);
 
-  // One-time auto-cleanup of ghost users (the two Sids and claudio.brignole@gmail.com)
-  useEffect(() => {
-    if (!user) return;
-    const cleanGhostUsers = async () => {
-      try {
-        const snap = await getDocs(collection(db, 'users'));
-        for (const d of snap.docs) {
-          const uData = d.data();
-          const email = (uData.email || '').toLowerCase();
-          const fullName = (uData.fullName || uData.artistName || uData.displayName || '').toLowerCase();
-          
-          const isClaudioBrignoleGmail = email === 'claudio.brignole@gmail.com';
-          const isSid = email.includes('sid') || fullName.includes('sid');
-          const isNotAdmin = email !== 'claudio@brignole.ch' && email !== 'tagtales';
 
-          if ((isClaudioBrignoleGmail || isSid) && isNotAdmin && !uData.isDeleted) {
-            console.log("Auto-cleaning ghost user:", email, d.id);
-            await updateDoc(doc(db, 'users', d.id), { isDeleted: true });
-          }
-        }
-      } catch (e) {
-        console.error("Error cleaning ghost users:", e);
-      }
-    };
-    cleanGhostUsers();
-  }, [user]);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 

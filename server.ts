@@ -22,6 +22,25 @@ try {
 
 let aiInstance: GoogleGenAI | null = null;
 
+const getFirebaseConfig = () => {
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      return {
+        projectId: config.projectId || process.env.FIREBASE_PROJECT_ID || "gen-lang-client-0591253558",
+        databaseId: config.firestoreDatabaseId || process.env.FIREBASE_DATABASE_ID || "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168"
+      };
+    }
+  } catch (e) {
+    console.error("Could not load firebase-applet-config.json", e);
+  }
+  return {
+    projectId: process.env.FIREBASE_PROJECT_ID || "gen-lang-client-0591253558",
+    databaseId: process.env.FIREBASE_DATABASE_ID || "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168"
+  };
+};
+
 function getAi(): GoogleGenAI {
   if (!aiInstance) {
     let apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -98,7 +117,14 @@ async function startServer() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("SendFox API error:", errorText);
-        return res.status(response.status).json({ error: `SendFox subscription failed: ${errorText}` });
+        let errorMessage = `SendFox subscription failed: ${errorText}`;
+        try {
+          const parsed = JSON.parse(errorText);
+          errorMessage = parsed.message || (parsed.errors ? Object.values(parsed.errors).flat().join(", ") : errorText);
+        } catch (e) {
+          // Fallback to text
+        }
+        return res.status(response.status).json({ success: false, error: errorMessage });
       }
 
       const data = await response.json();
@@ -291,14 +317,25 @@ async function startServer() {
           html: finalHtml, 
           from_name: process.env.SENDFOX_FROM_NAME || "TagTales Gallery",
           from_email: process.env.SENDFOX_FROM_EMAIL || "info@tagtales.gallery",
-          lists: list_id ? [parseInt(list_id, 10)] : [] 
+          lists: (() => {
+            if (!list_id) return [];
+            const parsed = parseInt(list_id, 10);
+            return isNaN(parsed) ? [] : [parsed];
+          })()
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error("SendFox campaign creation failed:", errorText);
-        return res.status(response.status).json({ error: `Failed to create campaign: ${errorText}` });
+        let errorMessage = `Failed to create campaign: ${errorText}`;
+        try {
+          const parsed = JSON.parse(errorText);
+          errorMessage = parsed.message || (parsed.errors ? Object.values(parsed.errors).flat().join(", ") : errorText);
+        } catch (e) {
+          // Fallback to text
+        }
+        return res.status(response.status).json({ success: false, error: errorMessage });
       }
 
       const data = await response.json();
@@ -584,8 +621,9 @@ ${text}`,
     try {
       const { messages, mode = 'public', language = 'it' } = req.body; 
 
-      const projectId = "gen-lang-client-0591253558";
-      const databaseId = "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168";
+      const firebaseConfig = getFirebaseConfig();
+      const projectId = firebaseConfig.projectId;
+      const databaseId = firebaseConfig.databaseId;
       const configUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/chat_config/${mode}`;
       
       let systemInstruction = `You are the official assistant for TagTales Gallery. Maintain a professional, authentic tone focused on supporting graffiti culture.
@@ -649,14 +687,11 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
     }
   });
 
-  app.get("/api/check-key", (req, res) => {
-      res.json(process.env);
-  });
-
   app.get("/sitemap.xml", async (req, res) => {
     try {
-      const projectId = "gen-lang-client-0591253558";
-      const databaseId = "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168";
+      const firebaseConfig = getFirebaseConfig();
+      const projectId = firebaseConfig.projectId;
+      const databaseId = firebaseConfig.databaseId;
       const baseUrl = "https://tagtalesgallery.com";
       
       const fetchIds = async (collection: string) => {

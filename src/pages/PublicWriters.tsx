@@ -188,6 +188,10 @@ export default function PublicWriters() {
                             src={writer.fotoProfilo}
                             alt={nickname}
                             className="opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-700"
+                            loading="lazy"
+                            width={400}
+                            height={400}
+                            style={{ objectFit: "cover" }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
                         </>

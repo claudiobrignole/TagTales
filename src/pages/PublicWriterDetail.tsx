@@ -188,6 +188,10 @@ export default function PublicWriterDetail() {
               src={writer.fotoProfilo}
               alt={writer.nickname}
               className="opacity-40"
+              loading="eager"
+              width={1920}
+              height={1080}
+              style={{ objectFit: "cover" }}
             />
             <div className="absolute inset-0 bg-black/70"></div>
           </div>
@@ -289,7 +293,15 @@ export default function PublicWriterDetail() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
-                          <LazyImage src={ex.bannerHero} alt={ex.titolo} className="group-hover:scale-105 transition-transform duration-500" />
+                          <LazyImage 
+                            src={ex.bannerHero} 
+                            alt={ex.titolo} 
+                            className="group-hover:scale-105 transition-transform duration-500" 
+                            loading="lazy"
+                            width={800}
+                            height={450}
+                            style={{ objectFit: "cover" }}
+                          />
                         )
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>

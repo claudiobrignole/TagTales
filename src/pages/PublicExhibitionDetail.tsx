@@ -159,6 +159,10 @@ export default function PublicExhibitionDetail() {
                 alt={exhibition.titolo}
                 className="opacity-80"
                 wrapperClassName="absolute inset-0 w-full h-full"
+                loading="eager"
+                width={1920}
+                height={1080}
+                style={{ objectFit: "cover" }}
               />
             )
           )}
@@ -240,7 +244,14 @@ export default function PublicExhibitionDetail() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {exhibition.galleria.filter((url: string) => url && url.trim() !== '').map((url: string, index: number) => (
                         <div key={index} className="aspect-video sm:aspect-square rounded-2xl overflow-hidden border border-[#EAE3D9] shadow-sm">
-                          <LazyImage src={url} alt={`${exhibition.titolo} - ${index}`} />
+                          <LazyImage 
+                            src={url} 
+                            alt={`${exhibition.titolo} - ${index}`} 
+                            loading="lazy"
+                            width={800}
+                            height={450}
+                            style={{ objectFit: "cover" }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -287,7 +298,15 @@ export default function PublicExhibitionDetail() {
                   <div key={artwork.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group">
                     <div className="aspect-[4/5] bg-[#F2EEE8] relative overflow-hidden">
                       {artwork.immagineHiRes && artwork.immagineHiRes.trim() !== '' ? (
-                        <LazyImage src={artwork.immagineHiRes} alt={artwork.titolo} className="group-hover:scale-105 transition-transform duration-500" />
+                        <LazyImage 
+                          src={artwork.immagineHiRes} 
+                          alt={artwork.titolo} 
+                          className="group-hover:scale-105 transition-transform duration-500" 
+                          loading="lazy"
+                          width={600}
+                          height={750}
+                          style={{ objectFit: "cover" }}
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>
                       )}
