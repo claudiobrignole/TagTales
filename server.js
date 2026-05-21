@@ -80,6 +80,7 @@ try {
 catch (e) {
     console.error("Could not load .dev.env.json", e);
 }
+
 let aiInstance = null;
 function getAi() {
     if (!aiInstance) {
@@ -94,16 +95,379 @@ function getAi() {
     }
     return aiInstance;
 }
+
+const getSendFoxToken = () => {
+  let token = process.env.SENDFOX_ACCESS_TOKEN?.trim() || "";
+  if (!token) {
+    const base64Token = process.env.SENDFOX_ACCESS_TOKEN_BASE64?.trim();
+    if (base64Token) {
+      try {
+        token = Buffer.from(base64Token, "base64").toString("utf8").trim();
+      } catch (e) {
+        console.error("Failed to decode SENDFOX_ACCESS_TOKEN_BASE64:", e);
+      }
+    }
+  }
+  return token;
+};
+
 async function startServer() {
     const app = express();
     const PORT = process.env.PORT || 3000;
     app.use(express.json({ limit: '10mb' }));
+
     // API routes
     app.get("/api/config", (req, res) => {
         res.json({
             ecwidStoreId: process.env.ECWID_STORE_ID || "",
         });
     });
+
+    app.post("/api/newsletter/subscribe", async (req, res) => {
+        try {
+            const { email, first_name, lists } = req.body;
+            
+            if (!email) {
+                return res.status(400).json({ error: "Email is required" });
+            }
+
+            const sendfoxToken = getSendFoxToken();
+            if (!sendfoxToken) {
+                console.warn("SendFox API Token is not configured. Falling back to local success simulation.");
+                return res.json({ 
+                    success: true, 
+                    simulated: true, 
+                    message: "Mailing list subscription simulated successfully (SENDFOX_ACCESS_TOKEN is missing)." 
+                });
+            }
+
+            // Use default list from environment variables if none passed and configured
+            let targetLists = lists;
+            if (!targetLists && process.env.SENDFOX_DEFAULT_LIST_ID) {
+                const defaultListId = parseInt(process.env.SENDFOX_DEFAULT_LIST_ID, 10);
+                if (!isNaN(defaultListId)) {
+                    targetLists = [defaultListId];
+                }
+            }
+
+            const bodyPayload = {
+                email: email,
+            };
+            if (first_name) {
+                bodyPayload.first_name = first_name;
+            }
+            if (targetLists && Array.isArray(targetLists)) {
+                bodyPayload.lists = targetLists;
+            }
+
+            const response = await fetch("https://api.sendfox.com/contacts", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${sendfoxToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(bodyPayload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("SendFox API error:", errorText);
+                let errorMessage = `SendFox subscription failed: ${errorText}`;
+                try {
+                    const parsed = JSON.parse(errorText);
+                    errorMessage = parsed.message || (parsed.errors ? Object.values(parsed.errors).flat().join(", ") : errorText);
+                } catch (e) {
+                    // Fallback to text
+                }
+                return res.status(response.status).json({ success: false, error: errorMessage });
+            }
+
+            const data = await response.json();
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error("Newsletter subscription error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.get("/api/newsletter/lists", async (req, res) => {
+        try {
+            const sendfoxToken = getSendFoxToken();
+            if (!sendfoxToken) {
+                return res.json({ 
+                    lists: [
+                        { id: 11, name: "Lista Generale TagTales", contacts_count: 3 },
+                        { id: 22, name: "Collezionisti Opere Originali", contacts_count: 1 },
+                        { id: 33, name: "Lista Newsletter Inglese (EN)", contacts_count: 0 }
+                    ],
+                    simulated: true 
+                });
+            }
+
+            const response = await fetch("https://api.sendfox.com/lists", {
+                headers: {
+                    "Authorization": `Bearer ${sendfoxToken}`,
+                    "Accept": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error("SendFox fetch lists error:", errorData);
+                return res.status(response.status).json({ error: "Failed to fetch lists from SendFox" });
+            }
+
+            const data = await response.json();
+            res.json({ lists: data.data || [], simulated: false });
+        } catch (error) {
+            console.error("Fetch lists error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.get("/api/newsletter/contacts", async (req, res) => {
+        try {
+            const sendfoxToken = getSendFoxToken();
+            if (!sendfoxToken) {
+                return res.json({
+                    contacts: [
+                        { id: 101, email: "collector.milano@art.it", first_name: "Alessandro", lists: [11, 22], status: "active", created_at: "2026-05-18T10:00:00.000000Z" },
+                        { id: 102, email: "phase2.legend@graff.ch", first_name: "Phase2 Tribute", lists: [11], status: "active", created_at: "2026-05-19T14:30:00.000000Z" },
+                        { id: 103, email: "spray_lover@gmail.com", first_name: "Marco", lists: [11], status: "unsubscribed", created_at: "2026-05-15T09:12:00.000000Z" },
+                        { id: 104, email: "claudio@brignole.ch", first_name: "Claudio", lists: [11, 22], status: "active", created_at: "2026-05-10T12:00:00.000000Z" },
+                    ],
+                    simulated: true
+                });
+            }
+
+            const response = await fetch("https://api.sendfox.com/contacts", {
+                headers: {
+                    "Authorization": `Bearer ${sendfoxToken}`,
+                    "Accept": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("SendFox fetch contacts error:", errorText);
+                return res.status(response.status).json({ error: "Failed to fetch contacts from SendFox" });
+            }
+
+            const data = await response.json();
+            res.json({ 
+                contacts: data.data || [], 
+                total: data.total || (data.data ? data.data.length : 0),
+                simulated: false 
+            });
+        } catch (error) {
+            console.error("Fetch contacts error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.post("/api/newsletter/lists", async (req, res) => {
+        try {
+            const sendfoxToken = getSendFoxToken();
+            const { name } = req.body;
+            if (!name) {
+                return res.status(400).json({ error: "List name is required" });
+            }
+
+            if (!sendfoxToken) {
+                return res.json({
+                    success: true,
+                    data: { id: Math.floor(Math.random() * 1000) + 100, name: name, contacts_count: 0 },
+                    simulated: true
+                });
+            }
+
+            const response = await fetch("https://api.sendfox.com/lists", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${sendfoxToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                return res.status(response.status).json({ error: `Failed to create list: ${errorText}` });
+            }
+
+            const data = await response.json();
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error("Create list error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.get("/api/newsletter/campaigns", async (req, res) => {
+        try {
+            const sendfoxToken = getSendFoxToken();
+            if (!sendfoxToken) {
+                return res.json({
+                    campaigns: [
+                        { id: 501, name: "Lancio nuova Minimostra: Phase2", subject: "In anteprima le leggende del Writing di New York", status: "Sent", stats: { sent: 154, open_rate: "54%", click_rate: "12%" } },
+                        { id: 502, name: "Intervista a Rae Martini: Milano Graffiti", subject: "Rae Martini si racconta su TagTales Gallery", status: "Draft" },
+                    ],
+                    simulated: true
+                });
+            }
+
+            const response = await fetch("https://api.sendfox.com/campaigns", {
+                headers: {
+                    "Authorization": `Bearer ${sendfoxToken}`,
+                    "Accept": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("SendFox fetch campaigns error:", errorText);
+                return res.status(response.status).json({ error: "Failed to fetch campaigns" });
+            }
+
+            const data = await response.json();
+            res.json({ campaigns: data.data || [], simulated: false });
+        } catch (error) {
+            console.error("Fetch campaigns error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.post("/api/newsletter/campaigns", async (req, res) => {
+        try {
+            const sendfoxToken = getSendFoxToken();
+            const { name, subject, body, list_id } = req.body;
+
+            if (!name || !subject || !body) {
+                return res.status(400).json({ error: "Name, subject, and body are required to create a campaign." });
+            }
+
+            if (!sendfoxToken) {
+                return res.json({
+                    success: true,
+                    data: { id: Math.floor(Math.random() * 1000) + 1000, name, subject, body, list_id, status: "Draft" },
+                    simulated: true
+                });
+            }
+
+            let finalHtml = body;
+            if (!finalHtml.includes("{{unsubscribe_url}}")) {
+                // Automatically inject mandatory SendFox unsubscribe link
+                finalHtml += `<br/><br/><hr style="border:0;border-top:1px solid #eae3d9;margin:20px 0;"/><p style="font-size:11px;color:#666;text-align:center;">Ricevi questa email perché sei iscritto alla newsletter di TagTales Gallery.<br/><a href="{{unsubscribe_url}}" style="color:#ff4f00;text-decoration:underline;">Disiscriviti</a> per non ricevere più comunicazioni.</p>`;
+            }
+
+            const response = await fetch("https://api.sendfox.com/campaigns", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${sendfoxToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ 
+                    title: name, 
+                    subject: subject, 
+                    html: finalHtml, 
+                    from_name: process.env.SENDFOX_FROM_NAME || "TagTales Gallery",
+                    from_email: process.env.SENDFOX_FROM_EMAIL || "info@tagtales.gallery",
+                    lists: (() => {
+                        if (!list_id) return [];
+                        const parsed = parseInt(list_id, 10);
+                        return isNaN(parsed) ? [] : [parsed];
+                    })()
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("SendFox campaign creation failed:", errorText);
+                let errorMessage = `Failed to create campaign: ${errorText}`;
+                try {
+                    const parsed = JSON.parse(errorText);
+                    errorMessage = parsed.message || (parsed.errors ? Object.values(parsed.errors).flat().join(", ") : errorText);
+                } catch (e) {
+                    // Fallback to text
+                }
+                return res.status(response.status).json({ success: false, error: errorMessage });
+            }
+
+            const data = await response.json();
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error("Create campaign error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.post("/api/newsletter/automation/suggest", async (req, res) => {
+        try {
+            const { type, writerName, exhibitionName, topic, extraContext } = req.body;
+            const ai = getAi();
+            
+            let prompt = "";
+            if (type === "writer") {
+                prompt = `Scrivi una newsletter coinvolgente in lingua italiana per presentare il writer "${writerName}".
+Concentrati sulla storia del graffiti writing, lo stile puro, l'energia della cultura hip-hop / street, ed evita espressioni artificiali generiche. 
+Argomento e dettagli extra: ${topic || ""} ${extraContext || ""}. 
+Assicurati di includere un Oggetto dell'email accattivante (Oggetto: ...) ed un corpo del messaggio con saluti amichevoli nello spirito di TagTales Gallery. Non usare riferimenti a contenuti generati da intelligenze artificiali, solo storie umane ed arte originale.`;
+            } else if (type === "exhibition") {
+                prompt = `Scrivi una newsletter promozionale per il lancio della mini-mostra "${exhibitionName}" del writer "${writerName}".
+La mini-mostra si tiene su TagTales Gallery e contiene opere originali, stampe e poster limited edition.
+Argomento e dettagli extra: ${topic || ""} ${extraContext || ""}.
+Scrivi in lingua italiana. Includi un Oggetto dell'email d'impatto (Oggetto: ...) e un invito all'azione a visitare la mini-mostra per collezionare pezzi iconici firmati dal writer.`;
+            } else {
+                prompt = `Scrivi una newsletter speciale in lingua italiana per gli iscritti di TagTales Gallery sull'argomento: "${topic || "Cultura Graffiti"}".
+Dettagli extra: ${extraContext || ""}.
+Usa uno stile street, autentico e directo. Includi un Oggetto dell'email (Oggetto: ...) e un corpo dell'email completo.`;
+            }
+
+            const response = await ai.models.generateContent({
+                model: "gemini-3.5-flash",
+                contents: prompt,
+            });
+
+            const text = response.text || "";
+            res.json({ text });
+        } catch (error) {
+            console.error("Gemini suggestion error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
+    app.post("/api/newsletter/automation/report", async (req, res) => {
+        try {
+            const { contactsCount, listsCount, activeCount, unsubscribeCount, sampleEmails } = req.body;
+            const ai = getAi();
+
+            const prompt = `Fornisci un report strategico in formato Markdown (lingua italiana) per analizzare la crescita e l'engagement della mailing list di TagTales Gallery.
+Dati correnti:
+- Iscritti totali: ${contactsCount}
+- Liste attive: ${listsCount}
+- Contatti attivi: ${activeCount}
+- Disiscritti: ${unsubscribeCount}
+- Esempi di iscritti/domini: ${sampleEmails ? sampleEmails.join(", ") : "Nessuno"}
+
+Il report dovrebbe contenere tre sezioni:
+1. **Analisi dello Stato Attuale**: un riepilogo critico ma incoraggiante della composizione dei contatti (es. collezionisti vs appassionati).
+2. **Strategie ed Idee di Segmentazione**: consiglia come raggruppare i contatti per aumentare le vendite di stampe digitali o quadri originali dei graffiti moderni.
+3. **Puntate Ideali della Newsletter**: dai 3 idee pratiche d'invio newsletter con relativi argomenti (es. interviste storiche repentine, offerte lampo firmate).
+
+Ritorna SOLO il testo Markdown strutturato con titoli ed elenchi puntati.`;
+
+            const response = await ai.models.generateContent({
+                model: "gemini-3.5-flash",
+                contents: prompt,
+            });
+
+            res.json({ report: response.text || "" });
+        } catch (error) {
+            console.error("Gemini report error:", error);
+            res.status(500).json({ error: error.message || "Internal server error" });
+        }
+    });
+
     app.post("/api/translate", async (req, res) => {
         try {
             const { text, targetLanguages, context } = req.body;
@@ -132,6 +496,7 @@ ${text}`,
             res.status(500).json({ error: error.message || "Internal server error" });
         }
     });
+
     app.post("/api/artworks/:id/approve", async (req, res) => {
         try {
             const { id } = req.params;
@@ -189,6 +554,7 @@ ${text}`,
             res.status(500).json({ error: error.message || "Internal server error" });
         }
     });
+
     app.get("/api/ecwid/products", async (req, res) => {
         try {
             const storeId = process.env.ECWID_STORE_ID;
@@ -220,6 +586,7 @@ ${text}`,
             res.status(500).json({ error: error.message || "Internal server error" });
         }
     });
+
     app.post("/api/sales", async (req, res) => {
         try {
             const { productIds, createdFrom, createdTo } = req.body;
@@ -282,11 +649,13 @@ ${text}`,
             res.status(500).json({ error: error.message || "Internal server error" });
         }
     });
+
     app.post("/api/assistance", async (req, res) => {
         try {
             const { messages, mode = 'public', language = 'it' } = req.body;
-            const projectId = "gen-lang-client-0591253558";
-            const databaseId = "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168";
+            const firebaseConfig = getFirebaseConfig();
+            const projectId = firebaseConfig.projectId;
+            const databaseId = firebaseConfig.databaseId;
             const configUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/chat_config/${mode}`;
             let systemInstruction = `You are the official assistant for TagTales Gallery. Maintain a professional, authentic tone focused on supporting graffiti culture.
 You are in mode: ${mode.toUpperCase()}.
@@ -334,6 +703,7 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
             res.status(500).json({ success: false, error: e.message });
         }
     });
+
     app.get("/api/test-gemini", async (req, res) => {
         try {
             const ai = getAi();
@@ -347,9 +717,43 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
             res.status(500).json({ success: false, error: e.message, fullError: e });
         }
     });
+
+    app.get("/api/pagespeed", async (req, res) => {
+        try {
+            const { url, strategy = "mobile" } = req.query;
+            if (!url) {
+                return res.status(400).json({ success: false, error: "Missing required parameter: url" });
+            }
+
+            const targetUrl = encodeURIComponent(String(url));
+            let psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${targetUrl}&strategy=${strategy}&category=performance`;
+
+            // Utilize dedicated PageSpeed API key, or fallback to the Gemini API Key if it's a standard Google developer key
+            const apiKey = process.env.PAGESPEED_API_KEY || 
+                           (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.startsWith("AIzaSy") ? process.env.GEMINI_API_KEY : "");
+            
+            if (apiKey) {
+                psiUrl += `&key=${apiKey}`;
+            }
+
+            const response = await fetch(psiUrl);
+            if (!response.ok) {
+                const errDetails = await response.text();
+                return res.status(response.status).json({ success: false, error: `Google API Error: ${errDetails}` });
+            }
+
+            const data = await response.json();
+            res.json(data);
+        } catch (e) {
+            console.error("PageSpeed proxy error:", e);
+            res.status(500).json({ success: false, error: e.message });
+        }
+    });
+
     app.get("/api/check-key", (req, res) => {
         res.json(process.env);
     });
+
     app.delete("/api/users/:uid", async (req, res) => {
         try {
             const { uid } = req.params;
@@ -371,8 +775,9 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
 
     app.get("/sitemap.xml", async (req, res) => {
         try {
-            const projectId = "gen-lang-client-0591253558";
-            const databaseId = "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168";
+            const firebaseConfig = getFirebaseConfig();
+            const projectId = firebaseConfig.projectId;
+            const databaseId = firebaseConfig.databaseId;
             const baseUrl = "https://tagtalesgallery.com";
             const fetchIds = async (collection) => {
                 const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/${collection}?pageSize=1000`;
@@ -396,23 +801,43 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
                 fetchIds("articoli"),
                 fetchIds("pagine"),
             ]);
-            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-            const addUrl = (path, priority = "0.8") => {
-                xml += `  <url>\n    <loc>${baseUrl}${path}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
+            const addUrl = (pathIt, pathEn, priority = "0.8", changefreq = "weekly") => {
+                const lastmod = new Date().toISOString().split('T')[0];
+                xml += `  <url>\n`;
+                xml += `    <loc>${baseUrl}${pathIt}</loc>\n`;
+                xml += `    <lastmod>${lastmod}</lastmod>\n`;
+                xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
+                xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
+                xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
+                xml += `    <changefreq>${changefreq}</changefreq>\n`;
+                xml += `    <priority>${priority}</priority>\n`;
+                xml += `  </url>\n`;
+                xml += `  <url>\n`;
+                xml += `    <loc>${baseUrl}${pathEn}</loc>\n`;
+                xml += `    <lastmod>${lastmod}</lastmod>\n`;
+                xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
+                xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
+                xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
+                xml += `    <changefreq>${changefreq}</changefreq>\n`;
+                xml += `    <priority>${priority}</priority>\n`;
+                xml += `  </url>\n`;
             };
             // Static routes
-            addUrl("/", "1.0");
-            addUrl("/writers", "0.9");
-            addUrl("/exhibitions", "0.9");
-            addUrl("/magazine", "0.9");
-            addUrl("/privacy", "0.5");
-            addUrl("/terms", "0.5");
-            addUrl("/cookies", "0.5");
+            addUrl("/", "/en", "1.0", "weekly");
+            addUrl("/writers", "/en/writers", "0.9", "weekly");
+            addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly");
+            addUrl("/magazine", "/en/magazine", "0.9", "weekly");
+            addUrl("/privacy", "/en/privacy", "0.5", "monthly");
+            addUrl("/terms", "/en/terms", "0.5", "monthly");
+            addUrl("/cookies", "/en/cookies", "0.5", "monthly");
+            addUrl("/assistance", "/en/assistance", "0.5", "monthly");
+            
             // Dynamic routes
-            writers.forEach((id) => addUrl(`/writer/${id}`, "0.8"));
-            exhibitions.forEach((id) => addUrl(`/exhibition/${id}`, "0.8"));
-            articles.forEach((id) => addUrl(`/magazine/${id}`, "0.8"));
-            pages.forEach((id) => addUrl(`/page/${id}`, "0.7"));
+            writers.forEach((id) => addUrl(`/writer/${id}`, `/en/writer/${id}`, "0.8"));
+            exhibitions.forEach((id) => addUrl(`/exhibition/${id}`, `/en/exhibition/${id}`, "0.8"));
+            articles.forEach((id) => addUrl(`/magazine/${id}`, `/en/magazine/${id}`, "0.8"));
+            pages.forEach((id) => addUrl(`/page/${id}`, `/en/page/${id}`, "0.7"));
             xml += `</urlset>`;
             res.header('Content-Type', 'application/xml');
             res.send(xml);
@@ -427,6 +852,7 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
         res.header("Content-Type", "text/plain");
         res.send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: https://tagtalesgallery.com/sitemap.xml`);
     });
+
     // Vite middleware for development
     if (process.env.NODE_ENV !== "production") {
         const vite = await createViteServer({
