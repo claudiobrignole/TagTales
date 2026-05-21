@@ -475,7 +475,7 @@ Ritorna SOLO il testo Markdown strutturato con titoli ed elenchi puntati.`;
             const results = {};
             for (const lang of targetLanguages) {
                 const response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-3.5-flash",
                     config: {
                         temperature: 0.2
                     },
@@ -689,7 +689,7 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
                 });
             }
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.5-flash",
                 contents: formattedContents,
                 config: {
                     systemInstruction: systemInstruction,
@@ -708,7 +708,7 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
         try {
             const ai = getAi();
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.5-flash",
                 contents: "Hello, world!"
             });
             res.json({ success: true, text: response.text });

@@ -11,10 +11,12 @@ export default function LanguagePrompt() {
   const handleSelect = (lang: any) => {
     setLanguage(lang);
     setShowLanguagePrompt(false);
+    window.dispatchEvent(new CustomEvent('language-prompt-closed', { detail: { action: 'selected', language: lang } }));
   };
 
   const handleClose = () => {
     setShowLanguagePrompt(false);
+    window.dispatchEvent(new CustomEvent('language-prompt-closed', { detail: { action: 'closed' } }));
   };
 
   const langList = [

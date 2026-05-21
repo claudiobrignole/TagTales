@@ -45,7 +45,7 @@ Rules:
 Example output: ["graffiti writer", "arte urbana Milano", "opere originali street art"]`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: prompt
     });
 

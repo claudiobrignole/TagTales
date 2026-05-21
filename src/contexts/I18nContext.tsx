@@ -83,16 +83,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProposedLang(proposed.toUpperCase());
 
         if (browserLangFull !== 'it') {
-            const hasPrompted = sessionStorage.getItem('language_prompted');
-            if (!hasPrompted) {
-                // If their browser isn't Italian, we still default the UI to Italian as requested,
-                // but we prompt them if they want to switch to their browser's language (or English).
-                resolvedLang = 'it'; 
-                setShowLanguagePrompt(true);
-                sessionStorage.setItem('language_prompted', 'true');
-            } else {
-                resolvedLang = 'it'; // Or we could keep whatever, but Italian is primary.
-            }
+            resolvedLang = 'it'; // Default the UI to Italian first, and prompt them gracefully later
         } else {
             resolvedLang = 'it';
         }
@@ -106,6 +97,61 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     fetchUserLanguage();
   }, [user]);
+
+  // Handle staggered and coordinated LanguagePrompt orchestration
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    const triggerPrompt = () => {
+      sessionStorage.setItem('language_prompted', 'true');
+      setShowLanguagePrompt(true);
+    };
+
+    const handleCookieClosed = () => {
+      // Show language prompt after 2.0s of breathing space once Cookie Banner is interacted/closed
+      timer = setTimeout(() => {
+        triggerPrompt();
+      }, 2000);
+    };
+
+    const checkAndStaggerPrompt = () => {
+      const hasPrompted = sessionStorage.getItem('language_prompted');
+      if (hasPrompted) {
+        // Skip prompt, dispatch event so PWA can coordinate
+        window.dispatchEvent(new CustomEvent('language-prompt-closed', { detail: { action: 'skipped_prompted' } }));
+        return;
+      }
+
+      const browserLangFull = navigator.language.split('-')[0].toLowerCase();
+      if (browserLangFull === 'it') {
+        // Already Italian, skip prompt and dispatch event for PWA coordination
+        window.dispatchEvent(new CustomEvent('language-prompt-closed', { detail: { action: 'skipped_italian' } }));
+        return;
+      }
+
+      const storedConsent = localStorage.getItem('tagtales_cookie_consent_prefs');
+      if (storedConsent) {
+        // Since cookie banner isn't showing, display language prompt after 3.5 seconds
+        timer = setTimeout(() => {
+          triggerPrompt();
+        }, 3500);
+      } else {
+        // Cookie banner is active or pending. Listen for its close event.
+        window.addEventListener('cookie-banner-closed', handleCookieClosed);
+      }
+    };
+
+    // Stagger initial check slightly to let layout settle
+    const initTimer = setTimeout(() => {
+      checkAndStaggerPrompt();
+    }, 1000);
+
+    return () => {
+      clearTimeout(initTimer);
+      clearTimeout(timer);
+      window.removeEventListener('cookie-banner-closed', handleCookieClosed);
+    };
+  }, []);
 
   const setLanguage = async (lang: Language, skipRedirect?: boolean) => {
     setLanguageState(lang);

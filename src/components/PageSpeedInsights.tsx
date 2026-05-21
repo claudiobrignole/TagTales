@@ -612,7 +612,7 @@ export default function PageSpeedInsights() {
                   <AlertTriangle size={16} />
                   {simulationReason === 'sandbox' ? 'Modalità Demo / Anteprima Attiva' : 'API PageSpeed Temporaneamente Offline'}
                 </div>
-                <p className="text-[#59554E] leading-relaxed font-normal">
+                <div className="text-[#59554E] leading-relaxed font-normal">
                   {simulationReason === 'sandbox' ? (
                     <>
                       L'indirizzo inserito è un ambiente di sviluppo locale o sandboxed (es. localhost o ais-dev). Dal momento che i server pubblici di Google PageSpeed Insights™ non possono raggiungere reti private o protette da credenziali, stiamo mostrando un report per smartphone e computer generato ad alta fedeltà per illustrare i parametri diagnostici. Se inserisci l'URL pubblico di produzione (es: <strong>https://tagtalesgallery.com</strong>), verranno scansionati dati reali tramite le API in tempo reale.
@@ -627,7 +627,7 @@ export default function PageSpeedInsights() {
                       )}
                     </>
                   )}
-                </p>
+                </div>
               </div>
             )}
             {/* Strategy Switch */}

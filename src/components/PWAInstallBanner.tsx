@@ -13,6 +13,8 @@ export default function PWAInstallBanner() {
   const [showHowTo, setShowHowTo] = useState(false);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+
     // Check if already in standalone mode
     const standalone = 
       window.matchMedia("(display-mode: standalone)").matches || 
@@ -29,27 +31,22 @@ export default function PWAInstallBanner() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      
-      // Auto-show prompt after 4 seconds on first load if not dismissed before
-      const isDismissed = localStorage.getItem("pwa-dismissed");
-      if (!isDismissed && !standalone) {
-        const timer = setTimeout(() => {
-          setIsOpen(true);
-        }, 4000);
-        return () => clearTimeout(timer);
-      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // Check if we should auto-prompt iOS users
-    const isDismissed = localStorage.getItem("pwa-dismissed");
-    if (ios && !standalone && !isDismissed) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    // Coordinated auto-prompt trigger listener (called after language preferences & cookies are resolved)
+    const handleTriggerAutoPrompt = () => {
+      const isDismissed = localStorage.getItem("pwa-dismissed");
+      if (!isDismissed && !standalone) {
+        // Wait 6.0 more seconds of browsing room after the previous modal is closed/skipped
+        timer = setTimeout(() => {
+          setIsOpen(true);
+        }, 6000);
+      }
+    };
+
+    window.addEventListener("language-prompt-closed", handleTriggerAutoPrompt);
 
     // Direct trigger from external elements (e.g. Footer Link)
     const handleTriggerOpen = () => {
@@ -60,7 +57,9 @@ export default function PWAInstallBanner() {
     window.addEventListener("open-pwa-install", handleTriggerOpen);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("language-prompt-closed", handleTriggerAutoPrompt);
       window.removeEventListener("open-pwa-install", handleTriggerOpen);
     };
   }, []);
