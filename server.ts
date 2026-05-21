@@ -55,6 +55,21 @@ function getAi(): GoogleGenAI {
   return aiInstance;
 }
 
+const getSendFoxToken = () => {
+  let token = process.env.SENDFOX_ACCESS_TOKEN?.trim() || "";
+  if (!token) {
+    const base64Token = process.env.SENDFOX_ACCESS_TOKEN_BASE64?.trim();
+    if (base64Token) {
+      try {
+        token = Buffer.from(base64Token, "base64").toString("utf8").trim();
+      } catch (e) {
+        console.error("Failed to decode SENDFOX_ACCESS_TOKEN_BASE64:", e);
+      }
+    }
+  }
+  return token;
+};
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -76,7 +91,7 @@ async function startServer() {
         return res.status(400).json({ error: "Email is required" });
       }
 
-      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const sendfoxToken = getSendFoxToken();
       if (!sendfoxToken) {
         console.warn("SendFox API Token is not configured. Falling back to local success simulation.");
         return res.json({ 
@@ -137,7 +152,7 @@ async function startServer() {
 
   app.get("/api/newsletter/lists", async (req, res) => {
     try {
-      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const sendfoxToken = getSendFoxToken();
       if (!sendfoxToken) {
         return res.json({ 
           lists: [
@@ -172,7 +187,7 @@ async function startServer() {
 
   app.get("/api/newsletter/contacts", async (req, res) => {
     try {
-      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const sendfoxToken = getSendFoxToken();
       if (!sendfoxToken) {
         return res.json({
           contacts: [
@@ -212,7 +227,7 @@ async function startServer() {
 
   app.post("/api/newsletter/lists", async (req, res) => {
     try {
-      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const sendfoxToken = getSendFoxToken();
       const { name } = req.body;
       if (!name) {
         return res.status(400).json({ error: "List name is required" });
@@ -250,7 +265,7 @@ async function startServer() {
 
   app.get("/api/newsletter/campaigns", async (req, res) => {
     try {
-      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const sendfoxToken = getSendFoxToken();
       if (!sendfoxToken) {
         return res.json({
           campaigns: [
@@ -284,7 +299,7 @@ async function startServer() {
 
   app.post("/api/newsletter/campaigns", async (req, res) => {
     try {
-      const sendfoxToken = process.env.SENDFOX_ACCESS_TOKEN?.trim();
+      const sendfoxToken = getSendFoxToken();
       const { name, subject, body, list_id } = req.body;
 
       if (!name || !subject || !body) {
@@ -695,7 +710,15 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
       }
 
       const targetUrl = encodeURIComponent(String(url));
-      const psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${targetUrl}&strategy=${strategy}&category=performance`;
+      let psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${targetUrl}&strategy=${strategy}&category=performance`;
+
+      // Utilize dedicated PageSpeed API key, or fallback to the Gemini API Key if it's a standard Google developer key
+      const apiKey = process.env.PAGESPEED_API_KEY || 
+                     (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.startsWith("AIzaSy") ? process.env.GEMINI_API_KEY : "");
+      
+      if (apiKey) {
+        psiUrl += `&key=${apiKey}`;
+      }
 
       const response = await fetch(psiUrl);
       if (!response.ok) {

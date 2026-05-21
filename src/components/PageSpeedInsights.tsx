@@ -43,6 +43,7 @@ export default function PageSpeedInsights() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSimulated, setIsSimulated] = useState(false);
   const [simulationReason, setSimulationReason] = useState<'sandbox' | 'api_error' | null>(null);
+  const [apiErrorDetails, setApiErrorDetails] = useState<string>('');
 
   // Automatic Weekly Optimization state
   const [optSettings, setOptSettings] = useState({
@@ -130,6 +131,7 @@ export default function PageSpeedInsights() {
     setErrorMessage('');
     setIsSimulated(false);
     setSimulationReason(null);
+    setApiErrorDetails('');
     
     let normalizedUrl = testUrl.trim();
     if (!/^https?:\/\//i.test(normalizedUrl)) {
@@ -267,6 +269,7 @@ export default function PageSpeedInsights() {
 
     } catch (err: any) {
       console.warn('[PageSpeed] Error running diagnostics, falling back to simulation:', err);
+      setApiErrorDetails(err?.message || String(err));
       // Beautiful fallback simulation if Google PageSpeed API is blocked or offline
       setResults({
         mobile: {
@@ -617,6 +620,11 @@ export default function PageSpeedInsights() {
                   ) : (
                     <>
                       Il servizio Google PageSpeed Insights™ ha riscontrato un errore (es. limite di quota API superato o timeout di risoluzione DNS). Viene visualizzato un report simulato ad alta fedeltà dell'indirizzo reale per permetterti di valutare i parametri diagnostici e i suggerimenti previsti per il tuo sito.
+                      {apiErrorDetails && (
+                        <div className="mt-2.5 p-3 bg-red-500/5 text-red-600 rounded-xl font-mono text-[11px] border border-red-500/10 break-all leading-normal">
+                          <strong className="uppercase font-bold tracking-wider">Errore Tecnico Riscontrato:</strong> {apiErrorDetails}
+                        </div>
+                      )}
                     </>
                   )}
                 </p>

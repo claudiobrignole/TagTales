@@ -403,7 +403,7 @@ export default function AdminNewsletter() {
                 La piattaforma è in Modalità di Simulazione
               </h4>
               <p className="font-['Karla'] text-sm text-gray-600 max-w-2xl leading-relaxed">
-                Nessuna chiave <code className="bg-white/60 px-1.5 py-0.5 rounded font-mono text-xs text-[#FF4F00]">SENDFOX_ACCESS_TOKEN</code> è configurata nel file delle variabili d'ambiente. Venite mostrati dati fittizi strutturati al fine di testare l'esperienza visiva, l'automazione locale e i report intelligenti con l'intelligenza artificiale Gemini.
+                Nessuna chiave <code className="bg-white/60 px-1.5 py-0.5 rounded font-mono text-xs text-[#FF4F00]">SENDFOX_ACCESS_TOKEN</code> (o <code className="bg-white/60 px-1.5 py-0.5 rounded font-mono text-xs text-[#FF4F00]">SENDFOX_ACCESS_TOKEN_BASE64</code>) è configurata nel file delle variabili d'ambiente. Vengono mostrati dati fittizi strutturati al fine di testare l'esperienza visiva, l'automazione locale e i report intelligenti con l'intelligenza artificiale Gemini.
               </p>
             </div>
           </div>
