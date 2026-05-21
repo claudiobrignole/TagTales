@@ -43,7 +43,7 @@
     "assistenza": "ASSISTENZA"
   },
   "footer": {
-    "description": "La storia di ogni writer inizia con una tag. TagTales Gallery connette graffiti writers e collezionisti attraverso mini mostre: opere originali, stampe in edizione limitata, print-on-demand. Zero intelligenza artificiale, solo stile originale.",
+    "description": "La storia di ogni writer inizia con una tag. Tag Tales Gallery connette graffiti writers e collezionisti attraverso mini mostre: opere originali, stampe in edizione limitata, print-on-demand. Zero intelligenza artificiale, solo stile originale.",
     "newsletterDesc": "Ricevi inviti esclusivi alle mostre e approfondimenti dal Magazine.",
     "emailPlaceholder": "La tua email",
     "newsletterError": "Errore durante l'iscrizione. Riprova.",
@@ -153,7 +153,7 @@
   "dashboard": {
     "uploadArtwork": "Carica Opera",
     "onboarding": {
-      "allSet": "Hai finito! Benvenuto in TagTales",
+      "allSet": "Hai finito! Benvenuto in Tag Tales",
       "welcome": "Benvenuto! Prepariamo il tuo account",
       "completed": "Completato",
       "step1": "Passo 1 — Completa il tuo profilo",
@@ -533,7 +533,7 @@
     "successTitle": "Negozio Connesso",
     "successText": "Il tuo profilo è collegato con successo ai prodotti dello store. I tuoi dati di vendita sono in diretta.",
     "notActiveTitle": "La tua connessione alle vendite non è ancora attiva.",
-    "notActiveText": "Il team di TagTales collegherà a breve le tue opere al sistema di vendita. Riceverai una notifica quando i tuoi dati di vendita saranno pronti.",
+    "notActiveText": "Il team di Tag Tales collegherà a breve le tue opere al sistema di vendita. Riceverai una notifica quando i tuoi dati di vendita saranno pronti.",
     "activeTitle": "La tua connessione alle vendite è attiva.",
     "activeText": "I tuoi dati di vendita sono aggiornati in tempo reale."
   },
@@ -649,13 +649,13 @@
     "pageSubtitle": "Come possiamo aiutarti?",
     "collector": "Collezionista",
     "writer": "Writer",
-    "greeting": "Ciao, chiedimi quello che vuoi su TagTales Gallery",
+    "greeting": "Ciao, chiedimi quello che vuoi su Tag Tales Gallery",
     "inputPlaceholder": "Scrivi qui la tua richiesta",
     "subtitle": "Trova le risposte alle domande comuni e impara a usare la piattaforma.",
     "writers": "WRITERS",
     "searchPlaceholder": "Cerca argomenti di aiuto...",
     "stillNeedHelp": "Hai ancora bisogno di aiuto?",
-    "contactTeam": "Contatta direttamente il team di TagTales all'indirizzo tagtales@brignole.ch.",
+    "contactTeam": "Contatta direttamente il team di Tag Tales all'indirizzo tagtales@brignole.ch.",
     "noResults": "Nessun risultato trovato per la tua ricerca.",
     "adminTitle": "Gestione Aiuto e FAQ",
     "adminSubtitle": "Gestisci i contenuti delle FAQ mostrati ai writer.",
@@ -782,9 +782,9 @@
     "backHome": "Torna alla Home"
   },
   "seo": {
-    "writersDesc": "Scopri i migliori writer della scena internazionale su TagTales Gallery.",
-    "exhibitionsDesc": "Esplora le mini mostre di TagTales Gallery: opere originali e serie limitate.",
-    "magazineDesc": "Approfondimenti, interviste e storie dal mondo della graffiti culture su TagTales Magazine."
+    "writersDesc": "Scopri i migliori writer della scena internazionale su Tag Tales Gallery.",
+    "exhibitionsDesc": "Esplora le mini mostre di Tag Tales Gallery: opere originali e serie limitate.",
+    "magazineDesc": "Approfondimenti, interviste e storie dal mondo della graffiti culture su Tag Tales Magazine."
   },
   "legal": {
     "privacyTitle": "Privacy Policy",
@@ -925,5 +925,40 @@
     "statusDraft": "Bozza",
     "statusPublished": "Pubblicato",
     "statusArchived": "Archiviato"
+  },
+  "contactForm": {
+    "name": "Nome",
+    "email": "Email",
+    "message": "Messaggio",
+    "gdprHome": "Accetto il trattamento dei dati.",
+    "gdprPage": "Accetto che i miei dati vengano trattati per rispondere alla mia richiesta, in conformità con la Privacy Policy.",
+    "send": "Invia",
+    "sendMessage": "Invia Messaggio",
+    "sending": "Invio in corso...",
+    "sent": "Messaggio inoltrato!",
+    "gdprAlert": "Devi accettare l'informativa sulla privacy."
+  },
+  "pwa": {
+    "installTitle": "INSTALLA TAG TALES APP",
+    "subtitle": "Vivi l'esperienza a schermo intero",
+    "description": "Aggiungi Tag Tales Gallery alla schermata home del tuo dispositivo. Occupa pochissimo spazio, si carica all'istante e funziona come un'app vera e propria senza dover aprire il browser ogni volta!",
+    "installBtn": "INSTALLA ORA",
+    "installIOSBtn": "COME SCARICARE",
+    "guideBtn": "GUIDA",
+    "dismiss": "FORSE PIÙ TARDI",
+    "guideHeader": "GUIDA DI INSTALLAZIONE",
+    "iosIntro": "Apple iOS non supporta l'installazione automatica con un click, ma puoi aggiungerla in pochi secondi così:",
+    "iosStep1": "Apri questo sito all'interno del browser ",
+    "iosStep2": "Tocca l'icona di",
+    "iosStep2_end": " nella barra in basso (su iPhone) o in alto (su iPad).",
+    "iosStep3": "Scorri l'elenco e seleziona",
+    "androidIntro": "Se la richiesta di installazione automatica non si è aperta, puoi installare l'app manualmente attraverso il browser:",
+    "androidStep1": "Tocca il pulsante con i ",
+    "threeDots": "tre puntini",
+    "androidStep1_end": " in alto a destra nel browser.",
+    "androidStep2": "Seleziona 'Installa applicazione' o 'Aggiungi a schermata Home'.",
+    "back": "INDIETRO",
+    "close": "CHIUDI",
+    "downloadApp": "Scarica l'App"
   }
 }

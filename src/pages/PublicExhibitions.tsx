@@ -12,7 +12,7 @@ import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useInView } from "react-intersection-observer";
-import { Grid3x3, Maximize } from "lucide-react";
+import { Grid3x3, Maximize, ChevronDown } from "lucide-react";
 import { getLocalizedField } from "../utils/localization";
 
 import PublicLayout from "../components/PublicLayout";
@@ -196,7 +196,7 @@ export default function PublicExhibitions() {
         title={t("nav.mostre", "MOSTRE")}
         description={t(
           "seo.exhibitionsDesc",
-          "Esplora le mini mostre di TagTales Gallery: opere originali e serie limitate.",
+          "Esplora le mini mostre di Tag Tales Gallery: opere originali e serie limitate.",
         )}
       />
 
@@ -207,7 +207,7 @@ export default function PublicExhibitions() {
           y: hiddenFilterBar ? -100 : 0,
         }}
         transition={{ duration: 0.2 }}
-        className="fixed top-[75px] w-full z-40 bg-[#121212] border-b border-white/10 px-4 py-3 md:px-8 shadow-xl"
+        className="fixed top-[65px] lg:top-[75px] w-full z-40 bg-[#121212] border-b border-white/10 px-4 py-3 md:px-8 shadow-xl"
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
@@ -227,10 +227,10 @@ export default function PublicExhibitions() {
           className={clsx(
             "flex-col md:flex-row gap-4 mt-4 md:mt-0 transition-all text-white",
             isFilterOpen ? "flex" : "hidden md:flex",
-            "items-center justify-between",
+            "items-stretch md:items-center justify-between",
           )}
         >
-          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1 items-center">
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1 items-stretch md:items-center">
             <span className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
               {t("nav.mostre", "MOSTRE")}
             </span>
@@ -239,27 +239,32 @@ export default function PublicExhibitions() {
               placeholder={t("search.writerName", "Nome Writer...")}
               value={writerFilter}
               onChange={(e) => setWriterFilter(e.target.value)}
-              className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm flex-1 max-w-[200px]"
+              className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm w-full md:max-w-[200px]"
             />
             <input
               type="text"
               placeholder={t("search.exhibitionTitle", "Titolo Mostra...")}
               value={titleFilter}
               onChange={(e) => setTitleFilter(e.target.value)}
-              className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm flex-1 max-w-[200px]"
+              className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm w-full md:max-w-[200px]"
             />
-            <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="bg-white/10 text-white px-4 pr-10 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm [&>option]:bg-[#121212] flex-1 max-w-[200px] mr-12"
-            >
-              <option value="">{t("search.allYears", "Tutti gli anni")}</option>
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+            <div className="relative w-full md:max-w-[200px] shrink-0">
+              <select
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="appearance-none bg-white/10 text-white px-4 pr-10 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm [&>option]:bg-[#121212] w-full cursor-pointer"
+              >
+                <option value="">{t("search.allYears", "Tutti gli anni")}</option>
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </div>
 
           <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-4 shrink-0">

@@ -4,6 +4,7 @@ import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 
@@ -70,6 +71,62 @@ const getSendFoxToken = () => {
   return token;
 };
 
+async function sendEmailThroughSmtpOrService(to: string, subject: string, html: string) {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpFrom = process.env.SMTP_FROM || "info@tagtales.gallery";
+  const resendApiKey = process.env.RESEND_API_KEY;
+
+  if (resendApiKey) {
+    console.log("Attempting to send mail via Resend API...");
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: smtpFrom || "onboarding@resend.dev",
+        to,
+        subject,
+        html
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Resend email dispatch failed: ${errText}`);
+    }
+    console.log("Email dispatched via Resend successfully.");
+    return { success: true, provider: "resend" };
+  }
+
+  if (smtpHost && smtpUser && smtpPass) {
+    console.log(`Attempting to send mail via Nodemailer SMTP (${smtpHost})...`);
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465 || process.env.SMTP_SECURE === "true",
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    await transporter.sendMail({
+      from: smtpFrom,
+      to,
+      subject,
+      html,
+    });
+    console.log("Email sent successfully via SMTP.");
+    return { success: true, provider: "smtp" };
+  }
+
+  throw new Error("No mail service configured on backend. Please configure either SMTP_HOST/SMTP_USER/SMTP_PASS or RESEND_API_KEY.");
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -81,6 +138,21 @@ async function startServer() {
     res.json({
       ecwidStoreId: process.env.ECWID_STORE_ID || "",
     });
+  });
+
+  app.post("/api/send-email", async (req, res) => {
+    try {
+      const { to, subject, html } = req.body;
+      if (!to || !subject || !html) {
+        return res.status(400).json({ error: "Missing required fields: to, subject, or html" });
+      }
+
+      const result = await sendEmailThroughSmtpOrService(to, subject, html);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Direct sendEmail error in server API:", error);
+      res.status(500).json({ error: error.message || "Email send failed" });
+    }
   });
 
   app.post("/api/newsletter/subscribe", async (req, res) => {

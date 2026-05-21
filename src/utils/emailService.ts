@@ -17,24 +17,24 @@ export async function sendEmailNotification(to: string, templateName: string, da
     const templates: Record<string, Record<string, { subject: string, html: string }>> = {
       welcome: {
         en: {
-          subject: 'Welcome to TagTales!',
-          html: `<p>Hello,</p><p>Welcome to TagTales! We are excited to have you on board.</p>`
+          subject: 'Welcome to Tag Tales!',
+          html: `<p>Hello,</p><p>Welcome to Tag Tales! We are excited to have you on board.</p>`
         },
         it: {
-          subject: 'Benvenuto su TagTales!',
-          html: `<p>Ciao,</p><p>Benvenuto su TagTales! Siamo felici di averti con noi.</p>`
+          subject: 'Benvenuto su Tag Tales!',
+          html: `<p>Ciao,</p><p>Benvenuto su Tag Tales! Siamo felici di averti con noi.</p>`
         },
         de: {
-          subject: 'Willkommen bei TagTales!',
-          html: `<p>Hallo,</p><p>Willkommen bei TagTales! Wir freuen uns, Sie an Bord zu haben.</p>`
+          subject: 'Willkommen bei Tag Tales!',
+          html: `<p>Hallo,</p><p>Willkommen bei Tag Tales! Wir freuen uns, Sie an Bord zu haben.</p>`
         },
         fr: {
-          subject: 'Bienvenue sur TagTales !',
-          html: `<p>Bonjour,</p><p>Bienvenue sur TagTales ! Nous sommes ravis de vous compter parmi nous.</p>`
+          subject: 'Bienvenue sur Tag Tales !',
+          html: `<p>Bonjour,</p><p>Bienvenue sur Tag Tales ! Nous sommes ravis de vous compter parmi nous.</p>`
         },
         es: {
-          subject: '¡Bienvenido a TagTales!',
-          html: `<p>Hola,</p><p>¡Bienvenido a TagTales! Estamos emocionados de tenerte a bordo.</p>`
+          subject: '¡Bienvenido a Tag Tales!',
+          html: `<p>Hola,</p><p>¡Bienvenido a Tag Tales! Estamos emocionados de tenerte a bordo.</p>`
         }
       },
       artwork_approved: {
@@ -146,6 +146,72 @@ export async function sendEmailNotification(to: string, templateName: string, da
           subject: 'Pago Procesado',
           html: `<p>Tu solicitud de pago de ${data.amount} ha sido marcada como pagada.</p>`
         }
+      },
+      admin_new_register: {
+        en: {
+          subject: 'New User Registration - Tag Tales Gallery',
+          html: `<p>Hello Claudio,</p>
+                 <p>A new user has just registered on Tag Tales Gallery.</p>
+                 <p><strong>Email:</strong> \${data.email}</p>
+                 <p><strong>UserID:</strong> \${data.userId}</p>
+                 <br/><p>Best regards,<br/>Tag Tales Automation</p>`
+        },
+        it: {
+          subject: 'Nuova Registrazione Utente - Tag Tales Gallery',
+          html: `<p>Ciao Claudio,</p>
+                 <p>Un nuovo utente si è appena registrato su Tag Tales Gallery.</p>
+                 <p><strong>Email:</strong> \${data.email}</p>
+                 <p><strong>ID Utente (UID):</strong> \${data.userId}</p>
+                 <br/><p>Un cordiale saluto,<br/>Tag Tales Automation</p>`
+        }
+      },
+      chat_message_received: {
+        en: {
+          subject: 'New Chat Message Received - Tag Tales Gallery',
+          html: `<p>Hello Claudio,</p>
+                 <p>You have received a new chat message from the writer <strong>\${data.senderName}</strong>:</p>
+                 <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; font-style: italic; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px;">
+                   \${data.messageText}
+                 </blockquote>
+                 <p><a href="https://tagtalesgallery.com/app/admin?chat=\${data.writerId}" style="color: #FF4F00; font-weight: bold; text-decoration: underline;">Click here to view the chat and reply</a></p>
+                 <br/><p>Best regards,<br/>Tag Tales Automation</p>`
+        },
+        it: {
+          subject: 'Nuovo Messaggio in Chat - Tag Tales Gallery',
+          html: `<p>Ciao Claudio,</p>
+                 <p>Hai ricevuto un nuovo messaggio in chat dal writer <strong>\${data.senderName}</strong>:</p>
+                 <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; font-style: italic; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px;">
+                   \${data.messageText}
+                 </blockquote>
+                 <p><a href="https://tagtalesgallery.com/app/admin?chat=\${data.writerId}" style="color: #FF4F00; font-weight: bold; text-decoration: underline;">Clicca qui per visualizzare la chat e rispondere</a></p>
+                 <br/><p>Un cordiale saluto,<br/>Tag Tales Automation</p>`
+        }
+      },
+      public_contact_message: {
+        en: {
+          subject: 'New Public Contact Message - Tag Tales Gallery',
+          html: `<p>Hello Claudio,</p>
+                 <p>You received a new message from the contact form on your website:</p>
+                 <p><strong>Sender Name:</strong> \${data.name}</p>
+                 <p><strong>Sender Email:</strong> \${data.email}</p>
+                 <p><strong>Message:</strong></p>
+                 <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px; white-space: pre-wrap;">
+                   \${data.message}
+                 </blockquote>
+                 <br/><p>Best regards,<br/>Tag Tales Automation</p>`
+        },
+        it: {
+          subject: 'Nuovo Messaggio dal Modulo Contatti - Tag Tales Gallery',
+          html: `<p>Ciao Claudio,</p>
+                 <p>Hai ricevuto un nuovo messaggio compilato tramite il modulo contatti del tuo sito:</p>
+                 <p><strong>Nome mittente:</strong> \${data.name}</p>
+                 <p><strong>Email mittente:</strong> \${data.email}</p>
+                 <p><strong>Messaggio:</strong></p>
+                 <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px; white-space: pre-wrap;">
+                   \${data.message}
+                 </blockquote>
+                 <br/><p>Un cordiale saluto,<br/>Tag Tales Automation</p>`
+        }
       }
     };
 
@@ -156,6 +222,29 @@ export async function sendEmailNotification(to: string, templateName: string, da
       return;
     }
 
+    // Try sending email via backend direct router API (supports SMTP and Resend)
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to,
+          subject: template.subject,
+          html: template.html
+        })
+      });
+      if (response.ok) {
+        console.log(`Email successfully routed through direct backend to ${to} for event ${templateName}`);
+        return;
+      }
+      console.warn('Backend email API responded with error status. Falling back to writing mail in Firestore.');
+    } catch (apiErr) {
+      console.error('Error calling /api/send-email, falling back to Firestore database write:', apiErr);
+    }
+
+    // Fallback: original Firestore save which triggers Firebase Extension
     await addDoc(collection(db, 'mail'), {
       to,
       message: {

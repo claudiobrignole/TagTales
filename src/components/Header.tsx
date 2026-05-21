@@ -182,7 +182,7 @@ export default function Header() {
         <Link to="/" className="relative z-50 flex items-center h-full">
           <img
             src="/TAGTALES-logo-header.png"
-            alt="TagTales"
+            alt="Tag Tales"
             className="w-[190px] lg:w-[150px] xl:w-[260px] h-auto object-contain"
           />
         </Link>

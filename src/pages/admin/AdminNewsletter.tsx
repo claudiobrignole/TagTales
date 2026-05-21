@@ -393,7 +393,7 @@ export default function AdminNewsletter() {
 
       {/* Warning Overlay when Access Token is Missing (Simulated Data Mode) */}
       {simulatedMode && (
-        <div className="bg-[#FFF4E5] border border-[#F5E1C9] rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between animate-in fade-in duration-300">
+        <div className="bg-[#EAE3D9] border border-[#C8C0B5] rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between animate-in fade-in duration-300">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-[#FF4F00]/10 rounded-full text-[#FF4F00] shrink-0">
               <AlertCircle size={28} />

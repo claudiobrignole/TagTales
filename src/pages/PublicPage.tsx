@@ -4,7 +4,8 @@ import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/
 import PublicLayout from '../components/PublicLayout';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { sendEmailNotification } from '../utils/emailService';
 import clsx from 'clsx';
 import VideoEmbed from '../components/VideoEmbed';
 import { getLocalizedField } from '../utils/localization';
@@ -20,32 +21,43 @@ interface PageData {
 
 
 const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [formData, setFormData] = useState({ name: '', email: '', message: '', gdpr: false });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.gdpr) {
-      alert("Devi accettare l'informativa sulla privacy.");
+      alert(t('contactForm.gdprAlert', "Devi accettare l'informativa sulla privacy."));
       return;
     }
     
-    // Obfuscated email sending (using mailto for simplicity or a contact service logic)
-    // The user requested tagtales@brignole.ch
-    const to = atob("dGFndGFsZXNAYnJpZ25vbGUuY2g=");
-    const subject = `Nuovo messaggio da ${formData.name}`;
-    const body = `Nome: ${formData.name}\nEmail: ${formData.email}\n\nMessaggio:\n${formData.message}`;
-    
-    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+    setSubmitting(true);
+    try {
+      await sendEmailNotification(
+        'claudio@brignole.ch', 
+        'public_contact_message', 
+        {
+          name: formData.name,
+          email: formData.email,
+          message: formData.message
+        }, 
+        i18n.language.toLowerCase()
+      );
+      setSent(true);
+    } catch (err) {
+      console.error('Error sending contact message email:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <section className={clsx("py-20 px-6", block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
       <div className="max-w-xl mx-auto bg-white/5 backdrop-blur-sm p-8 md:p-12 rounded-[40px] border border-white/10 shadow-2xl">
         <h3 className="text-3xl md:text-5xl font-['Shamgod'] uppercase mb-4 md:mb-6 tracking-widest leading-none">
-          {getLocalizedField(block, 'title', i18n.language) || block.title || 'Inviaci un messaggio'}
+          {getLocalizedField(block, 'title', i18n.language) || block.title || t('contactForm.sendMessage', 'Inviaci un messaggio')}
         </h3>
         {((block.text && block.text !== '<p><br></p>') || (block.text_en && block.text_en !== '<p><br></p>')) && (
           <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit mb-8", block.backgroundColor === 'black' ? 'prose-invert text-white' : '')} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', i18n.language) || block.text) }} />
@@ -56,13 +68,12 @@ const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
              <div className="w-16 h-16 bg-[#FF4F00] rounded-full flex items-center justify-center mx-auto text-white">
                 <ChevronDown size={32} className="-rotate-90" />
              </div>
-             <p className="font-['Karla'] text-xl font-bold uppercase">Messaggio inoltrato!</p>
-             <p className="opacity-60 text-sm">Il tuo client email è stato aperto con i dati inseriti.</p>
+             <p className="font-['Karla'] text-xl font-bold uppercase">{t('contactForm.sent', 'Messaggio inoltrato!')}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Nome</label>
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">{t('contactForm.name', 'Nome')}</label>
               <input 
                 type="text" required 
                 value={formData.name}
@@ -71,7 +82,7 @@ const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Email</label>
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">{t('contactForm.email', 'Email')}</label>
               <input 
                 type="email" required 
                 value={formData.email}
@@ -80,7 +91,7 @@ const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Messaggio</label>
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">{t('contactForm.message', 'Messaggio')}</label>
               <textarea 
                 required rows={4}
                 value={formData.message}
@@ -96,14 +107,16 @@ const ContactFormBlock: React.FC<{ block: any }> = ({ block }) => {
                 className="mt-1 accent-[#FF4F00] w-5 h-5 cursor-pointer" 
               />
               <label htmlFor="gdpr-p" className="text-sm opacity-60 cursor-pointer">
-                Accetto che i miei dati vengano trattati per rispondere alla mia richiesta, in conformità con la Privacy Policy.
+                {t('contactForm.gdprPage', 'Accetto che i miei dati vengano trattati per rispondere alla mia richiesta, in conformità con la Privacy Policy.')}
               </label>
             </div>
             <button 
               type="submit"
-              className="w-full bg-[#121212] hover:bg-[#FF4F00] text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-[#121212]/20"
+              disabled={submitting}
+              className="w-full bg-[#121212] hover:bg-[#FF4F00] text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-[#121212]/20 flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              Invia Messaggio
+              {submitting && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+              {submitting ? t('contactForm.sending', 'Invio in corso...') : t('contactForm.sendMessage', 'Invia Messaggio')}
             </button>
           </form>
         )}
@@ -329,7 +342,7 @@ export default function PublicPage({ id: propId }: { id?: string }) {
   return (
     <PublicLayout>
        <div className="min-h-screen bg-[#F2EEE8]">
-         <SEO title={data ? (getLocalizedField(data, 'titolo', lang) || data.title) : 'TagTales'} />
+         <SEO title={data ? (getLocalizedField(data, 'titolo', lang) || data.title) : 'Tag Tales'} />
          {loading ? (
            <div className="pb-20 px-[25px]">
              <div className="animate-pulse flex flex-col gap-4 max-w-4xl mx-auto mt-20">

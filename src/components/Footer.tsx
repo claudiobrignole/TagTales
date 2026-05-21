@@ -70,11 +70,11 @@ export default function Footer() {
           <div className="w-full lg:w-1/3">
             <img
               src="/TagTales-tagline-bianco-medium.png"
-              alt="TagTales"
+              alt="Tag Tales"
               className="w-[220px] md:w-[275px] lg:w-[320px] h-auto mb-6"
             />
             <p className="max-w-md text-sm md:text-base lg:text-lg mb-6 text-white font-medium">
-              {t('footer.description', 'La storia di ogni writer inizia con una tag. TagTales Gallery connette graffiti writers e collezionisti attraverso mini mostre: opere originali, stampe in edizione limitata, print-on-demand. Zero intelligenza artificiale, solo stile originale.')}
+              {t('footer.description', 'La storia di ogni writer inizia con una tag. Tag Tales Gallery connette graffiti writers e collezionisti attraverso mini mostre: opere originali, stampe in edizione limitata, print-on-demand. Zero intelligenza artificiale, solo stile originale.')}
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -206,6 +206,14 @@ export default function Footer() {
                     INSTAGRAM
                   </a>
                 </li>
+                <li>
+                  <button
+                    onClick={() => window.dispatchEvent(new Event('open-pwa-install'))}
+                    className="hover:text-[#FF4F00] transition-colors uppercase cursor-pointer text-left font-medium block"
+                  >
+                    {t('pwa.downloadApp', "Scarica l'App")}
+                  </button>
+                </li>
                 {isAdmin && (
                   <li>
                     <Link
@@ -237,7 +245,7 @@ export default function Footer() {
 
         <div className="border-t border-white/20 pt-8 text-center">
           <p className="font-medium text-white/80 w-full text-center">
-            © {new Date().getFullYear()} TagTales Gallery by Brignole | {t('footer.country')}
+            © {new Date().getFullYear()} Tag Tales Gallery by Brignole | {t('footer.country')}
           </p>
         </div>
       </div>

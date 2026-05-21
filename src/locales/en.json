@@ -43,7 +43,7 @@
     "assistenza": "SUPPORT"
   },
   "footer": {
-    "description": "Every writer's history begins with a tag. TagTales Gallery connects graffiti writers and collectors through exhibitions: original works, limited edition prints, print-on-demand. Zero AI, just original style.",
+    "description": "Every writer's history begins with a tag. Tag Tales Gallery connects graffiti writers and collectors through exhibitions: original works, limited edition prints, print-on-demand. Zero AI, just original style.",
     "newsletterDesc": "Receive exclusive invitations to exhibitions and insights from the Magazine.",
     "emailPlaceholder": "Your email",
     "newsletterError": "Error during subscription. Please try again.",
@@ -193,7 +193,7 @@
     "currency": "€",
     "uploadArtwork": "Upload Artwork",
     "onboarding": {
-      "allSet": "You're all set! Welcome to TagTales",
+      "allSet": "You're all set! Welcome to Tag Tales",
       "welcome": "Welcome! Let's get you set up",
       "completed": "Completed",
       "step1": "Step 1 — Complete your profile",
@@ -551,7 +551,7 @@
     "successTitle": "Store Connected",
     "successText": "Your profile is successfully linked to your store products. Your sales data is live.",
     "notActiveTitle": "Your sales connection is not active yet.",
-    "notActiveText": "The TagTales team will link your artworks to the sales system shortly. You will be notified when your sales data is ready.",
+    "notActiveText": "The Tag Tales team will link your artworks to the sales system shortly. You will be notified when your sales data is ready.",
     "activeTitle": "Your sales connection is active.",
     "activeText": "Your sales data is updated in real time."
   },
@@ -667,13 +667,13 @@
     "pageSubtitle": "How can we help you?",
     "collector": "Collector",
     "writer": "Writer",
-    "greeting": "Hi, ask me anything you want about TagTales Gallery",
+    "greeting": "Hi, ask me anything you want about Tag Tales Gallery",
     "inputPlaceholder": "Write your request here",
     "subtitle": "Find answers to common questions and learn how to use the platform.",
     "writers": "WRITERS",
     "searchPlaceholder": "Search for help topics...",
     "stillNeedHelp": "Still need help?",
-    "contactTeam": "Contact the TagTales team directly at tagtales@brignole.ch.",
+    "contactTeam": "Contact the Tag Tales team directly at tagtales@brignole.ch.",
     "noResults": "No results found for your search.",
     "adminTitle": "Help & FAQ Management",
     "adminSubtitle": "Manage the FAQ content displayed to writers.",
@@ -767,9 +767,9 @@
     "backHome": "Back to Home"
   },
   "seo": {
-    "writersDesc": "Discover the best writers on the international scene on TagTales Gallery.",
-    "exhibitionsDesc": "Explore TagTales Gallery exhibitions: original works and limited series.",
-    "magazineDesc": "Insights, interviews, and stories from the world of graffiti culture on TagTales Magazine."
+    "writersDesc": "Discover the best writers on the international scene on Tag Tales Gallery.",
+    "exhibitionsDesc": "Explore Tag Tales Gallery exhibitions: original works and limited series.",
+    "magazineDesc": "Insights, interviews, and stories from the world of graffiti culture on Tag Tales Magazine."
   },
   "legal": {
     "privacyTitle": "Privacy Policy",
@@ -910,5 +910,40 @@
     "statusDraft": "Draft",
     "statusPublished": "Published",
     "statusArchived": "Archived"
+  },
+  "contactForm": {
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "gdprHome": "I accept the data treatment.",
+    "gdprPage": "I accept that my data will be processed to answer my request, in accordance with the Privacy Policy.",
+    "send": "Send",
+    "sendMessage": "Send Message",
+    "sending": "Sending...",
+    "sent": "Message sent!",
+    "gdprAlert": "You must accept the privacy policy."
+  },
+  "pwa": {
+    "installTitle": "INSTALL TAG TALES APP",
+    "subtitle": "Get the fullscreen experience",
+    "description": "Add Tag Tales Gallery to your device's home screen. It takes up almost zero space, loads instantly, and runs like a real app without having to open the browser every time!",
+    "installBtn": "INSTALL NOW",
+    "installIOSBtn": "HOW TO DOWNLOAD",
+    "guideBtn": "GUIDE",
+    "dismiss": "MAYBE LATER",
+    "guideHeader": "INSTALLATION GUIDE",
+    "iosIntro": "Apple iOS does not support one-click automatic installation, but you can add it in seconds like this:",
+    "iosStep1": "Open this website within the ",
+    "iosStep2": "Tap the",
+    "iosStep2_end": " share icon in the bottom bar (on iPhone) or top bar (on iPad).",
+    "iosStep3": "Scroll the list and select",
+    "androidIntro": "If the automatic installation prompt did not open, you can manually install the app through your browser:",
+    "androidStep1": "Tap the ",
+    "threeDots": "three dots icon",
+    "androidStep1_end": " in the top-right corner of the browser.",
+    "androidStep2": "Select 'Install app' or 'Add to Home Screen'.",
+    "back": "BACK",
+    "close": "CLOSE",
+    "downloadApp": "Download App"
   }
 }

@@ -140,7 +140,7 @@ export default function Layout() {
           <div className="flex flex-col gap-1 items-start">
             <img
               src="/logo.png"
-              alt="TagTales Logo"
+              alt="Tag Tales Logo"
               className="h-[91px] w-auto object-contain"
             />
             <p className="text-xs uppercase tracking-widest text-[#59554E] font-bold mt-2">

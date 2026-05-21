@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
-import { collection, query, where, orderBy, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { sendEmailNotification } from '../utils/emailService';
 import { db } from '../firebase';
 import { useI18n } from '../contexts/I18nContext';
 import ReactMarkdown from 'react-markdown';
@@ -121,6 +122,22 @@ export default function DirectChat({ userId, isAdmin, currentUserId, recipientNa
                createdAt: now
              });
           });
+
+          // Send actual email notification to claudio@brignole.ch
+          try {
+            const writerDoc = await getDoc(doc(db, 'users', currentUserId));
+            const senderName = writerDoc.exists() 
+              ? (writerDoc.data().fullName || writerDoc.data().email || 'Scrittore') 
+              : 'Un writer';
+            
+            await sendEmailNotification('claudio@brignole.ch', 'chat_message_received', {
+              senderName: senderName,
+              messageText: messageText,
+              writerId: currentUserId
+            }, 'it');
+          } catch (emailErr) {
+            console.error('Error sending chat email notification:', emailErr);
+          }
         });
       }
 

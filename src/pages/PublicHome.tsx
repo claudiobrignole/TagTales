@@ -36,6 +36,7 @@ import { getLocalizedField } from "../utils/localization";
 import { cleanHtml } from "../utils/cleanHtml";
 import { IMAGE_RADIUS } from "../constants/theme";
 import PublicLayout from "../components/PublicLayout";
+import { sendEmailNotification } from "../utils/emailService";
 import SEO from "../components/SEO";
 import VideoEmbed from "../components/VideoEmbed";
 import LazyImage from "../components/LazyImage";
@@ -140,7 +141,7 @@ const AccordionItem: React.FC<{ item: any; isBlack: boolean }> = ({
 };
 
 const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -148,18 +149,32 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
     gdpr: false,
   });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.gdpr) {
-      alert("Devi accettare l'informativa sulla privacy.");
+      alert(t('contactForm.gdprAlert', "Devi accettare l'informativa sulla privacy."));
       return;
     }
-    const to = atob("dGFndGFsZXNAYnJpZ25vbGUuY2g=");
-    const subject = `Nuovo messaggio da ${formData.name}`;
-    const body = `Nome: ${formData.name}\nEmail: ${formData.email}\n\nMessaggio:\n${formData.message}`;
-    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+    setSubmitting(true);
+    try {
+      await sendEmailNotification(
+        'claudio@brignole.ch', 
+        'public_contact_message', 
+        {
+          name: formData.name,
+          email: formData.email,
+          message: formData.message
+        }, 
+        i18n.language.toLowerCase()
+      );
+      setSent(true);
+    } catch (err) {
+      console.error("Error sending contact message email", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -175,7 +190,7 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
         <h3 className="text-3xl md:text-5xl font-['Shamgod'] uppercase mb-4 md:mb-6 tracking-widest leading-none">
           {getLocalizedField(block, "title", i18n.language) ||
             block.title ||
-            "Contattaci"}
+            t("contactForm.sendMessage", "Contattaci")}
         </h3>
         {((block.text && block.text !== "<p><br></p>") ||
           (block.text_en && block.text_en !== "<p><br></p>")) && (
@@ -194,14 +209,14 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
               <ChevronDown size={32} className="-rotate-90" />
             </div>
             <p className="font-['Karla'] text-xl font-bold uppercase">
-              Messaggio inoltrato!
+              {t('contactForm.sent', 'Messaggio inoltrato!')}
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-                Nome
+                {t('contactForm.name', 'Nome')}
               </label>
               <input
                 type="text"
@@ -215,7 +230,7 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-                Email
+                {t('contactForm.email', 'Email')}
               </label>
               <input
                 type="email"
@@ -229,7 +244,7 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-                Messaggio
+                {t('contactForm.message', 'Messaggio')}
               </label>
               <textarea
                 required
@@ -256,14 +271,16 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
                 htmlFor="gdpr-h"
                 className="text-sm opacity-60 cursor-pointer text-left"
               >
-                Accetto il trattamento dei dati.
+                {t('contactForm.gdprHome', 'Accetto il trattamento dei dati.')}
               </label>
             </div>
             <button
               type="submit"
-              className="w-full bg-[#121212] hover:bg-[#FF4F00] text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] text-xs transition-all"
+              disabled={submitting}
+              className="w-full bg-[#121212] hover:bg-[#FF4F00] text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              Invia
+              {submitting && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+              {submitting ? t('contactForm.sending', 'Invio in corso...') : t('contactForm.send', 'Invia')}
             </button>
           </form>
         )}
@@ -1160,8 +1177,8 @@ export default function PublicHome() {
           pageData
             ? getLocalizedField(pageData, "titolo", lang) ||
               pageData.title ||
-              t("home.title", "TagTales")
-            : t("home.title", "TagTales")
+              t("home.title", "Tag Tales")
+            : t("home.title", "Tag Tales")
         }
         description={
           pageData
@@ -1169,11 +1186,11 @@ export default function PublicHome() {
               pageData.description ||
               t(
                 "home.desc",
-                "TagTales - Graffiti Culture, Exhibition and Magazine",
+                "Tag Tales - Graffiti Culture, Exhibition and Magazine",
               )
             : t(
                 "home.desc",
-                "TagTales - Graffiti Culture, Exhibition and Magazine",
+                "Tag Tales - Graffiti Culture, Exhibition and Magazine",
               )
         }
       />

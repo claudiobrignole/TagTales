@@ -19,7 +19,7 @@ export default function SupportChat({ mode = 'public' }: SupportChatProps) {
   const { t, language } = useI18n();
   
   const getGreeting = () => {
-    return t('help.greeting', 'Ciao, chiedimi quello che vuoi su TagTales Gallery');
+    return t('help.greeting', 'Ciao, chiedimi quello che vuoi su Tag Tales Gallery');
   };
 
   const [messages, setMessages] = useState<Message[]>([
@@ -152,7 +152,7 @@ export default function SupportChat({ mode = 'public' }: SupportChatProps) {
       <div className="flex flex-col h-[calc(100dvh-350px)] lg:h-[calc(100dvh-370px)] min-h-[400px] w-full bg-white rounded-[32px] border border-[#EAE3D9] overflow-hidden shadow-none">
         
         {showChatNewsletter && (
-          <div className="bg-[#FFF4E5] border-b border-[#F5E1C9] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 transition-all duration-300 relative">
+          <div className="bg-[#EAE3D9] border-b border-[#C8C0B5] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 transition-all duration-300 relative">
              <div className="text-left w-full md:w-auto pr-6">
                 <h4 className="font-['Shamgod'] text-[24px] leading-tight text-[#FF4F00] uppercase mb-1">
                   {t('chat.newsletterTitle', 'LISTA PRIORITARIA')}

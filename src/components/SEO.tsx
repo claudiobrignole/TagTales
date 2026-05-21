@@ -12,8 +12,8 @@ interface SEOProps {
 const SEO: React.FC<SEOProps> = ({ title, description, image, article }) => {
   const { t, i18n } = useTranslation();
   
-  const siteName = 'TagTales';
-  const defaultDescription = t('seo.defaultDescription', 'TagTales - Graffiti Culture, Exhibition and Magazine');
+  const siteName = 'Tag Tales';
+  const defaultDescription = t('seo.defaultDescription', 'Tag Tales - Graffiti Culture, Exhibition and Magazine');
   const baseUrl = window.location.origin;
   const defaultImage = `${baseUrl}/pwa-192x192.png`; // Fallback to PWA icon
   

@@ -49,6 +49,11 @@ export default function Login() {
         
         await sendEmailVerification(userCredential.user);
         await sendEmailNotification(userCredential.user.email!, 'welcome', { userId: userCredential.user.uid }, language.toLowerCase());
+        // Notify admin of standard email-password signup
+        await sendEmailNotification('claudio@brignole.ch', 'admin_new_register', { 
+          email: userCredential.user.email!, 
+          userId: userCredential.user.uid 
+        }, 'it');
         navigate('/app');
       }
     } catch (err: any) {
@@ -98,6 +103,11 @@ export default function Login() {
           language: language.toLowerCase()
         });
         await sendEmailNotification(user.email!, 'welcome', { userId: user.uid }, language.toLowerCase());
+        // Notify admin of Google OAuth signup
+        await sendEmailNotification('claudio@brignole.ch', 'admin_new_register', { 
+          email: user.email!, 
+          userId: user.uid 
+        }, 'it');
       } else {
         const userData = userDoc.data();
         if (userData && (userData.status === 'suspended' || userData.isDeleted)) {
@@ -134,7 +144,7 @@ export default function Login() {
 
       {/* Header Logo */}
       <header className="mb-12 relative z-10 flex justify-center">
-        <img src="/logo.png" alt="TagTales Logo" className="h-[138px] w-auto object-contain" />
+        <img src="/logo.png" alt="Tag Tales Logo" className="h-[138px] w-auto object-contain" />
       </header>
 
       {/* Main Card */}
@@ -275,7 +285,7 @@ export default function Login() {
 
       {/* Footer */}
       <footer className="mt-12 mb-8 text-center relative z-10">
-        <p className="text-[13px] font-medium text-[#59554E] tracking-tight">TagTales Gallery © 2026</p>
+        <p className="text-[13px] font-medium text-[#59554E] tracking-tight">Tag Tales Gallery © 2026</p>
         <div className="flex gap-4 mt-2 justify-center">
           <a href="#" className="text-[0.65rem] font-bold uppercase tracking-widest text-[#59554E] hover:text-[#FF4F00]">Support</a>
         </div>

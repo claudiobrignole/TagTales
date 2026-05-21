@@ -48,6 +48,7 @@ const NotFound = React.lazy(() => import("./pages/NotFound"));
 import EnRouteWrapper from "./components/EnRouteWrapper";
 
 import LanguagePrompt from "./components/LanguagePrompt";
+import PWAInstallBanner from "./components/PWAInstallBanner";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -177,6 +178,7 @@ export default function App() {
       <BrowserRouter>
         <I18nProvider>
           <LanguagePrompt />
+          <PWAInstallBanner />
           <RouteTracker />
           <Suspense fallback={
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#F2EEE8] font-['Karla'] p-6 text-center">
