@@ -6,6 +6,7 @@ import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 
@@ -25,6 +26,25 @@ if (!getApps().length) {
   }
 }
 const db = getFirestore(getApp(), 'ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168');
+
+const getFirebaseConfig = () => {
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      return {
+        projectId: config.projectId || process.env.FIREBASE_PROJECT_ID || "gen-lang-client-0591253558",
+        databaseId: config.firestoreDatabaseId || process.env.FIREBASE_DATABASE_ID || "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168"
+      };
+    }
+  } catch (e) {
+    console.error("Could not load firebase-applet-config.json", e);
+  }
+  return {
+    projectId: process.env.FIREBASE_PROJECT_ID || "gen-lang-client-0591253558",
+    databaseId: process.env.FIREBASE_DATABASE_ID || "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168"
+  };
+};
 
 async function getSeoConfig(pageId) {
   try {
@@ -111,19 +131,90 @@ const getSendFoxToken = () => {
   return token;
 };
 
+async function sendEmailThroughSmtpOrService(to, subject, html) {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpFrom = process.env.SMTP_FROM || "info@tagtales.gallery";
+  const resendApiKey = process.env.RESEND_API_KEY;
+
+  if (resendApiKey) {
+    console.log("Attempting to send mail via Resend API...");
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: smtpFrom || "onboarding@resend.dev",
+        to,
+        subject,
+        html
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Resend email dispatch failed: ${errText}`);
+    }
+    console.log("Email dispatched via Resend successfully.");
+    return { success: true, provider: "resend" };
+  }
+
+  if (smtpHost && smtpUser && smtpPass) {
+    console.log(`Attempting to send mail via Nodemailer SMTP (${smtpHost})...`);
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465 || process.env.SMTP_SECURE === "true",
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    await transporter.sendMail({
+      from: smtpFrom,
+      to,
+      subject,
+      html,
+    });
+    console.log("Email sent successfully via SMTP.");
+    return { success: true, provider: "smtp" };
+  }
+
+  throw new Error("No mail service configured on backend. Please configure either SMTP_HOST/SMTP_USER/SMTP_PASS or RESEND_API_KEY.");
+}
+
 async function startServer() {
     const app = express();
     const PORT = process.env.PORT || 3000;
     app.use(express.json({ limit: '10mb' }));
 
     // API routes
-    app.get("/api/config", (req, res) => {
+    app.get("/api/config/?", (req, res) => {
         res.json({
             ecwidStoreId: process.env.ECWID_STORE_ID || "",
         });
     });
 
-    app.post("/api/newsletter/subscribe", async (req, res) => {
+    app.post("/api/send-email/?", async (req, res) => {
+        try {
+            const { to, subject, html } = req.body;
+            if (!to || !subject || !html) {
+                return res.status(400).json({ error: "Missing required fields: to, subject, or html" });
+            }
+
+            const result = await sendEmailThroughSmtpOrService(to, subject, html);
+            res.json(result);
+        } catch (error) {
+            console.error("Direct sendEmail error in server API:", error);
+            res.status(500).json({ error: error.message || "Email send failed" });
+        }
+    });
+
+    app.post(["/api/newsletter/subscribe", "/api/newsletter/subscribe/"], async (req, res) => {
         try {
             const { email, first_name, lists } = req.body;
             
@@ -650,7 +741,15 @@ ${text}`,
         }
     });
 
-    app.post("/api/assistance", async (req, res) => {
+    app.get(["/api/assistance", "/api/assistance/"], async (req, res) => {
+        res.status(405).json({ 
+            success: false, 
+            error: "The assistance API expects a POST request containing user messages. Received GET instead. This is often caused by your hosting provider's redirect rules (such as HTTP to HTTPS, non-www to www, or trailing slash rewrites) converting the browser's POST request to GET on redirect. Please check your web server URL redirection rules.",
+            suggestion: "Please use POST protocol directly or check if SSL/WWW redirection is causing method modification."
+        });
+    });
+
+    app.post(["/api/assistance", "/api/assistance/"], async (req, res) => {
         try {
             const { messages, mode = 'public', language = 'it' } = req.body;
             const firebaseConfig = getFirebaseConfig();

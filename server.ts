@@ -155,7 +155,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/newsletter/subscribe", async (req, res) => {
+  app.post(["/api/newsletter/subscribe", "/api/newsletter/subscribe/"], async (req, res) => {
     try {
       const { email, first_name, lists } = req.body;
       
@@ -704,7 +704,15 @@ ${text}`,
     }
   });
 
-  app.post("/api/assistance", async (req, res) => {
+  app.get(["/api/assistance", "/api/assistance/"], async (req, res) => {
+    res.status(405).json({ 
+        success: false, 
+        error: "The assistance API expects a POST request containing user messages. Received GET instead. This is often caused by your hosting provider's redirect rules (such as HTTP to HTTPS, non-www to www, or trailing slash rewrites) converting the browser's POST request to GET on redirect. Please check your web server URL redirection rules.",
+        suggestion: "Please use POST protocol directly or check if SSL/WWW redirection is causing method modification."
+    });
+  });
+
+  app.post(["/api/assistance", "/api/assistance/"], async (req, res) => {
     try {
       const { messages, mode = 'public', language = 'it' } = req.body; 
 
