@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import nodemailer from "nodemailer";
+import compression from "compression";
 
 dotenv.config();
 
@@ -129,6 +130,7 @@ async function sendEmailThroughSmtpOrService(to: string, subject: string, html: 
 
 async function startServer() {
   const app = express();
+  app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '10mb' }));
@@ -911,7 +913,16 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml`);
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: '1y',
+      setHeaders: (res, filePath) => {
+        if (filePath.includes('/assets/') || filePath.endsWith('.woff2') || filePath.endsWith('.woff') || filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.webp') || filePath.endsWith('.ico') || filePath.endsWith('.svg')) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        }
+      }
+    }));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

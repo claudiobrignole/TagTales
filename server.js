@@ -7,6 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import nodemailer from "nodemailer";
+import compression from "compression";
 
 dotenv.config();
 
@@ -189,6 +190,7 @@ async function sendEmailThroughSmtpOrService(to, subject, html) {
 
 async function startServer() {
     const app = express();
+    app.use(compression());
     const PORT = process.env.PORT || 3000;
     app.use(express.json({ limit: '10mb' }));
 
@@ -964,9 +966,14 @@ CRITICAL INSTRUCTION: You MUST detect the language of the user's input and reply
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath, {
           index: false,
+          maxAge: '1y',
           setHeaders: (res, filePath) => {
             if (filePath.endsWith('.html')) {
               res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            } else if (filePath.includes('/assets/') || filePath.endsWith('.woff2') || filePath.endsWith('.woff') || filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.webp') || filePath.endsWith('.ico') || filePath.endsWith('.svg')) {
+              res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            } else {
+              res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
             }
           }
         }));

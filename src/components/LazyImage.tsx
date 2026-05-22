@@ -22,6 +22,11 @@ export default function LazyImage({
   const [isLoaded, setIsLoaded] = useState(alreadyPreloaded);
   const [error, setError] = useState(false);
 
+  useEffect(() => {
+    setIsLoaded(isImagePreloaded(bustedSrc));
+    setError(false);
+  }, [bustedSrc]);
+
   if (!src) return null;
 
   if (error) {
