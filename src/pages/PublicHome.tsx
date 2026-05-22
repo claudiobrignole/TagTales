@@ -21,6 +21,7 @@ import {
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
+import { usePublicData } from "../contexts/PublicDataContext";
 import { db } from "../firebase";
 import {
   collection,
@@ -344,8 +345,10 @@ export default function PublicHome() {
     }
   };
 
+  const { writers: cachedWriters, exhibitions: cachedExhibitions, articles: cachedArticles, loading: cachedPublicLoading } = usePublicData();
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchPageConfig = async () => {
       try {
         // Fetch Page Config
         const pageDoc = await getDoc(doc(db, "pagine", "home"));
@@ -362,106 +365,27 @@ export default function PublicHome() {
             { id: "h5", type: "home_section", sectionId: "newsletter" },
           ]);
         }
-
-        const isPublished = (data: any) => {
-          if (data.published === false || data.isPublished === false)
-            return false;
-          return true;
-        };
-
-        const snapshotWriters = await getDocs(collection(db, "scrittori"));
-        const writersMap: Record<string, string> = {};
-        const writersData = snapshotWriters.docs
-          .map((doc) => {
-            const data = doc.data();
-            const nickname = data.nickname || data.artistName || "Writer";
-            writersMap[doc.id] = nickname;
-            return {
-              id: doc.id,
-              ...data,
-              name: nickname,
-              nation: data.paese || data.country || "",
-              img: data.fotoProfilo || data.profileImageUrl,
-            };
-          })
-          .filter(isPublished) as any[];
-
-        const sortedWriters = writersData.sort(
-          (a, b) => (a.order ?? 999) - (b.order ?? 999),
-        );
-        setWriters(sortedWriters.slice(0, 8));
-
-        const snapshotExhibitions = await getDocs(collection(db, "mostre"));
-        const exhibitionsData = snapshotExhibitions.docs
-          .map((doc) => {
-            const data = doc.data();
-            const artistaId =
-              data.artistaIds?.[0] ||
-              data.artistaPrincipaleId ||
-              data.writerIds?.[0];
-            return {
-              id: doc.id,
-              ...data,
-              subtitle: data.intro || data.sottotitolo || data.subtitle || "",
-              description:
-                data.testoCuratela ||
-                data.descrizione ||
-                data.description ||
-                "",
-              image: data.bannerHero || data.coverImageUrl,
-              img: data.bannerHero || data.coverImageUrl,
-              fallbackUrl: data.bannerHeroFallback || "",
-              dataApertura: data.dataApertura || "",
-              title: data.titolo || data.title,
-              preTitolo: data.preTitolo || "",
-              owner: artistaId ? writersMap[artistaId] || "MOSTRA" : "MOSTRA",
-              link: `/exhibitions/${data.slug || doc.id}`,
-              buttonText: "VISITA LA MOSTRA", // handled via getLoc or translation
-            };
-          })
-          .filter(isPublished) as any[];
-
-        const sortedExhibitions = exhibitionsData.sort(
-          (a, b) => (a.order ?? 999) - (b.order ?? 999),
-        );
-
-        const featured = sortedExhibitions.filter(
-          (e) => e.featured || e.isFeatured,
-        );
-        setFeaturedExhibitions(
-          featured.length > 0 ? featured : mockFeaturedExhibitions,
-        );
-        setMostre(sortedExhibitions.slice(0, 6));
-
-        const snapshotArticles = await getDocs(collection(db, "articoli"));
-        const articlesData = snapshotArticles.docs
-          .map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              img: data.immagineCopertina || data.coverImageUrl,
-              title: data.titolo || data.title,
-              tag: data.tag?.[0] || data.tags?.[0] || "ARTICOLO",
-            };
-          })
-          .filter(isPublished) as any[];
-
-        const sortedArticles = articlesData.sort(
-          (a, b) => (a.order ?? 999) - (b.order ?? 999),
-        );
-        setArticles(sortedArticles.slice(0, 6));
-
-        setLoading(false);
       } catch (error) {
-        console.error("Error fetching homepage data:", error);
-        setFeaturedExhibitions(mockFeaturedExhibitions);
-        setLoading(false);
+        console.error("Error fetching homepage config:", error);
       }
     };
+    fetchPageConfig();
+  }, []);
 
-    fetchData();
-  }, [t]);
+  useEffect(() => {
+    if (!cachedPublicLoading) {
+      setWriters(cachedWriters.slice(0, 8));
+      const featured = cachedExhibitions.filter(
+        (e) => e.featured || e.isFeatured,
+      );
+      setFeaturedExhibitions(
+        featured.length > 0 ? featured : mockFeaturedExhibitions,
+      );
+      setMostre(cachedExhibitions.slice(0, 6));
+      setArticles(cachedArticles.slice(0, 6));
+      setLoading(false);
+    }
+  }, [cachedPublicLoading, cachedWriters, cachedExhibitions, cachedArticles]);
 
   useEffect(() => {
     if (featuredExhibitions.length === 0) return;

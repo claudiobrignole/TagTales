@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
+import { usePublicData } from "../contexts/PublicDataContext";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { getLocalizedField } from "../utils/localization";
@@ -34,41 +35,14 @@ export default function PublicMagazine() {
     }
   });
 
+  const { articles: cachedArticles, loading: cachedPublicLoading } = usePublicData();
+
   useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "articoli"));
-        const data = snapshot.docs
-          .map((doc) => {
-            const docData = doc.data();
-            return {
-              id: doc.id,
-              ...docData,
-              titolo: docData.titolo || docData.title || "ARTICOLO",
-              immagineCopertina:
-                docData.immagineCopertina || docData.coverImageUrl,
-            };
-          })
-          .filter((a: any) => a.published !== false && a.isPublished !== false)
-          .sort((a: any, b: any) => {
-            // Priority to manual order, fallback to createdAt
-            if (a.order !== undefined || b.order !== undefined) {
-              return (a.order ?? 999) - (b.order ?? 999);
-            }
-            return (
-              (b.createdAt?.toMillis?.() || 0) -
-              (a.createdAt?.toMillis?.() || 0)
-            );
-          });
-        setArticles(data);
-      } catch (error) {
-        console.error("Error fetching articles:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchArticles();
-  }, []);
+    if (!cachedPublicLoading) {
+      setArticles(cachedArticles);
+      setLoading(false);
+    }
+  }, [cachedPublicLoading, cachedArticles]);
 
   const filteredArticles = useMemo(() => {
     return articles.filter(

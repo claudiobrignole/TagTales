@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
+import { usePublicData } from "../contexts/PublicDataContext";
 import { db } from "../firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useInView } from "react-intersection-observer";
@@ -73,72 +74,26 @@ export default function PublicExhibitions() {
   const { ref: loadMoreRef, inView } = useInView();
   const ITEMS_PER_PAGE = 3;
 
+  const { exhibitions: cachedExhibitions, loading: cachedPublicLoading } = usePublicData();
+
   useEffect(() => {
-    const fetchExhibitionsAndWriters = async () => {
-      try {
-        // Fetch writers/artists to resolve names
-        const snapshotWriters = await getDocs(collection(db, "scrittori"));
-        const writersMap: Record<string, string> = {};
-        snapshotWriters.docs.forEach((doc) => {
-          const wData = doc.data();
-          writersMap[doc.id] = (wData.nickname || wData.artistName || "").toLowerCase();
-        });
+    if (!cachedPublicLoading) {
+      const data = cachedExhibitions;
 
-        const snapshot = await getDocs(collection(db, "mostre"));
-        const data = snapshot.docs
-          .map((doc) => {
-            const docData = doc.data();
-            const year = docData.dataApertura
-              ? docData.dataApertura.substring(0, 4)
-              : "";
-            const artistaId = docData.artistaIds?.[0] || docData.artistaPrincipaleId || docData.writerIds?.[0];
-            const artistNames = (docData.artistaIds || docData.writerIds || [])
-              .map((id: string) => writersMap[id])
-              .filter(Boolean);
+      // Extract available years for filter
+      const years = Array.from(
+        new Set(data.map((d) => d.year).filter((y) => y)),
+      )
+        .sort()
+        .reverse();
+      setAvailableYears(years as string[]);
 
-            if (artistNames.length === 0 && artistaId && writersMap[artistaId]) {
-              artistNames.push(writersMap[artistaId]);
-            }
-
-            return {
-              id: doc.id,
-              ...docData,
-              bannerHero: docData.bannerHero || docData.coverImageUrl,
-              year,
-              artistNames,
-            } as Exhibition;
-          })
-          .filter((ex: any) => ex.published !== false && ex.isPublished !== false);
-
-        // Client side sorting to handle missing order field
-        data.sort((a, b) => {
-          if (a.order !== undefined || b.order !== undefined) {
-            return (a.order ?? 999) - (b.order ?? 999);
-          }
-          const dateA = a.dataApertura || "0";
-          const dateB = b.dataApertura || "0";
-          return dateB.localeCompare(dateA);
-        });
-
-        // Extract available years for filter
-        const years = Array.from(
-          new Set(data.map((d) => d.year).filter((y) => y)),
-        )
-          .sort()
-          .reverse();
-        setAvailableYears(years);
-
-        setAllExhibitions(data);
-        setFilteredExhibitions(data);
-        setVisibleExhibitions(data.slice(0, ITEMS_PER_PAGE));
-      } catch (error) {
-        console.error("Error fetching exhibitions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchExhibitionsAndWriters();
-  }, []);
+      setAllExhibitions(data);
+      setFilteredExhibitions(data);
+      setVisibleExhibitions(data.slice(0, ITEMS_PER_PAGE));
+      setLoading(false);
+    }
+  }, [cachedPublicLoading, cachedExhibitions]);
 
   // Filter effect
   useEffect(() => {

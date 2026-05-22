@@ -7,6 +7,7 @@ import React, { useEffect, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
+import { PublicDataProvider } from "./contexts/PublicDataContext";
 import Layout from "./components/Layout";
 import { trackPageView } from "./utils/analytics";
 import { initCacheVersion } from "./utils/cacheManager";
@@ -176,8 +177,9 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <I18nProvider>
-          <LanguagePrompt />
+        <PublicDataProvider>
+          <I18nProvider>
+            <LanguagePrompt />
           <PWAInstallBanner />
           <RouteTracker />
           <Suspense fallback={
@@ -406,6 +408,7 @@ export default function App() {
           </Routes>
           </Suspense>
         </I18nProvider>
+      </PublicDataProvider>
       </BrowserRouter>
     </AuthProvider>
   );

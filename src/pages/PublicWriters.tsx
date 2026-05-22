@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
+import { usePublicData } from "../contexts/PublicDataContext";
 import { db } from "../firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 
@@ -35,32 +36,14 @@ export default function PublicWriters() {
     }
   });
 
+  const { writers: cachedWriters, loading: cachedPublicLoading } = usePublicData();
+
   useEffect(() => {
-    const fetchWriters = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "scrittori"));
-        const data = snapshot.docs
-          .map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              fotoProfilo: data.fotoProfilo || data.profileImageUrl,
-            };
-          })
-          .filter((w: any) => w.published !== false && w.isPublished !== false)
-          .sort((a: any, b: any) => {
-            return (a.order ?? 999) - (b.order ?? 999);
-          });
-        setWriters(data);
-      } catch (error) {
-        console.error("Error fetching artists:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWriters();
-  }, []);
+    if (!cachedPublicLoading) {
+      setWriters(cachedWriters);
+      setLoading(false);
+    }
+  }, [cachedPublicLoading, cachedWriters]);
 
   const filteredWriters = useMemo(() => {
     return writers.filter((w) => {
