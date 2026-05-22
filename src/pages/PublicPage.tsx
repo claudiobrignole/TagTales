@@ -11,6 +11,7 @@ import VideoEmbed from '../components/VideoEmbed';
 import { getLocalizedField } from '../utils/localization';
 import { cleanHtml } from '../utils/cleanHtml';
 import SEO from '../components/SEO';
+import LazyImage from '../components/LazyImage';
 
 interface PageData {
   titolo: string;
@@ -219,7 +220,16 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                   isVideo(block.images[0].url) ? (
                     <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-3xl" />
                   ) : (
-                    <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                    <LazyImage
+                      src={block.images[0].url}
+                      alt=""
+                      className="w-full h-auto object-cover rounded-3xl"
+                      wrapperClassName="w-full h-auto"
+                      loading="lazy"
+                      width={600}
+                      height={450}
+                      style={{ objectFit: "cover" }}
+                    />
                   )
                 )}
               </div>
@@ -234,7 +244,16 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                 isVideo(block.images[0].url) ? (
                   <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-3xl" />
                 ) : (
-                  <img src={block.images[0].url} alt="" className="w-full h-auto object-cover rounded-3xl" />
+                  <LazyImage
+                    src={block.images[0].url}
+                    alt=""
+                    className="w-full h-auto object-cover rounded-3xl"
+                    wrapperClassName="w-full h-auto"
+                    loading="lazy"
+                    width={1200}
+                    height={675}
+                    style={{ objectFit: "cover" }}
+                  />
                 )
               )}
             </div>
@@ -246,7 +265,16 @@ export default function PublicPage({ id: propId }: { id?: string }) {
             {isVideo(block.images?.[0]?.url) ? (
               <video src={block.images?.[0]?.url} poster={block.images?.[0]?.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
             ) : (
-              <img src={block.images?.[0]?.url} alt="" className="w-full h-full object-cover" />
+              <LazyImage
+                src={block.images?.[0]?.url}
+                alt=""
+                className="w-full h-full object-cover"
+                wrapperClassName="w-full h-full"
+                loading="lazy"
+                width={1920}
+                height={1080}
+                style={{ objectFit: "cover" }}
+              />
             )}
           </section>
         );
@@ -266,7 +294,17 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                 isVideo(img.url) ? (
                   <video key={idx} src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-3xl" />
                 ) : (
-                  <img key={idx} src={img.url} alt="" className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-3xl" />
+                  <LazyImage
+                    key={idx}
+                    src={img.url}
+                    alt=""
+                    className="w-full aspect-[4/5] md:aspect-square object-cover object-center rounded-3xl"
+                    wrapperClassName="w-full aspect-[4/5] md:aspect-square"
+                    loading="lazy"
+                    width={800}
+                    height={800}
+                    style={{ objectFit: "cover" }}
+                  />
                 )
               ))}
             </div>
