@@ -82,13 +82,13 @@
           document.body.appendChild(sendFoxScript);
         }
 
-        // Trigger on interaction or fallback to 3.5s delay
+        // Trigger on interaction or fallback to 9.5s delay
         window.addEventListener('scroll', initThirdParty, { passive: true });
         window.addEventListener('mousemove', initThirdParty, { passive: true });
         window.addEventListener('touchstart', initThirdParty, { passive: true });
         
         // Safety timeout trigger (not executed if interaction occurs earlier)
-        setTimeout(initThirdParty, 3500);
+        setTimeout(initThirdParty, 9500);
       })();
     </script>
   </head>
