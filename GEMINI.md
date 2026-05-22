@@ -39,3 +39,4 @@ TagTales Gallery is a full-stack web application designed for the graffiti subcu
 - Always verify dependencies and schema before editing code.
 - Prioritize server-side operations for API keys.
 - **SEO priority**: Every new public page MUST have appropriate SEO meta-data added.
+- **Server Entry Point & Build Config**: The backend service compiled entry point under `dist/server.js` and build configurations specify that the environment compiles `server.ts` directly into `dist/server.js`. These must **NEVER** be changed, and any deployment settings on platforms (like Hostinger) must strictly target `dist/server.js` as the Server Entry File.
