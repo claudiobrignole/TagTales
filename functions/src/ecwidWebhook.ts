@@ -28,6 +28,17 @@ const FEE_TABLE: Record<string, { full: number; promo: number } | null> = {
   stampa_limitata: null  // calcolata come: prezzo_vendita - 90.00
 };
 
+const getVatRate = (countryCode: string): number => {
+  const code = countryCode.toUpperCase().trim();
+  const vatRates: Record<string, number> = {
+    DE: 0.19, FR: 0.20, IT: 0.22, ES: 0.21, NL: 0.21, BE: 0.21, AT: 0.20, 
+    PT: 0.23, PL: 0.23, SE: 0.25, DK: 0.25, FI: 0.24, GR: 0.24, IE: 0.23,
+    CZ: 0.21, HU: 0.27, RO: 0.19, HR: 0.25, SK: 0.20, SI: 0.22, BG: 0.20,
+    LT: 0.21, LV: 0.21, EE: 0.20, LU: 0.17, CY: 0.19, MT: 0.18
+  };
+  return vatRates[code] !== undefined ? vatRates[code] : 0.20;
+};
+
 const getAttribute = (item: any, attrName: string): any => {
   if (item[attrName] !== undefined) return item[attrName];
   if (item.attributes && Array.isArray(item.attributes)) {
@@ -108,6 +119,7 @@ export const ecwidWebhook = onRequest(
       }
 
       const items = orderData.items || [];
+      const countryCode = String(orderData.billingPerson?.countryCode || "").toUpperCase().trim();
 
       const batch = db.batch();
       const artistFees: Record<string, number> = {};
@@ -136,11 +148,29 @@ export const ecwidWebhook = onRequest(
                         String(promoActiveStr).toLowerCase() === 'yes';
 
         let feePerUnit = 0;
+        const isStampaLimitata = productType === 'stampa_limitata';
+        let stampaLimitataFields: any = {};
 
         if (feeOverride !== null && !isNaN(feeOverride)) {
           feePerUnit = feeOverride;
-        } else if (productType === 'stampa_limitata') {
-          feePerUnit = item.price - 90.00;
+        } else if (isStampaLimitata) {
+          const vatRate = getVatRate(countryCode);
+          const priceExVatUnrounded = item.price / (1 + vatRate);
+          const priceExVat = Math.round(priceExVatUnrounded * 100) / 100;
+          feePerUnit = priceExVat - 90.00;
+          
+          if (feePerUnit <= 0) {
+            logger.warn(`Stampa limitata feePerUnit calculated <= 0 (${feePerUnit}) for item ${item.id}, setting to 0`);
+            feePerUnit = 0;
+          }
+
+          stampaLimitataFields = {
+            countryCode,
+            vatRate,
+            grossPrice: item.price,
+            priceExVat,
+            platformFee: 90.00
+          };
         } else if (FEE_TABLE[productType]) {
           feePerUnit = isPromo ? FEE_TABLE[productType]!.promo : FEE_TABLE[productType]!.full;
         } else {
@@ -155,7 +185,7 @@ export const ecwidWebhook = onRequest(
 
         // 1. Write to royalties collection
         const royaltyRef = db.collection('royalties').doc();
-        batch.set(royaltyRef, {
+        const royaltyDoc: any = {
           artistId: artistId,
           orderId: String(orderId), // save as string just in case
           productType: productType,
@@ -165,7 +195,13 @@ export const ecwidWebhook = onRequest(
           isPromo: isPromo,
           status: 'pending',
           createdAt: FieldValue.serverTimestamp()
-        });
+        };
+
+        if (isStampaLimitata) {
+          Object.assign(royaltyDoc, stampaLimitataFields);
+        }
+
+        batch.set(royaltyRef, royaltyDoc);
 
         // Accumulate for artist update
         if (!artistFees[artistId]) {
