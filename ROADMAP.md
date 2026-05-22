@@ -85,6 +85,11 @@ Usare ogni volta che si crea un nuovo prodotto TagTales su Ecwid.
   - Sostituzione del form iframe in `PublicHome.tsx` con un modulo controllato via AJAX, dotato di messaggi di successo ed errore personalizzati.
   - Sviluppo di un banner interattivo all'interno di `SupportChat.tsx` (Chat AI) per l'iscrizione semplice degli utenti durante la conversazione.
   - Implementazione del **Punto C** nel webhook Ecwid (`ecwidWebhook.ts`): auto-iscrizione immediata del cliente su SendFox se in fase di pagamento su Ecwid viene espresso il consenso al marketing (`opt_in` o `opt_in_from_checkout`).
+- **Ottimizzazioni PageSpeed & Performance Mobile/Desktop (22 maggio 2026)**:
+  - **Precaricamento Font Display**: Aggiunto il preload di `shamgod-bold-webfont.woff2` in `index.html` per l'eliminazione dei ritardi di resa testuale e la riduzione del Cumulative Layout Shift (CLS).
+  - **Script Non-Bloccanti**: Deferito il caricamento dello script esterno SendFox (`form.js`) per evitare il blocco del parsing HTML (DOM parsing blocker) all'avvio.
+  - **Refactoring Lazy Loading Immagini**: Ridisegnato il componente `LazyImage.tsx` eliminando la creazione imperativa di una seconda istanza d'immagine in `useEffect`. L'approccio precedente sovrascriveva e bypassava il parametro nativo `loading="lazy"` del browser, scaricando contemporaneamente intere griglie di immagini ad alta risoluzione e saturando la connettività mobile (causa del precedente punteggio basso sul mobile).
+  - **Bundle Code splitting (Rollup)**: Aggiunto nel file di configurazione `vite.config.ts` il partizionamento manuale dei chunk (`manualChunks`) in Rollup, isolando in file secondari paralleli le librerie esterne (`react-core`, `firebase-db`, `animations`, `icons`, e `vendor`). Questo massimizza il parallelismo dei download e riduce drasticamente i tempi di esecuzione e parsing del thread javascript principale sul client.
 
 
 

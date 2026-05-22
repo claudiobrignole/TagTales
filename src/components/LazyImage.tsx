@@ -22,38 +22,6 @@ export default function LazyImage({
   const [isLoaded, setIsLoaded] = useState(alreadyPreloaded);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    if (!src) {
-      setError(true);
-      return;
-    }
-
-    if (alreadyPreloaded) {
-      setIsLoaded(true);
-      return;
-    }
-
-    setIsLoaded(false);
-    setError(false);
-
-    const img = new Image();
-    img.src = bustedSrc;
-
-    img.onload = () => {
-      markImagePreloaded(bustedSrc);
-      setIsLoaded(true);
-    };
-
-    img.onerror = () => {
-      setError(true);
-    };
-
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [bustedSrc, src, alreadyPreloaded]);
-
   if (!src) return null;
 
   if (error) {
@@ -63,6 +31,15 @@ export default function LazyImage({
       </div>
     );
   }
+
+  const handleLoad = () => {
+    markImagePreloaded(bustedSrc);
+    setIsLoaded(true);
+  };
+
+  const handleError = () => {
+    setError(true);
+  };
 
   return (
     <div className={`relative overflow-hidden ${wrapperClassName || 'w-full h-full'}`}>
@@ -80,6 +57,8 @@ export default function LazyImage({
           isLoaded ? 'opacity-100 scale-100 filter-none' : 'opacity-0 scale-105 blur-sm'
         } ${className}`}
         loading={loading}
+        onLoad={handleLoad}
+        onError={handleError}
         referrerPolicy="no-referrer"
         {...props}
       />
