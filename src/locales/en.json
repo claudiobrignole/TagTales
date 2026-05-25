@@ -61,7 +61,11 @@
   "chat": {
     "withAdmin": "Chat with Administration",
     "with": "Chat with {{name}}",
-    "placeholder": "Write a message..."
+    "placeholder": "Write a message...",
+    "newsletterTitle": "PRIORITY LIST",
+    "newsletterDesc": "Subscribe to receive updates about mini-exhibitions, interviews with writers, and limited edition prints.",
+    "newsletterPlaceholder": "Enter your email",
+    "newsletterSuccess": "✓ Successfully subscribed!"
   },
   "firstName": "First Name",
   "lastName": "Last Name",

@@ -21,7 +21,19 @@ export interface ExhibitionBlock {
   text_en?: string;
   backgroundColor?: 'black' | 'light';
   alignment?: 'left' | 'center' | 'right';
-  images?: { url: string; ecwidLink?: string; contactType?: 'email' | 'whatsapp' | 'link'; contactLink?: string; fallbackUrl?: string; caption?: string; caption_en?: string; captionColor?: 'white' | 'black'; captionPosition?: 'top-left' | 'bottom-left' }[];
+  images?: { 
+    url: string; 
+    ecwidLink?: string; 
+    contactType?: 'email' | 'whatsapp' | 'link'; 
+    contactLink?: string; 
+    fallbackUrl?: string; 
+    caption?: string; 
+    caption_en?: string; 
+    captionColor?: 'white' | 'black'; 
+    captionPosition?: 'top-left' | 'bottom-left';
+    isLimitedEdition?: boolean;
+    limitedEditionQuantity?: number;
+  }[];
   videoUrl?: string;
   hidden?: boolean;
 }
@@ -72,7 +84,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     onChange(newBlocks);
   };
 
-  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'bottom-left' }>) => {
+  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'bottom-left'; isLimitedEdition: boolean; limitedEditionQuantity: number }>) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
@@ -81,8 +93,8 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     }));
   };
 
-  const updateImage = (blockId: string, imageIndex: number, field: 'url' | 'ecwidLink' | 'contactType' | 'contactLink' | 'fallbackUrl' | 'caption' | 'caption_en' | 'captionColor' | 'captionPosition', value: string) => {
-    updateImageFields(blockId, imageIndex, { [field]: value as any });
+  const updateImage = (blockId: string, imageIndex: number, field: string, value: any) => {
+    updateImageFields(blockId, imageIndex, { [field]: value });
   };
 
   return (
@@ -261,6 +273,36 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                         <label className="block text-xs font-medium text-[#121212] mb-2 uppercase tracking-wide">Opzioni di Vendita</label>
                         
                         <div className="space-y-4">
+                          <div className="flex items-center justify-between p-2 border border-gray-100 rounded bg-white">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">Edizione Limitata</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={!!img.isLimitedEdition} 
+                                onChange={e => updateImageFields(block.id, imgIndex, { isLimitedEdition: e.target.checked })}
+                                className="sr-only peer" 
+                              />
+                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF4F00]"></div>
+                            </label>
+                          </div>
+
+                          {img.isLimitedEdition && (
+                            <div className="bg-orange-50/50 p-2.5 rounded border border-orange-100/50 space-y-2">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Quantità Disponibile</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0}
+                                onChange={e => {
+                                  const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                                  updateImageFields(block.id, imgIndex, { limitedEditionQuantity: val === '' ? undefined : (isNaN(val) ? 0 : val) });
+                                }}
+                                className="w-full border border-gray-200 rounded px-2 py-1 text-sm bg-white"
+                                placeholder="Esempio: 25"
+                              />
+                            </div>
+                          )}
+
                           <div>
                             <label className="block text-xs font-medium text-gray-500 mb-1">Ecwid Store Link</label>
                             <input

@@ -211,7 +211,7 @@ export default function SupportChat({ mode = 'public' }: SupportChatProps) {
                type="button" 
                onClick={() => setShowChatNewsletter(false)}
                className="absolute top-2 right-2 text-gray-400 hover:text-black font-bold p-1 text-xs"
-               title="Chiudi"
+               title={t('common.close', 'Chiudi')}
              >
                ✕
              </button>

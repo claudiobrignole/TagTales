@@ -223,6 +223,55 @@ export const ecwidWebhook = onRequest(
 
       await batch.commit();
 
+      // Automatically update limited edition quantities for exhibitions based on sold items
+      try {
+        const mostreSnap = await db.collection('mostre').get();
+        for (const mostreDoc of mostreSnap.docs) {
+          const mostraData = mostreDoc.data();
+          let changed = false;
+          if (mostraData.blocks && Array.isArray(mostraData.blocks)) {
+            const updatedBlocks = mostraData.blocks.map((block: any) => {
+              if (block.images && Array.isArray(block.images)) {
+                let blockChanged = false;
+                const updatedImages = block.images.map((img: any) => {
+                  if (img.isLimitedEdition && img.ecwidLink) {
+                    // Find if any sold item productId is present in this ecwidLink
+                    const soldItem = items.find((itm: any) => {
+                      const pId = String(itm.productId);
+                      return img.ecwidLink.includes(pId);
+                    });
+                    if (soldItem) {
+                      const currentQty = img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0;
+                      const newQty = Math.max(0, currentQty - soldItem.quantity);
+                      logger.info(`Updating limited edition quantity for mostra ${mostreDoc.id}, block ${block.id}: from ${currentQty} to ${newQty}`);
+                      blockChanged = true;
+                      return {
+                        ...img,
+                        limitedEditionQuantity: newQty
+                      };
+                    }
+                  }
+                  return img;
+                });
+                if (blockChanged) {
+                  changed = true;
+                  return {
+                    ...block,
+                    images: updatedImages
+                  };
+                }
+              }
+              return block;
+            });
+            if (changed) {
+              await mostreDoc.ref.update({ blocks: updatedBlocks });
+            }
+          }
+        }
+      } catch (exhibitionsErr) {
+        logger.error("Failed to automatically update limited edition quantities on exhibitions", exhibitionsErr);
+      }
+
       try {
         const pixelId = '1331292394239342';
         const accessToken = process.env.META_PIXEL_ACCESS_TOKEN;

@@ -25,16 +25,56 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   };
 
   const allImages = useMemo(() => {
-    const images: {url: string, ecwidLink?: string, contactLink?: string, contactType?: string, fallbackUrl?: string, blockType: string, id: string}[] = [];
+    const images: {
+      url: string;
+      ecwidLink?: string;
+      contactLink?: string;
+      contactType?: string;
+      fallbackUrl?: string;
+      blockType: string;
+      id: string;
+      isLimitedEdition?: boolean;
+      limitedEditionQuantity?: number;
+    }[] = [];
     if (!blocks) return images;
     blocks.forEach(block => {
       if (!block) return;
       if (block.hidden) return; // Skip hidden blocks
       if (block.type === 'image_fullscreen' && block.images?.[0]?.url) {
-        images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, contactType: block.images[0].contactType, contactLink: block.images[0].contactLink, fallbackUrl: block.images[0].fallbackUrl, blockType: block.type, id: `${block.id}_0` });
+        images.push({ 
+          url: block.images[0].url, 
+          ecwidLink: block.images[0].ecwidLink, 
+          contactType: block.images[0].contactType, 
+          contactLink: block.images[0].contactLink, 
+          fallbackUrl: block.images[0].fallbackUrl, 
+          blockType: block.type, 
+          id: `${block.id}_0`,
+          isLimitedEdition: block.images[0].isLimitedEdition,
+          limitedEditionQuantity: block.images[0].limitedEditionQuantity
+        });
       } else if (block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') {
-        if (block.images?.[0]?.url) images.push({ url: block.images[0].url, ecwidLink: block.images[0].ecwidLink, contactType: block.images[0].contactType, contactLink: block.images[0].contactLink, fallbackUrl: block.images[0].fallbackUrl, blockType: block.type, id: `${block.id}_0` });
-        if (block.images?.[1]?.url) images.push({ url: block.images[1].url, ecwidLink: block.images[1].ecwidLink, contactType: block.images[1].contactType, contactLink: block.images[1].contactLink, fallbackUrl: block.images[1].fallbackUrl, blockType: block.type, id: `${block.id}_1` });
+        if (block.images?.[0]?.url) images.push({ 
+          url: block.images[0].url, 
+          ecwidLink: block.images[0].ecwidLink, 
+          contactType: block.images[0].contactType, 
+          contactLink: block.images[0].contactLink, 
+          fallbackUrl: block.images[0].fallbackUrl, 
+          blockType: block.type, 
+          id: `${block.id}_0`,
+          isLimitedEdition: block.images[0].isLimitedEdition,
+          limitedEditionQuantity: block.images[0].limitedEditionQuantity
+        });
+        if (block.images?.[1]?.url) images.push({ 
+          url: block.images[1].url, 
+          ecwidLink: block.images[1].ecwidLink, 
+          contactType: block.images[1].contactType, 
+          contactLink: block.images[1].contactLink, 
+          fallbackUrl: block.images[1].fallbackUrl, 
+          blockType: block.type, 
+          id: `${block.id}_1`,
+          isLimitedEdition: block.images[1].isLimitedEdition,
+          limitedEditionQuantity: block.images[1].limitedEditionQuantity
+        });
       }
     });
     return images;
@@ -58,6 +98,23 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   }, [lightboxIndex, allImages.length]);
 
   const isVideo = (url: string) => url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null;
+
+  const getButtonText = (img: any, isBuyButton: boolean) => {
+    const isEn = lang && lang.toUpperCase() === 'EN';
+    if (img.isLimitedEdition) {
+      const qty = img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0;
+      return isEn 
+        ? `Limited edition: ${qty} available` 
+        : `Edizione Limitata: ${qty} disponibili`;
+    }
+    if (isBuyButton) {
+      return t('exhibition.buy', 'Acquista');
+    } else {
+      return isEn 
+        ? "Original work: request info" 
+        : "Opera originale: richiedi info";
+    }
+  };
 
   if (!blocks || blocks.length === 0) return null;
 
@@ -133,14 +190,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                       className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {t('exhibition.buy', 'Acquista')}
+                      {getButtonText(img, true)}
                     </a>
                   ) : (
                     <button 
                       onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img.contactType, img.contactLink)); }}
                       className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                     >
-                      {t('exhibitionInquiry.title', 'Richiedi info')}
+                      {getButtonText(img, false)}
                     </button>
                   )}
                 </div>
@@ -217,14 +274,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                         onClick={(e) => e.stopPropagation()}
                         className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
-                        {t('exhibition.buy', 'Acquista')}
+                        {getButtonText(img1, true)}
                       </a>
                     ) : (
                       <button 
                          onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img1.contactType, img1.contactLink)); }}
                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
-                        {t('exhibitionInquiry.title', 'Richiedi info')}
+                        {getButtonText(img1, false)}
                       </button>
                     )}
                   </div>
@@ -261,14 +318,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                         onClick={(e) => e.stopPropagation()}
                         className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
-                        {t('exhibition.buy', 'Acquista')}
+                        {getButtonText(img2, true)}
                       </a>
                     ) : (
                       <button 
                          onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img2.contactType, img2.contactLink)); }}
                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                       >
-                        {t('exhibitionInquiry.title', 'Richiedi info')}
+                        {getButtonText(img2, false)}
                       </button>
                     )}
                   </div>
@@ -326,14 +383,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
-                          {t('exhibition.buy', 'Acquista')}
+                          {getButtonText(img1, true)}
                         </a>
                       ) : (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img1.contactType, img1.contactLink)); }}
                           className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
-                          {t('exhibitionInquiry.title', 'Richiedi info')}
+                          {getButtonText(img1, false)}
                         </button>
                       )}
                     </div>
@@ -369,14 +426,14 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
-                          {t('exhibition.buy', 'Acquista')}
+                          {getButtonText(img2, true)}
                         </a>
                       ) : (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img2.contactType, img2.contactLink)); }}
                           className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
                         >
-                          {t('exhibitionInquiry.title', 'Richiedi info')}
+                          {getButtonText(img2, false)}
                         </button>
                       )}
                     </div>
@@ -457,7 +514,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                      rel="noopener noreferrer"
                      className="inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg"
                    >
-                     {t('exhibition.buy', 'Acquista')}
+                     {getButtonText(allImages[lightboxIndex], true)}
                    </a>
                  ) : (
                    <button 
@@ -467,7 +524,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                      }}
                      className="inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg"
                    >
-                     {lang === 'EN' ? 'Info Request' : 'Richiedi info'}
+                     {getButtonText(allImages[lightboxIndex], false)}
                    </button>
                  )}
                </div>

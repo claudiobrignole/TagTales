@@ -697,7 +697,11 @@
   "chat": {
     "withAdmin": "Chat con l'Amministrazione",
     "with": "Chat con {{name}}",
-    "placeholder": "Scrivi un messaggio..."
+    "placeholder": "Scrivi un messaggio...",
+    "newsletterTitle": "LISTA PRIORITARIA",
+    "newsletterDesc": "Iscriviti per ricevere aggiornamenti sulle minimostre, interviste ai writers e stampe in edizione limitata.",
+    "newsletterPlaceholder": "Inserisci la tua email",
+    "newsletterSuccess": "✓ Iscritto con successo!"
   },
   "firstName": "Nome",
   "lastName": "Cognome",
