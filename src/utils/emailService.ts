@@ -152,16 +152,16 @@ export async function sendEmailNotification(to: string, templateName: string, da
           subject: 'New User Registration - Tag Tales Gallery',
           html: `<p>Hello Claudio,</p>
                  <p>A new user has just registered on Tag Tales Gallery.</p>
-                 <p><strong>Email:</strong> \${data.email}</p>
-                 <p><strong>UserID:</strong> \${data.userId}</p>
+                 <p><strong>Email:</strong> ${data.email}</p>
+                 <p><strong>UserID:</strong> ${data.userId}</p>
                  <br/><p>Best regards,<br/>Tag Tales Automation</p>`
         },
         it: {
           subject: 'Nuova Registrazione Utente - Tag Tales Gallery',
           html: `<p>Ciao Claudio,</p>
                  <p>Un nuovo utente si è appena registrato su Tag Tales Gallery.</p>
-                 <p><strong>Email:</strong> \${data.email}</p>
-                 <p><strong>ID Utente (UID):</strong> \${data.userId}</p>
+                 <p><strong>Email:</strong> ${data.email}</p>
+                 <p><strong>ID Utente (UID):</strong> ${data.userId}</p>
                  <br/><p>Un cordiale saluto,<br/>Tag Tales Automation</p>`
         }
       },
@@ -169,21 +169,21 @@ export async function sendEmailNotification(to: string, templateName: string, da
         en: {
           subject: 'New Chat Message Received - Tag Tales Gallery',
           html: `<p>Hello Claudio,</p>
-                 <p>You have received a new chat message from the writer <strong>\${data.senderName}</strong>:</p>
+                 <p>You have received a new chat message from the writer <strong>${data.senderName}</strong>:</p>
                  <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; font-style: italic; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px;">
-                   \${data.messageText}
+                   ${data.messageText}
                  </blockquote>
-                 <p><a href="https://tagtalesgallery.com/app/admin?chat=\${data.writerId}" style="color: #FF4F00; font-weight: bold; text-decoration: underline;">Click here to view the chat and reply</a></p>
+                 <p><a href="https://tagtalesgallery.com/app/admin?chat=${data.writerId}" style="color: #FF4F00; font-weight: bold; text-decoration: underline;">Click here to view the chat and reply</a></p>
                  <br/><p>Best regards,<br/>Tag Tales Automation</p>`
         },
         it: {
           subject: 'Nuovo Messaggio in Chat - Tag Tales Gallery',
           html: `<p>Ciao Claudio,</p>
-                 <p>Hai ricevuto un nuovo messaggio in chat dal writer <strong>\${data.senderName}</strong>:</p>
+                 <p>Hai ricevuto un nuovo messaggio in chat dal writer <strong>${data.senderName}</strong>:</p>
                  <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; font-style: italic; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px;">
-                   \${data.messageText}
+                   ${data.messageText}
                  </blockquote>
-                 <p><a href="https://tagtalesgallery.com/app/admin?chat=\${data.writerId}" style="color: #FF4F00; font-weight: bold; text-decoration: underline;">Clicca qui per visualizzare la chat e rispondere</a></p>
+                 <p><a href="https://tagtalesgallery.com/app/admin?chat=${data.writerId}" style="color: #FF4F00; font-weight: bold; text-decoration: underline;">Clicca qui per visualizzare la chat e rispondere</a></p>
                  <br/><p>Un cordiale saluto,<br/>Tag Tales Automation</p>`
         }
       },
@@ -192,11 +192,11 @@ export async function sendEmailNotification(to: string, templateName: string, da
           subject: 'New Public Contact Message - Tag Tales Gallery',
           html: `<p>Hello Claudio,</p>
                  <p>You received a new message from the contact form on your website:</p>
-                 <p><strong>Sender Name:</strong> \${data.name}</p>
-                 <p><strong>Sender Email:</strong> \${data.email}</p>
+                 <p><strong>Sender Name:</strong> ${data.name}</p>
+                 <p><strong>Sender Email:</strong> ${data.email}</p>
                  <p><strong>Message:</strong></p>
                  <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px; white-space: pre-wrap;">
-                   \${data.message}
+                   ${data.message}
                  </blockquote>
                  <br/><p>Best regards,<br/>Tag Tales Automation</p>`
         },
@@ -204,11 +204,11 @@ export async function sendEmailNotification(to: string, templateName: string, da
           subject: 'Nuovo Messaggio dal Modulo Contatti - Tag Tales Gallery',
           html: `<p>Ciao Claudio,</p>
                  <p>Hai ricevuto un nuovo messaggio compilato tramite il modulo contatti del tuo sito:</p>
-                 <p><strong>Nome mittente:</strong> \${data.name}</p>
-                 <p><strong>Email mittente:</strong> \${data.email}</p>
+                 <p><strong>Nome mittente:</strong> ${data.name}</p>
+                 <p><strong>Email mittente:</strong> ${data.email}</p>
                  <p><strong>Messaggio:</strong></p>
                  <blockquote style="border-left: 4px solid #FF4F00; padding-left: 12px; margin: 15px 0; color: #333; background-color: #F8F6F3; padding-top: 8px; padding-bottom: 8px; white-space: pre-wrap;">
-                   \${data.message}
+                   ${data.message}
                  </blockquote>
                  <br/><p>Un cordiale saluto,<br/>Tag Tales Automation</p>`
         }

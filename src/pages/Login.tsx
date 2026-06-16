@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCustomToken, sendEmailVerification, signOut, type User } from 'firebase/auth';
 import { auth, db } from '../firebase';
+import { isLocalDev } from '../utils/isLocalDev';
+import { isSuperAdminEmail, SUPER_ADMIN_EMAIL } from '../constants/admin';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useI18n } from '../contexts/I18nContext';
 import { Eye, EyeOff } from 'lucide-react';
@@ -20,6 +22,43 @@ export default function Login() {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useI18n();
 
+  const ensureUserProfile = async (user: User, options?: { isNewGoogleUser?: boolean }) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      if (!isSuperAdminEmail(user.email) && !options?.isNewGoogleUser) {
+        await signOut(auth);
+        throw new Error('Account non trovato, eliminato o sospeso.');
+      }
+
+      await setDoc(userDocRef, {
+        uid: user.uid,
+        email: user.email,
+        fullName: user.displayName || '',
+        profilePictureUrl: user.photoURL || '',
+        role: isSuperAdminEmail(user.email) ? 'admin' : 'artist',
+        createdAt: new Date().toISOString(),
+        language: language.toLowerCase()
+      });
+
+      if (options?.isNewGoogleUser) {
+        await sendEmailNotification(user.email!, 'welcome', { userId: user.uid }, language.toLowerCase());
+        await sendEmailNotification(SUPER_ADMIN_EMAIL, 'admin_new_register', {
+          email: user.email!,
+          userId: user.uid
+        }, 'it');
+      }
+      return;
+    }
+
+    const userData = userDoc.data();
+    if (userData?.status === 'suspended' || userData?.isDeleted) {
+      await signOut(auth);
+      throw new Error(userData.isDeleted ? 'Account non trovato o eliminato.' : 'Questo account è stato sospeso.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -29,12 +68,7 @@ export default function Login() {
     try {
       if (isLogin) {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-        const userData = userDoc.data();
-        if (!userDoc.exists() || (userData && (userData.status === 'suspended' || userData.isDeleted))) {
-          await signOut(auth);
-          throw new Error('Account non trovato, eliminato o sospeso.');
-        }
+        await ensureUserProfile(userCredential.user);
         navigate('/app');
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -42,7 +76,7 @@ export default function Login() {
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           uid: userCredential.user.uid,
           email: userCredential.user.email,
-          role: userCredential.user.email?.toLowerCase() === 'claudio@brignole.ch' ? 'admin' : 'artist',
+          role: isSuperAdminEmail(userCredential.user.email) ? 'admin' : 'artist',
           createdAt: new Date().toISOString(),
           language: language.toLowerCase()
         });
@@ -50,7 +84,7 @@ export default function Login() {
         await sendEmailVerification(userCredential.user);
         await sendEmailNotification(userCredential.user.email!, 'welcome', { userId: userCredential.user.uid }, language.toLowerCase());
         // Notify admin of standard email-password signup
-        await sendEmailNotification('claudio@brignole.ch', 'admin_new_register', { 
+        await sendEmailNotification(SUPER_ADMIN_EMAIL, 'admin_new_register', { 
           email: userCredential.user.email!, 
           userId: userCredential.user.uid 
         }, 'it');
@@ -78,52 +112,91 @@ export default function Login() {
     }
   };
 
+  const processGoogleUser = async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    const isNewGoogleUser = !userDoc.exists();
+    await ensureUserProfile(user, { isNewGoogleUser });
+    navigate('/app');
+  };
+
+  const handleGoogleError = (err: any) => {
+    console.error("Google login error:", err);
+    if (err.code === 'auth/operation-not-allowed') {
+      setError(t('login.googleNotEnabled'));
+    } else if (err.code === 'auth/unauthorized-domain') {
+      setError('Dominio non autorizzato. In Firebase Console → Authentication → Settings aggiungi "localhost" ai domini autorizzati.');
+    } else if (err.code === 'auth/popup-blocked') {
+      setError('Il browser ha bloccato il popup di Google. Consenti i popup per questo sito e riprova.');
+    } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+      setError(err.message || t('login.googleError'));
+    }
+  };
+
+  // In locale il popup resta bloccato sulla pagina handler di Firebase: usiamo redirect a pagina intera.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (cancelled || !result?.user) return;
+        await processGoogleUser(result.user);
+      })
+      .catch((err) => {
+        if (!cancelled) handleGoogleError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDevAdminLogin = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      const response = await fetch('/api/dev/admin-login', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Login dev non disponibile');
+      }
+
+      let user: User;
+      if (data.method === 'customToken') {
+        const credential = await signInWithCustomToken(auth, data.token);
+        user = credential.user;
+      } else if (data.method === 'password') {
+        const credential = await signInWithEmailAndPassword(auth, data.email, data.password);
+        user = credential.user;
+      } else {
+        throw new Error('Metodo di login dev non supportato');
+      }
+
+      await ensureUserProfile(user);
+      navigate('/app');
+    } catch (err: any) {
+      setError(err.message || 'Login dev fallito');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setError('');
     setSuccess('');
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      if (isLocalDev) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      // Check if user exists in Firestore
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        // Create new user profile
-        await setDoc(userDocRef, {
-          uid: user.uid,
-          email: user.email,
-          fullName: user.displayName || '',
-          profilePictureUrl: user.photoURL || '',
-          role: user.email?.toLowerCase() === 'claudio@brignole.ch' ? 'admin' : 'artist',
-          createdAt: new Date().toISOString(),
-          language: language.toLowerCase()
-        });
-        await sendEmailNotification(user.email!, 'welcome', { userId: user.uid }, language.toLowerCase());
-        // Notify admin of Google OAuth signup
-        await sendEmailNotification('claudio@brignole.ch', 'admin_new_register', { 
-          email: user.email!, 
-          userId: user.uid 
-        }, 'it');
-      } else {
-        const userData = userDoc.data();
-        if (userData && (userData.status === 'suspended' || userData.isDeleted)) {
-          await signOut(auth);
-          throw new Error(userData.isDeleted ? 'Account non trovato o eliminato.' : 'Questo account è stato sospeso.');
-        }
-      }
-      navigate('/app');
+      await processGoogleUser(result.user);
     } catch (err: any) {
-      console.error("Google login error:", err);
-      // Provide a helpful error message if the provider is not enabled
-      if (err.code === 'auth/operation-not-allowed') {
-        setError(t('login.googleNotEnabled'));
-      } else {
-        setError(err.message || t('login.googleError'));
-      }
+      handleGoogleError(err);
     } finally {
       setLoading(false);
     }
@@ -262,6 +335,17 @@ export default function Login() {
             </svg>
             {t('login.continueWithGoogle')}
           </button>
+
+          {isLocalDev && (
+            <button
+              type="button"
+              onClick={handleDevAdminLogin}
+              disabled={loading}
+              className="w-full mt-4 border border-dashed border-[#FF4F00]/60 text-[#FF4F00] font-bold py-3 px-6 rounded-full hover:bg-[#FF4F00]/5 active:scale-[0.98] transition-all text-sm disabled:opacity-70"
+            >
+              Dev: accedi come admin
+            </button>
+          )}
         </div>
       </main>
 

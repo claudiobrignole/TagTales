@@ -6,6 +6,8 @@ import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import nodemailer from "nodemailer";
 import compression from "compression";
+import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 
 dotenv.config();
 
@@ -128,7 +130,71 @@ async function sendEmailThroughSmtpOrService(to: string, subject: string, html: 
   throw new Error("No mail service configured on backend. Please configure either SMTP_HOST/SMTP_USER/SMTP_PASS or RESEND_API_KEY.");
 }
 
+function isLocalDevRequest(req: { get: (name: string) => string | undefined }): boolean {
+  const host = (req.get("host") || "").toLowerCase();
+  return host.startsWith("localhost:") || host.startsWith("127.0.0.1:");
+}
+
+let firebaseAdminInitError: string | null = null;
+
+function initFirebaseAdmin(): boolean {
+  try {
+    if (getApps().length) {
+      return true;
+    }
+
+    const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const keyPaths = [
+      path.resolve(process.cwd(), "serviceAccountKey.json"),
+      path.resolve(process.cwd(), "var/serviceAccountKey.json"),
+    ];
+
+    let credentialSource = "";
+    let credential;
+
+    if (b64) {
+      credential = cert(JSON.parse(Buffer.from(b64, "base64").toString("utf8")));
+      credentialSource = "FIREBASE_SERVICE_ACCOUNT_BASE64";
+    } else if (raw) {
+      credential = cert(JSON.parse(raw));
+      credentialSource = "FIREBASE_SERVICE_ACCOUNT_KEY";
+    } else {
+      const keyPath = keyPaths.find((p) => fs.existsSync(p));
+      if (keyPath) {
+        credential = cert(JSON.parse(fs.readFileSync(keyPath, "utf8")));
+        credentialSource = keyPath;
+      }
+    }
+
+    if (!credential) {
+      firebaseAdminInitError =
+        "Nessuna service account trovata. Metti serviceAccountKey.json nella root del progetto.";
+      return false;
+    }
+
+    initializeApp({ credential });
+    console.log(`Firebase Admin inizializzato (${credentialSource})`);
+    firebaseAdminInitError = null;
+    return true;
+  } catch (err: any) {
+    firebaseAdminInitError = err?.message || String(err);
+    console.warn("Firebase Admin init failed:", firebaseAdminInitError);
+    return false;
+  }
+}
+
+async function getFirebaseAdminAuth() {
+  if (!getApps().length && !initFirebaseAdmin()) {
+    throw new Error(firebaseAdminInitError || "Firebase Admin non inizializzato");
+  }
+
+  return getAuth(getApp());
+}
+
 async function startServer() {
+  initFirebaseAdmin();
+
   const app = express();
   app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
@@ -139,6 +205,34 @@ async function startServer() {
   app.get("/api/config", (req, res) => {
     res.json({
       ecwidStoreId: process.env.ECWID_STORE_ID || "",
+    });
+  });
+
+  // Dev-only: mint a Firebase custom token for the super-admin (localhost only).
+  app.post("/api/dev/admin-login", async (req, res) => {
+    if (!isLocalDevRequest(req)) {
+      return res.status(404).json({ error: "Not found" });
+    }
+
+    const adminUid = process.env.DEV_ADMIN_UID || "ZVQqmqZ99yPV6vVThQ56v9YjZsK2";
+    const adminEmail = process.env.DEV_ADMIN_EMAIL || "claudio@brignole.ch";
+
+    try {
+      const authAdmin = await getFirebaseAdminAuth();
+      const token = await authAdmin.createCustomToken(adminUid);
+      return res.json({ method: "customToken", token, email: adminEmail });
+    } catch (err: any) {
+      console.warn("Dev admin custom token failed:", err?.message || err);
+    }
+
+    const password = process.env.DEV_ADMIN_PASSWORD;
+    if (password) {
+      return res.json({ method: "password", email: adminEmail, password });
+    }
+
+    return res.status(503).json({
+      error:
+        "Login dev non configurato. Aggiungi FIREBASE_SERVICE_ACCOUNT_BASE64 (consigliato) o DEV_ADMIN_PASSWORD in .env",
     });
   });
 

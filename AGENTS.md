@@ -84,3 +84,15 @@ Regola 6: Soft-Delete Utenti (`/src/pages/AdminUsers.tsx`). L'azione di cancella
 
 Regola 7: Configurazione Build e Server Entry Point. L'applicazione full-stack compila `server.ts` tramite esbuild nel file di immissione di produzione `dist/server.js` (non `server.cjs` o altro). Le impostazioni del build script in `package.json` o nel sistema ospitante (`"build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --packages=external --sourcemap --outfile=dist/server.js"`) e lo start script (`"start": "node dist/server.js"`) NON DEVONO MAI ESSERE CAMBIATI. Qualsiasi configurazione su Hostinger o su altri server di produzione deve puntare a `dist/server.js` come Entry File principale. Questa impostazione bloccata e testata deve essere preservata senza alcuna eccezione.
 
+## Sviluppo Locale: Login Admin (Dev Bypass)
+
+Regola 8: Login admin in locale. Google OAuth su `localhost` può fallire (handler Firebase vuoto / redirect). Per sviluppo locale è disponibile il bypass **solo su localhost**:
+
+1. Mettere `serviceAccountKey.json` nella root del progetto (gitignored) oppure `FIREBASE_SERVICE_ACCOUNT_BASE64` in `.env`.
+2. Avviare `npm run dev` — il log deve mostrare `Firebase Admin inizializzato`.
+3. Su `/login` usare il pulsante **"Dev: accedi come admin"** (visibile solo in locale).
+4. L'endpoint `POST /api/dev/admin-login` risponde 404 fuori da localhost (non attivo in produzione).
+5. Super-admin: email `claudio@brignole.ch`, UID `ZVQqmqZ99yPV6vVThQ56v9YjZsK2` (costanti in `src/constants/admin.ts`).
+6. Il logout dalla dashboard resta `signOut(auth)` — usare per testare altri account.
+7. Dopo aver aggiunto o modificato `serviceAccountKey.json`, riavviare `npm run dev`. Se la porta 3000 è occupata: `lsof -ti:3000 | xargs kill -9`.
+

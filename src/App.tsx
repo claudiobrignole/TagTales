@@ -50,6 +50,7 @@ import EnRouteWrapper from "./components/EnRouteWrapper";
 
 import LanguagePrompt from "./components/LanguagePrompt";
 import PWAInstallBanner from "./components/PWAInstallBanner";
+import { isSuperAdminEmail } from "./constants/admin";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -63,7 +64,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   if (!user) return <Navigate to="/login" />;
-  if (!user.emailVerified) {
+  if (!user.emailVerified && !isSuperAdminEmail(user.email)) {
     const handleResend = async () => {
       setResending(true);
       setMessage("");
