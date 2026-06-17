@@ -1,0 +1,22 @@
+---
+description: Sicurezza — segreti, admin, operazioni distruttive
+alwaysApply: true
+---
+
+## Segreti
+- Mai committare `.env`, `serviceAccountKey.json`, chiavi API
+- Segreti solo in env o file gitignored
+
+## Utenti
+- Soft-delete: `updateDoc(..., { isDeleted: true })` — mai `deleteDoc` su collection `users`
+- Mai `window.confirm` / `window.alert` (usa Modal React)
+
+## Endpoint dev
+- `POST /api/dev/admin-login` risponde **404** fuori da localhost
+
+## Database / produzione
+- Modifiche Firestore schema o dati produzione: chiedi conferma esplicita
+- Rivedi migration/SQL prima di eseguire
+
+## Build produzione
+- Entry Hostinger: `dist/server.js` — non cambiare

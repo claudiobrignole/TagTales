@@ -1,20 +1,60 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# TagTales Gallery
 
-# Run and deploy your AI Studio app
+Piattaforma online per la cultura graffiti: mostre, writers, magazine e shop Ecwid.
 
-This contains everything you need to run your app locally.
+- **Prodotto:** [`PRD.md`](PRD.md) | **Specifica:** [`SPEC.md`](SPEC.md) | **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
+- **Deploy:** [`docs/DEPLOY.md`](docs/DEPLOY.md)
+- **Regole agente:** [`AGENTS.md`](AGENTS.md)
 
-View your app in AI Studio: https://ai.studio/apps/a2b09391-a17c-4730-a9b9-0ed2e7574168
+## Prerequisiti
 
-## Run Locally
+- Node.js 20+
+- Account Firebase (progetto `gen-lang-client-0591253558`)
 
-**Prerequisites:**  Node.js
+## Setup locale
 
+```bash
+git clone https://github.com/claudiobrignole/TagTales.git
+cd TagTales
+npm install
+cp .env.example .env   # compila le chiavi
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Variabili essenziali (`.env`)
+
+Vedi [`.env.example`](.env.example) e [`docs/DEPLOY.md`](docs/DEPLOY.md) per l'elenco completo.
+
+### Login admin in sviluppo
+
+Google OAuth su localhost è fragile. Usa il bypass dev:
+
+1. Scarica la service account JSON da Firebase Console → Impostazioni → Account di servizio
+2. Salvala come `serviceAccountKey.json` nella root (gitignored)
+3. `npm run dev` — verifica log: `Firebase Admin inizializzato`
+4. Apri http://localhost:3000/login → **Dev: accedi come admin**
+
+Alternativa: `FIREBASE_SERVICE_ACCOUNT_BASE64` in `.env` (come in produzione).
+
+## Comandi
+
+| Comando | Descrizione |
+|---------|-------------|
+| `npm run dev` | Server dev su http://localhost:3000 |
+| `npm run lint` | Typecheck TypeScript |
+| `npm test` | Test automatici (Vitest) |
+| `npm run build` | Build frontend + `dist/server.js` |
+| `npm start` | Produzione: `node dist/server.js` |
+
+## Verifica
+
+```bash
+npm run lint && npm test && npm run build
+```
+
+## Cursor
+
+Struttura vibe coding in [`.cursor/`](.cursor/): rules, commands (`/commit-push`, `/verify-local`), agents.
+
+## Produzione
+
+Hostinger → entry `dist/server.js`. Env vars documentate in [`docs/DEPLOY.md`](docs/DEPLOY.md).

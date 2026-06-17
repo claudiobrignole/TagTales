@@ -1,0 +1,22 @@
+---
+description: Git, verifica pre-commit, sessioni Cursor
+alwaysApply: true
+---
+
+## Git
+- Branch: `main` (push diretto, no PR obbligatoria)
+- Commit: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
+- Commit solo su richiesta esplicita dell'utente
+
+## Verifica prima di considerare un task fatto
+```bash
+npm run lint && npm test && npm run build
+```
+
+## Cursor
+- Compiti multi-file: usa modalità Piano prima di implementare
+- Dopo 2 tentativi falliti sullo stesso bug: nuova sessione con prompt più preciso
+- Roadmap: aggiorna ROADMAP.md solo se task testato nella sessione
+
+## Non modificare mai
+- Script `build` / `start` in package.json (entry `dist/server.js`)

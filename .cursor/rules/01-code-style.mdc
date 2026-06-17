@@ -1,0 +1,20 @@
+---
+description: Typography, layout, rich text — TagTales
+alwaysApply: true
+---
+
+## Typography
+- Titoli: font Shamgod, **MAIUSCOLO**, `leading-[0.8]` o `leading-none`
+- Body: Karla. Bottoni/label: Karla Bold uppercase
+
+## Layout
+- Pagine pubbliche: sempre `PublicLayout` (Header + Footer)
+- Image radius: `IMAGE_RADIUS` da `src/constants/theme.ts`
+
+## Rich text (obbligatorio)
+1. HTML da DB → sempre `cleanHtml()` prima di `dangerouslySetInnerHTML`
+2. Wrapper prose: className esatta in AGENTS.md Regola 2 (golden wrapper)
+3. Vietati hack CSS su word-break / sillabazione
+4. Contenitori flex/grid attorno a testo: `min-w-0`
+
+Dettaglio completo: @AGENTS.md
