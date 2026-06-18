@@ -33,6 +33,8 @@ import MultiImageUpload from "../components/MultiImageUpload";
 import AdminExhibitionBlocksEditor from "../components/AdminExhibitionBlocksEditor";
 import { translateDirtyFields, translateText } from "../utils/translate";
 import { generateSlug } from "../utils/slugify";
+import { generatePreviewToken } from "../utils/previewAccess";
+import PreviewLinkPanel from "../components/PreviewLinkPanel";
 
 import { useTranslation } from "react-i18next";
 
@@ -59,6 +61,7 @@ export default function AdminExhibitions() {
     published: false,
     featured: false,
     artistaIds: [] as string[],
+    previewToken: "",
   });
 
   const fetchData = async () => {
@@ -131,6 +134,7 @@ export default function AdminExhibitions() {
         published: exhibition.published || false,
         featured: exhibition.featured || false,
         artistaIds: exhibition.artistaIds || [],
+        previewToken: exhibition.previewToken || generatePreviewToken(),
       });
     } else {
       setEditingId(null);
@@ -148,6 +152,7 @@ export default function AdminExhibitions() {
         published: false,
         featured: false,
         artistaIds: [],
+        previewToken: generatePreviewToken(),
       });
     }
     setIsModalOpen(true);
@@ -213,6 +218,7 @@ export default function AdminExhibitions() {
         ...translatedData,
         slug_en: formData.slug_en || formData.slug,
         blocks: translatedBlocks,
+        previewToken: formData.previewToken || generatePreviewToken(),
         updatedAt: new Date().toISOString(),
       }));
 
@@ -221,6 +227,8 @@ export default function AdminExhibitions() {
       } else {
         await addDoc(collection(db, "mostre"), {
           ...payload,
+          previewToken: formData.previewToken || generatePreviewToken(),
+          previewTokenCreatedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         });
       }
@@ -416,7 +424,7 @@ export default function AdminExhibitions() {
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
-                    {exhibition.published ? t('adminExhibitions.statusPublished', "Pubblicata") : t('adminExhibitions.statusDraft', "Bozza")}
+                    {exhibition.published ? t('adminExhibitions.statusPublished', "Pubblicata") : "Solo link anteprima"}
                   </span>
                   {exhibition.featured && (
                     <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
@@ -687,7 +695,20 @@ export default function AdminExhibitions() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 pt-4 border-t border-[#EAE3D9]">
+                <div className="flex flex-col gap-6 pt-4 border-t border-[#EAE3D9]">
+                  <PreviewLinkPanel
+                    type="exhibition"
+                    slug={formData.slug}
+                    previewToken={formData.previewToken}
+                    published={formData.published}
+                    onRegenerateToken={(newToken) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        previewToken: newToken,
+                      }))
+                    }
+                  />
+                  <div className="flex items-center gap-6 flex-wrap">
                   <div className="flex items-center gap-3">
                     <input
                       id="publishedExhibition"
@@ -727,6 +748,7 @@ export default function AdminExhibitions() {
                     >
                       In Evidenza (Home Page)
                     </label>
+                  </div>
                   </div>
                 </div>
 

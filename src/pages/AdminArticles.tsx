@@ -29,6 +29,8 @@ import { translateDirtyFields } from "../utils/translate";
 import { useI18n } from '../contexts/I18nContext';
 
 import { generateSlug } from "../utils/slugify";
+import { generatePreviewToken } from "../utils/previewAccess";
+import PreviewLinkPanel from "../components/PreviewLinkPanel";
 
 export default function AdminArticles() {
   const { t } = useI18n();
@@ -52,6 +54,7 @@ export default function AdminArticles() {
     videoEmbeds: [] as string[],
     published: false,
     tag: [] as string[],
+    previewToken: "",
   });
 
   const fetchArticles = async () => {
@@ -115,6 +118,7 @@ export default function AdminArticles() {
         videoEmbeds: article.videoEmbeds || [],
         published: article.published || false,
         tag: article.tag || [],
+        previewToken: article.previewToken || generatePreviewToken(),
       });
     } else {
       setEditingId(null);
@@ -131,6 +135,7 @@ export default function AdminArticles() {
         videoEmbeds: [] as string[],
         published: false,
         tag: [],
+        previewToken: generatePreviewToken(),
       });
     }
     setTagInput("");
@@ -199,6 +204,7 @@ export default function AdminArticles() {
       const payload = {
         ...translatedData,
         slug_en: formData.slug_en || formData.slug,
+        previewToken: formData.previewToken || generatePreviewToken(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -207,6 +213,7 @@ export default function AdminArticles() {
       } else {
         await addDoc(collection(db, "articoli"), {
           ...payload,
+          previewTokenCreatedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         });
       }
@@ -379,7 +386,7 @@ export default function AdminArticles() {
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
-                    {article.published ? t('adminArticles.statusPublished', "Pubblicato") : t('adminArticles.statusDraft', "Bozza")}
+                    {article.published ? t('adminArticles.statusPublished', "Pubblicato") : "Solo link anteprima"}
                   </span>
                 </div>
                 <h3 className="font-bold text-lg text-[#121212] font-['Shamgod'] uppercase tracking-wider mb-1 leading-tight truncate">
@@ -719,7 +726,17 @@ export default function AdminArticles() {
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-6 pt-4 border-t border-[#EAE3D9]">
+                <div className="flex flex-col gap-6 pt-4 border-t border-[#EAE3D9]">
+                  <PreviewLinkPanel
+                    type="article"
+                    slug={formData.slug}
+                    previewToken={formData.previewToken}
+                    published={formData.published}
+                    onRegenerateToken={(newToken) =>
+                      setFormData((prev) => ({ ...prev, previewToken: newToken }))
+                    }
+                  />
+                <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex items-center gap-3">
                     <input
                       id="publishedArticle"
@@ -740,6 +757,7 @@ export default function AdminArticles() {
                       Pubblica Online
                     </label>
                   </div>
+                </div>
                 </div>
 
                 <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-[#F2EEE8] pb-6">

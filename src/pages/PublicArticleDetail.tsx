@@ -1,101 +1,93 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import VideoEmbed from "../components/VideoEmbed";
 import DOMPurify from "dompurify";
 import { getLocalizedField } from "../utils/localization";
 import { cleanHtml } from "../utils/cleanHtml";
 import { trackViewArtwork } from "../utils/analytics";
+import { fetchPreviewableContent } from "../utils/fetchPreviewableContent";
+import { useIsAdmin } from "../hooks/useIsAdmin";
+import { PREVIEW_QUERY_PARAM } from "../utils/previewAccess";
 
 import clsx from "clsx";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import PreviewBanner from "../components/PreviewBanner";
 import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
 
 export default function PublicArticleDetail() {
   const { slug } = useParams();
-  const { t, i18n } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const previewToken = searchParams.get(PREVIEW_QUERY_PARAM);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const { t } = useTranslation();
   const { language: lang } = useI18n();
 
   const [rawData, setRawData] = useState<any>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchArticle = async () => {
+      if (!slug || adminLoading) return;
+      setLoading(true);
       try {
-        if (!slug) return;
-        
-        let articleDoc: any = null;
-        
-        // 1. Se lingua EN, cerca prima per slug_en
-        if (lang === 'EN') {
-          const qEn = query(collection(db, "articoli"), where("slug_en", "==", slug), limit(1));
-          const snapEn = await getDocs(qEn);
-          if (!snapEn.empty) {
-            articleDoc = snapEn.docs[0];
-          }
+        const result = await fetchPreviewableContent<any>("article", slug, {
+          previewToken,
+          isAdmin,
+        });
+
+        if (result.accessDenied || !result.data) {
+          setRawData(null);
+          setRelatedArticles([]);
+          return;
         }
 
-        // 2. Fallback: cerca per slug italiano
-        if (!articleDoc) {
-          const q = query(collection(db, "articoli"), where("slug", "==", slug), limit(1));
-          const slugSnap = await getDocs(q);
-          if (!slugSnap.empty) {
-            articleDoc = slugSnap.docs[0];
-          }
+        const data = result.data;
+        setRawData(data);
+        setIsPreviewMode(result.isPreviewMode);
+        trackViewArtwork(data.id);
+        if (typeof (window as any).fbq === "function") {
+          (window as any).fbq("track", "ViewContent", {
+            content_type: "article",
+            content_ids: [data.id],
+          });
         }
 
-        // 3. Ultimo fallback: cerca per ID diretto
-        if (!articleDoc) {
-          const docRef = doc(db, "articoli", slug);
-          const idSnap = await getDoc(docRef);
-          if (idSnap.exists()) articleDoc = idSnap;
-        }
+        const snapshotArticles = await getDocs(collection(db, "articoli"));
+        let articlesData = snapshotArticles.docs
+          .map((docSnap) => {
+            const docData = docSnap.data();
+            return {
+              id: docSnap.id,
+              ...docData,
+              img: docData.immagineCopertina || docData.coverImageUrl,
+              title: docData.titolo || docData.title,
+              tag: docData.tag?.[0] || docData.tags?.[0] || "ARTICOLO",
+            };
+          })
+          .filter((a: any) => a.published !== false && a.isPublished !== false)
+          .filter((a) => a.id !== data.id) as any[];
 
-        if (articleDoc) {
-          const data = { id: articleDoc.id, ...articleDoc.data() as any };
-          setRawData(data);
-          trackViewArtwork(articleDoc.id);
-          if (typeof (window as any).fbq === 'function') {
-            (window as any).fbq('track', 'ViewContent', { content_type: 'article', content_ids: [articleDoc.id] });
-          }
-
-          // Fetch related articles
-          const isPublished = (d: any) => d.published !== false && d.isPublished !== false;
-          const snapshotArticles = await getDocs(collection(db, "articoli"));
-          let articlesData = snapshotArticles.docs
-            .map((doc) => {
-              const docData = doc.data();
-              return {
-                id: doc.id,
-                ...docData,
-                img: docData.immagineCopertina || docData.coverImageUrl,
-                title: docData.titolo || docData.title,
-                tag: docData.tag?.[0] || docData.tags?.[0] || "ARTICOLO",
-              };
-            })
-            .filter(isPublished)
-            .filter((a) => a.id !== articleDoc.id) as any[];
-
-          // Shuffle and pick 2
-          articlesData = articlesData.sort(() => 0.5 - Math.random());
-          setRelatedArticles(articlesData.slice(0, 2));
-        }
+        articlesData = articlesData.sort(() => 0.5 - Math.random());
+        setRelatedArticles(articlesData.slice(0, 2));
       } catch (error) {
         console.error("Error fetching article:", error);
+        setRawData(null);
       } finally {
         setLoading(false);
       }
     };
     fetchArticle();
-  }, [slug, lang]);
+  }, [slug, lang, previewToken, isAdmin, adminLoading]);
 
   const article = rawData ? {
     ...rawData,
@@ -107,7 +99,7 @@ export default function PublicArticleDetail() {
 
   const coverImage = article ? (article.immagineCopertina || article.coverImageUrl) : null;
 
-  if (loading) {
+  if (loading || adminLoading) {
     return (
       <PublicLayout>
         <div className="flex items-center justify-center py-32">
@@ -141,10 +133,12 @@ export default function PublicArticleDetail() {
         <SEO 
           title={getLocalizedField(article, 'titolo', lang) || article.titolo} 
           description={getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo} 
-          image={coverImage} 
+          image={coverImage}
           article={true}
+          noIndex={isPreviewMode}
         />
       )}
+      {isPreviewMode && <PreviewBanner />}
       <div className="pb-32">
         <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
           {coverImage && coverImage.trim() !== "" && (

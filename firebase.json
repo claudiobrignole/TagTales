@@ -2,5 +2,14 @@
   "functions": {
     "source": "functions",
     "runtime": "nodejs22"
+  },
+  "firestore": [
+    {
+      "database": "ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168",
+      "rules": "firestore.rules"
+    }
+  ],
+  "storage": {
+    "rules": "storage.rules"
   }
 }

@@ -8,6 +8,8 @@ import nodemailer from "nodemailer";
 import compression from "compression";
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { isLocalDevRequest } from "./src/utils/isLocalDevRequest.ts";
+import { fetchPreviewDocument, fetchPublishedSlugs, getAdminFirestore } from "./src/utils/previewServer.ts";
 
 dotenv.config();
 
@@ -130,11 +132,6 @@ async function sendEmailThroughSmtpOrService(to: string, subject: string, html: 
   throw new Error("No mail service configured on backend. Please configure either SMTP_HOST/SMTP_USER/SMTP_PASS or RESEND_API_KEY.");
 }
 
-function isLocalDevRequest(req: { get: (name: string) => string | undefined }): boolean {
-  const host = (req.get("host") || "").toLowerCase();
-  return host.startsWith("localhost:") || host.startsWith("127.0.0.1:");
-}
-
 let firebaseAdminInitError: string | null = null;
 
 function initFirebaseAdmin(): boolean {
@@ -192,6 +189,35 @@ async function getFirebaseAdminAuth() {
   return getAuth(getApp());
 }
 
+function getPreviewFirestore() {
+  if (!getApps().length && !initFirebaseAdmin()) {
+    throw new Error(firebaseAdminInitError || "Firebase Admin non inizializzato");
+  }
+  const { databaseId } = getFirebaseConfig();
+  return getAdminFirestore(databaseId);
+}
+
+function registerPreviewRoute(
+  app: express.Application,
+  pathSegment: "exhibition" | "writer" | "article",
+  collectionName: "mostre" | "scrittori" | "articoli",
+) {
+  app.get(`/api/preview/${pathSegment}/:slug`, async (req, res) => {
+    try {
+      const token = typeof req.query.token === "string" ? req.query.token : undefined;
+      const db = getPreviewFirestore();
+      const payload = await fetchPreviewDocument(db, collectionName, req.params.slug, token);
+      if (!payload) {
+        return res.status(404).json({ error: "Not found" });
+      }
+      res.json(payload);
+    } catch (error: any) {
+      console.error(`Preview ${pathSegment} error:`, error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+}
+
 async function startServer() {
   initFirebaseAdmin();
 
@@ -207,6 +233,10 @@ async function startServer() {
       ecwidStoreId: process.env.ECWID_STORE_ID || "",
     });
   });
+
+  registerPreviewRoute(app, "exhibition", "mostre");
+  registerPreviewRoute(app, "writer", "scrittori");
+  registerPreviewRoute(app, "article", "articoli");
 
   // Dev-only: mint a Firebase custom token for the super-admin (localhost only).
   app.post("/api/dev/admin-login", async (req, res) => {
@@ -912,32 +942,25 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
 
   app.get("/sitemap.xml", async (req, res) => {
     try {
-      const firebaseConfig = getFirebaseConfig();
-      const projectId = firebaseConfig.projectId;
-      const databaseId = firebaseConfig.databaseId;
       const baseUrl = "https://tagtalesgallery.com";
-      
-      const fetchIds = async (collection: string) => {
-        const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/${collection}?pageSize=1000`;
-        try {
-          const response = await fetch(url);
-          if (!response.ok) return [];
-          const data = await response.json();
-          return (data.documents || []).map((doc: any) => {
-            const parts = doc.name.split('/');
-            return parts[parts.length - 1];
-          });
-        } catch {
-          return [];
-        }
-      };
 
-      const [writers, exhibitions, articles, pages] = await Promise.all([
-        fetchIds("scrittori"),
-        fetchIds("mostre"),
-        fetchIds("articoli"),
-        fetchIds("pagine"),
-      ]);
+      let writers: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let exhibitions: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let articles: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let pages: string[] = [];
+
+      try {
+        const db = getPreviewFirestore();
+        [writers, exhibitions, articles] = await Promise.all([
+          fetchPublishedSlugs(db, "scrittori"),
+          fetchPublishedSlugs(db, "mostre"),
+          fetchPublishedSlugs(db, "articoli"),
+        ]);
+        const pagesSnap = await db.collection("pagine").where("published", "==", true).get();
+        pages = pagesSnap.docs.map((docSnap) => docSnap.id);
+      } catch (err) {
+        console.warn("Sitemap: Firebase Admin unavailable, dynamic URLs omitted.", err);
+      }
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
 
@@ -973,10 +996,22 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
       addUrl("/cookies", "/en/cookies", "0.5", "monthly");
       addUrl("/assistance", "/en/assistance", "0.5", "monthly");
 
-      // Dynamic routes
-      writers.forEach((id: string) => addUrl(`/writer/${id}`, `/en/writer/${id}`, "0.8"));
-      exhibitions.forEach((id: string) => addUrl(`/exhibition/${id}`, `/en/exhibition/${id}`, "0.8"));
-      articles.forEach((id: string) => addUrl(`/magazine/${id}`, `/en/magazine/${id}`, "0.8"));
+      // Dynamic routes (published only)
+      writers.forEach((item) => {
+        const slug = item.slug || item.id;
+        const slugEn = item.slug_en || slug;
+        addUrl(`/writers/${slug}`, `/en/writers/${slugEn}`, "0.8");
+      });
+      exhibitions.forEach((item) => {
+        const slug = item.slug || item.id;
+        const slugEn = item.slug_en || slug;
+        addUrl(`/exhibitions/${slug}`, `/en/exhibitions/${slugEn}`, "0.8");
+      });
+      articles.forEach((item) => {
+        const slug = item.slug || item.id;
+        const slugEn = item.slug_en || slug;
+        addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8");
+      });
       pages.forEach((id: string) => addUrl(`/page/${id}`, `/en/page/${id}`, "0.7"));
 
       xml += `</urlset>`;

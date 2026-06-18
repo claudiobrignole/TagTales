@@ -1,70 +1,78 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
-import { Film, Mail } from "lucide-react";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { Mail } from "lucide-react";
 import { getLocalizedField } from "../utils/localization";
 import VideoEmbed from "../components/VideoEmbed";
 import { cleanHtml } from "../utils/cleanHtml";
 import { trackViewArtist } from "../utils/analytics";
+import { fetchPreviewableContent } from "../utils/fetchPreviewableContent";
+import { useIsAdmin } from "../hooks/useIsAdmin";
+import { PREVIEW_QUERY_PARAM, appendPreviewToLink, isPublished } from "../utils/previewAccess";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
 
 export default function PublicWriterDetail() {
   const { slug } = useParams();
-  const { t, i18n } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const previewToken = searchParams.get(PREVIEW_QUERY_PARAM);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const { t } = useTranslation();
   const { language: lang } = useI18n();
 
   const [rawWriterData, setRawWriterData] = useState<any>(null);
   const [exhibitions, setExhibitions] = useState<any[]>([]);
   const [ecwidProducts, setEcwidProducts] = useState<any[]>([]);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchWriterData = async () => {
+      if (!slug || adminLoading) return;
+      setLoading(true);
       try {
-        if (!slug) return;
-        
-        let docSnap: any = null;
-        
-        // 1. Prova a cercare per slug
-        const q = query(collection(db, "scrittori"), where("slug", "==", slug), limit(1));
-        const slugSnap = await getDocs(q);
-        
-        if (!slugSnap.empty) {
-          docSnap = slugSnap.docs[0];
-        } else {
-          // 2. Fallback all'ID diretto
-          const docRef = doc(db, "scrittori", slug);
-          const idSnap = await getDoc(docRef);
-          if (idSnap.exists()) {
-            docSnap = idSnap;
-          }
-        }
-        
-        if (docSnap) {
-          const data = docSnap.data();
-          setRawWriterData({ id: docSnap.id, ...data });
-          trackViewArtist(docSnap.id);
-          if (typeof (window as any).fbq === 'function') {
-            (window as any).fbq('track', 'ViewContent', { content_type: 'writer', content_ids: [docSnap.id] });
-          }
+        const result = await fetchPreviewableContent<any>("writer", slug, {
+          previewToken,
+          isAdmin,
+        });
 
-          // Fetch exhibitions where writer is participant
-          const exhibitionsSnap = await getDocs(collection(db, "mostre"));
-          const exhibitionsData = exhibitionsSnap.docs
-            .map(eDoc => ({ id: eDoc.id, ...eDoc.data() }))
-            .filter((ex: any) => 
-              (ex.artistaIds?.includes(docSnap.id) || ex.artistaPrincipaleId === docSnap.id || ex.writerIds?.includes(docSnap.id)) && 
-              ex.published !== false && ex.isPublished !== false
-            );
-          setExhibitions(exhibitionsData);
+        if (result.accessDenied || !result.data) {
+          setRawWriterData(null);
+          setExhibitions([]);
+          setEcwidProducts([]);
+          return;
+        }
+
+        const data = result.data;
+        setRawWriterData(data);
+        setIsPreviewMode(result.isPreviewMode);
+        trackViewArtist(data.id);
+        if (typeof (window as any).fbq === "function") {
+          (window as any).fbq("track", "ViewContent", {
+            content_type: "writer",
+            content_ids: [data.id],
+          });
+        }
+
+        const exhibitionsSnap = await getDocs(collection(db, "mostre"));
+        const exhibitionsData = exhibitionsSnap.docs
+          .map((eDoc) => ({ id: eDoc.id, ...eDoc.data() }))
+          .filter(
+            (ex: any) =>
+              (ex.artistaIds?.includes(data.id) ||
+                ex.artistaPrincipaleId === data.id ||
+                ex.writerIds?.includes(data.id)) &&
+              isPublished(ex),
+          );
+        setExhibitions(exhibitionsData);
 
           // Fetch ecwid products if assigned
           let userEcwidProductIds: any[] = data.ecwidProductIds || [];
@@ -122,15 +130,15 @@ export default function PublicWriterDetail() {
           } else {
             console.log("No ecwid product IDs assigned to this writer.");
           }
-        }
       } catch (error) {
         console.error("Error fetching writer details:", error);
+        setRawWriterData(null);
       } finally {
         setLoading(false);
       }
     };
     fetchWriterData();
-  }, [slug]);
+  }, [slug, previewToken, isAdmin, adminLoading]);
 
   const writer = rawWriterData ? {
     ...rawWriterData,
@@ -142,7 +150,7 @@ export default function PublicWriterDetail() {
     bioBreve: getLocalizedField(rawWriterData, 'bioBreve', lang) || getLocalizedField(rawWriterData, 'bio', lang) || ""
   } : null;
 
-  if (loading) {
+  if (loading || adminLoading) {
     return (
       <PublicLayout>
         <div className="flex items-center justify-center py-32">
@@ -176,9 +184,11 @@ export default function PublicWriterDetail() {
         <SEO 
           title={writer.nickname || getLocalizedField(writer, 'nomeDarte', lang)} 
           description={getLocalizedField(writer, 'bioBreve', lang) || writer.bioBreve || getLocalizedField(writer, 'bioStrada', lang) || writer.bioStrada} 
-          image={writer.fotoProfilo || writer.fotoStrada} 
+          image={writer.fotoProfilo || writer.fotoStrada}
+          noIndex={isPreviewMode}
         />
       )}
+      {isPreviewMode && <PreviewBanner />}
       
       {/* Maximum Title Banner / Hero Section */}
       <div className="relative w-full h-[30vh] md:h-[40vh] min-h-[300px] flex flex-col items-center justify-center bg-[#121212] overflow-hidden -mt-[65px] lg:-mt-[75px] pt-[65px] lg:pt-[75px]">
@@ -277,7 +287,7 @@ export default function PublicWriterDetail() {
                 {exhibitions.map((ex) => (
                   <Link
                     key={ex.id}
-                    to={`/exhibitions/${ex.slug || ex.id}`}
+                    to={appendPreviewToLink(`/exhibitions/${ex.slug || ex.id}`, previewToken)}
                     className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group"
                   >
                     <div className="aspect-video bg-[#F2EEE8] relative overflow-hidden">

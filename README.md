@@ -41,7 +41,9 @@ Alternativa: `FIREBASE_SERVICE_ACCOUNT_BASE64` in `.env` (come in produzione).
 |---------|-------------|
 | `npm run dev` | Server dev su http://localhost:3000 |
 | `npm run lint` | Typecheck TypeScript |
-| `npm test` | Test automatici (Vitest) |
+| `npm test` | Test unitari (Vitest) |
+| `npm run test:e2e` | Test end-to-end (Playwright) |
+| `npm run test:all` | lint + Vitest + Playwright |
 | `npm run build` | Build frontend + `dist/server.js` |
 | `npm start` | Produzione: `node dist/server.js` |
 
@@ -49,7 +51,12 @@ Alternativa: `FIREBASE_SERVICE_ACCOUNT_BASE64` in `.env` (come in produzione).
 
 ```bash
 npm run lint && npm test && npm run build
+npm run test:e2e          # richiede .env + serviceAccountKey.json per test admin
+npm run test:all          # lint + unit + e2e
 ```
+
+Playwright avvia automaticamente `npm run dev` se il server non è già in ascolto su `:3000`.
+Per inviare email reali nei test E2E: `E2E_SEND_EMAIL=1 npm run test:e2e`.
 
 ## Cursor
 

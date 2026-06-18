@@ -86,8 +86,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    function isPublishedContent() {
+      return !('published' in resource.data) || resource.data.published == true;
+    }
+
     match /scrittori/{scrittoreId} {
-      allow read: if true;
+      allow read: if isPublishedContent() || isAdmin();
       allow create: if isAdmin();
       allow update: if isAdmin() || (isArtist() && getArtistId() == scrittoreId);
       allow delete: if isAdmin();
@@ -101,12 +105,12 @@ service cloud.firestore {
     }
 
     match /mostre/{mostraId} {
-      allow read: if true;
+      allow read: if isPublishedContent() || isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
     match /articoli/{articoloId} {
-      allow read: if true;
+      allow read: if isPublishedContent() || isAdmin();
       allow create, update, delete: if isAdmin();
     }
 

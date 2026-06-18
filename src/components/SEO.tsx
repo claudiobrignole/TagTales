@@ -7,9 +7,10 @@ interface SEOProps {
   description?: string;
   image?: string;
   article?: boolean;
+  noIndex?: boolean;
 }
 
-const SEO: React.FC<SEOProps> = ({ title, description, image, article }) => {
+const SEO: React.FC<SEOProps> = ({ title, description, image, article, noIndex }) => {
   const { t, i18n } = useTranslation();
   
   const siteName = 'Tag Tales';
@@ -35,6 +36,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, image, article }) => {
       <title>{seo.title}</title>
       <meta name="description" content={seo.description} />
       <meta name="image" content={seo.image} />
+      {noIndex && <meta name="robots" content="noindex, nofollow" />}
       
       <link rel="alternate" hrefLang="it" href={itUrl} />
       <link rel="alternate" hrefLang="en" href={enUrl} />

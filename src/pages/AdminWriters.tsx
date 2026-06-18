@@ -23,6 +23,8 @@ import ImageUpload from "../components/ImageUpload";
 import AdminExhibitionBlocksEditor from "../components/AdminExhibitionBlocksEditor";
 import { translateDirtyFields, translateText } from "../utils/translate";
 import { generateSlug } from "../utils/slugify";
+import { generatePreviewToken } from "../utils/previewAccess";
+import PreviewLinkPanel from "../components/PreviewLinkPanel";
 import { useI18n } from '../contexts/I18nContext';
 
 export default function AdminWriters() {
@@ -51,6 +53,7 @@ export default function AdminWriters() {
     uid: "",
     published: false,
     stato: "inattivo" as "attivo" | "inattivo",
+    previewToken: "",
   });
 
   const fetchWriters = async () => {
@@ -132,6 +135,7 @@ export default function AdminWriters() {
         uid: writer.uid || "",
         published: writer.published || false,
         stato: writer.stato || "inattivo",
+        previewToken: writer.previewToken || generatePreviewToken(),
       });
     } else {
       setEditingId(null);
@@ -151,6 +155,7 @@ export default function AdminWriters() {
         uid: "",
         published: false,
         stato: "inattivo",
+        previewToken: generatePreviewToken(),
       });
     }
     setIsModalOpen(true);
@@ -219,6 +224,7 @@ export default function AdminWriters() {
         blocks: translatedBlocks,
         uid: uidToSave,
         ecwidProductIds,
+        previewToken: formData.previewToken || generatePreviewToken(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -228,6 +234,7 @@ export default function AdminWriters() {
       } else {
         await addDoc(collection(db, "scrittori"), {
           ...payload,
+          previewTokenCreatedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         });
         alert(t('adminWriters.createdMsg', "Writer creato con successo!"));
@@ -397,7 +404,7 @@ export default function AdminWriters() {
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
-                    {writer.published ? t('adminWriters.statusPublished', "Pubblicato") : t('adminWriters.statusDraft', "Bozza")}
+                    {writer.published ? t('adminWriters.statusPublished', "Pubblicato") : "Solo link anteprima"}
                   </span>
                 </div>
               </div>
@@ -703,7 +710,17 @@ export default function AdminWriters() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 pt-4 border-t border-[#EAE3D9]">
+                <div className="flex flex-col gap-6 pt-4 border-t border-[#EAE3D9]">
+                  <PreviewLinkPanel
+                    type="writer"
+                    slug={formData.slug}
+                    previewToken={formData.previewToken}
+                    published={formData.published}
+                    onRegenerateToken={(newToken) =>
+                      setFormData((prev) => ({ ...prev, previewToken: newToken }))
+                    }
+                  />
+                <div className="grid grid-cols-2 gap-6">
                   <div className="flex items-center gap-3">
                     <input
                       id="published"
@@ -735,6 +752,7 @@ export default function AdminWriters() {
                       <option value="attivo">{t('adminWriters.active', 'Attivo')}</option>
                     </select>
                   </div>
+                </div>
                 </div>
 
                 <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-[#F2EEE8] pb-6">

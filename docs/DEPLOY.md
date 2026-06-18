@@ -53,6 +53,16 @@ Configurate in produzione (valori reali **solo** nel pannello Hostinger, mai in 
 - Project ID: `gen-lang-client-0591253558`
 - Firestore database ID: `ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168`
 
+### Regole Firestore (anteprima privata)
+
+Dopo modifiche a `firestore.rules`, deploy:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Il database Firestore non è quello default: è configurato in `firebase.json` con ID `ai-studio-a2b09391-a17c-4730-a9b9-0ed2e7574168`. Il progetto Firebase è `gen-lang-client-0591253558` (`.firebaserc`).
+
 ## Checklist post-deploy
 
 1. Homepage risponde 200

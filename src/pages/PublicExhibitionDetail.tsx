@@ -1,89 +1,91 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
-import { Film } from "lucide-react";
+import { collection, getDocs } from "firebase/firestore";
 import EcwidBuyButton from "../components/EcwidBuyButton";
-import VideoEmbed from "../components/VideoEmbed";
 import { getLocalizedField } from "../utils/localization";
-import { cleanHtml } from "../utils/cleanHtml";
 import { trackViewArtwork } from "../utils/analytics";
+import { fetchPreviewableContent } from "../utils/fetchPreviewableContent";
+import { useIsAdmin } from "../hooks/useIsAdmin";
+import { PREVIEW_QUERY_PARAM, appendPreviewToLink } from "../utils/previewAccess";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
 
 export default function PublicExhibitionDetail() {
   const { slug } = useParams();
-  const { t, i18n } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const previewToken = searchParams.get(PREVIEW_QUERY_PARAM);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const { t } = useTranslation();
   const { language: lang } = useI18n();
 
   const [rawExhibitionData, setRawExhibitionData] = useState<any>(null);
   const [artworks, setArtworks] = useState<any[]>([]);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchExhibitionAndArtworks = async () => {
+      if (!slug || adminLoading) return;
+      setLoading(true);
       try {
-        if (!slug) return;
-        
-        let docSnap: any = null;
-        
-        // 1. Cerca per slug o slug_en
-        const q = query(collection(db, "mostre"), where("slug", "==", slug), limit(1));
-        const qEn = query(collection(db, "mostre"), where("slug_en", "==", slug), limit(1));
-        
-        const [snap, snapEn] = await Promise.all([getDocs(q), getDocs(qEn)]);
-        
-        if (!snap.empty) {
-          docSnap = snap.docs[0];
-        } else if (!snapEn.empty) {
-          docSnap = snapEn.docs[0];
+        const result = await fetchPreviewableContent<any>("exhibition", slug, {
+          previewToken,
+          isAdmin,
+        });
+
+        if (result.accessDenied || !result.data) {
+          setRawExhibitionData(null);
+          setArtworks([]);
+          return;
         }
 
-        // 2. Ultimo fallback: cerca per ID diretto
-        if (!docSnap) {
-          const docRef = doc(db, "mostre", slug);
-          const idSnap = await getDoc(docRef);
-          if (idSnap.exists()) docSnap = idSnap;
+        const exDataRaw = result.data;
+        setRawExhibitionData(exDataRaw);
+        setIsPreviewMode(result.isPreviewMode);
+        trackViewArtwork(exDataRaw.id);
+        if (typeof (window as any).fbq === "function") {
+          (window as any).fbq("track", "ViewContent", {
+            content_type: "exhibition",
+            content_ids: [exDataRaw.id],
+          });
         }
-        
-        if (docSnap) {
-          const data = docSnap.data() as any;
-          const exDataRaw = { id: docSnap.id, ...data };
-          setRawExhibitionData(exDataRaw);
-          trackViewArtwork(docSnap.id);
-          if (typeof (window as any).fbq === 'function') {
-            (window as any).fbq('track', 'ViewContent', { content_type: 'exhibition', content_ids: [docSnap.id] });
-          }
 
-          const artistIds = exDataRaw.artistaIds || exDataRaw.writerIds || (exDataRaw.artistaPrincipaleId ? [exDataRaw.artistaPrincipaleId] : []);
+        const artistIds =
+          exDataRaw.artistaIds ||
+          exDataRaw.writerIds ||
+          (exDataRaw.artistaPrincipaleId ? [exDataRaw.artistaPrincipaleId] : []);
 
-          if (artistIds.length > 0) {
-            let allArtworks: any[] = [];
-            const artworksSnap = await getDocs(collection(db, "opere"));
-            const artworksData = artworksSnap.docs
-              .map(aDoc => ({ id: aDoc.id, ...aDoc.data() }))
-              .filter((a: any) => 
-                artistIds.includes(a.artistaId) && 
-                a.published !== false && 
-                a.isPublished !== false
-              );
-            setArtworks(artworksData);
-          }
+        if (artistIds.length > 0) {
+          const artworksSnap = await getDocs(collection(db, "opere"));
+          const artworksData = artworksSnap.docs
+            .map((aDoc) => ({ id: aDoc.id, ...aDoc.data() }))
+            .filter(
+              (a: any) =>
+                artistIds.includes(a.artistaId) &&
+                a.published !== false &&
+                a.isPublished !== false,
+            );
+          setArtworks(artworksData);
+        } else {
+          setArtworks([]);
         }
       } catch (error) {
         console.error("Error fetching exhibition details:", error);
+        setRawExhibitionData(null);
       } finally {
         setLoading(false);
       }
     };
     fetchExhibitionAndArtworks();
-  }, [slug, lang]);
+  }, [slug, lang, previewToken, isAdmin, adminLoading]);
 
   const exhibition = rawExhibitionData ? {
     ...rawExhibitionData,
@@ -103,7 +105,7 @@ export default function PublicExhibitionDetail() {
     return !isNaN(parsed);
   };
 
-  if (loading) {
+  if (loading || adminLoading) {
     return (
       <PublicLayout>
         <div className="flex items-center justify-center py-32">
@@ -137,9 +139,11 @@ export default function PublicExhibitionDetail() {
         <SEO 
           title={getLocalizedField(exhibition, 'titolo', lang) || exhibition.titolo} 
           description={getLocalizedField(exhibition, 'intro', lang) || exhibition.intro || getLocalizedField(exhibition, 'testoCuratela', lang) || exhibition.testoCuratela} 
-          image={exhibition.bannerHero} 
+          image={exhibition.bannerHero}
+          noIndex={isPreviewMode}
         />
       )}
+      {isPreviewMode && <PreviewBanner />}
       <div className="pb-[25px]">
         <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
           {exhibition.bannerHero && exhibition.bannerHero.trim() !== '' && (
@@ -269,7 +273,7 @@ export default function PublicExhibitionDetail() {
                       {exhibition.artistaIds.map((aId: string) => (
                         <Link
                           key={aId}
-                          to={`/writers/${aId}`}
+                          to={appendPreviewToLink(`/writers/${aId}`, previewToken)}
                           className="text-lg font-bold hover:text-[#FF4F00] transition-colors flex items-center gap-2"
                         >
                           &rarr; Profilo Writer

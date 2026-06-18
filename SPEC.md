@@ -118,14 +118,17 @@ Prima di ogni release:
 ```bash
 npm run lint      # tsc --noEmit
 npm test          # Vitest (utils critici)
+npm run test:e2e  # Playwright (vetrina, admin dev, API)
 npm run build     # build produzione
 ```
 
 Manuale (agent `verify-app`):
 1. Login dev admin → `/app/admin`
 2. Homepage → mostra → writer → magazine
-3. Invio form contatti / email test
-4. Logout → login writer test (se account disponibile)
+3. Creare mostra/writer/articolo con **Pubblica Online** disattivato → copiare link anteprima → verificare accesso con `?preview=TOKEN`
+4. Logout → slug senza token deve mostrare 404
+5. Invio form contatti / email test
+6. Logout → login writer test (se account disponibile)
 
 ---
 
