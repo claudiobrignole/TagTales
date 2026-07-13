@@ -125,9 +125,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   const actionBtnClass =
     "inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none";
   const soldBadgeClass =
-    "inline-flex bg-[#FF4F00] text-red-700 px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-['Karla'] font-bold tracking-widest text-[10px] md:text-sm shadow-none md:shadow-md pointer-events-none";
+    "inline-flex bg-[#FF4F00] text-white px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-['Karla'] font-bold tracking-widest text-[10px] md:text-sm shadow-none md:shadow-md pointer-events-none";
   const lightboxSoldBadgeClass =
-    "inline-flex bg-[#FF4F00] text-red-700 px-8 py-4 rounded-full uppercase font-['Karla'] font-bold tracking-widest text-sm shadow-lg pointer-events-none";
+    "inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-['Karla'] font-bold tracking-widest text-sm shadow-lg pointer-events-none";
   const lightboxActionBtnClass =
     "inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg";
 
