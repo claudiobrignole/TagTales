@@ -41,6 +41,14 @@ import { sendEmailNotification } from "../utils/emailService";
 import SEO from "../components/SEO";
 import VideoEmbed from "../components/VideoEmbed";
 import LazyImage from "../components/LazyImage";
+import {
+  FULL_PAGE_HERO_SHELL,
+  FullPageHeroBackground,
+  FullPageHeroOverlay,
+  FullPageHeroContent,
+  FullPageHeroCard,
+} from "../components/FullPageHero";
+import { isVideo } from "../utils/isVideo";
 
 interface Exhibition {
   id: string;
@@ -54,6 +62,7 @@ interface Exhibition {
   featured?: boolean;
   order?: number;
   published?: boolean;
+  tagImage?: string;
 }
 
 interface Writer {
@@ -290,7 +299,6 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
   );
 };
 
-const isVideo = (url?: string) => url ? url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null : false;
 
 export default function PublicHome() {
   const { t, i18n } = useTranslation();
@@ -409,7 +417,7 @@ export default function PublicHome() {
         return (
           <div
             key="hero"
-            className="relative h-[100svh] w-full overflow-hidden bg-[#121212] group"
+            className={clsx(FULL_PAGE_HERO_SHELL, "group")}
           >
             {featuredExhibitions.length > 0 ? (
               <AnimatePresence mode="wait">
@@ -423,39 +431,31 @@ export default function PublicHome() {
                 >
                   {featuredExhibitions[currentSlide] &&
                     (featuredExhibitions[currentSlide] as any).image && (
-                      isVideo((featuredExhibitions[currentSlide] as any).image) ? (
-                        <video
-                          src={(featuredExhibitions[currentSlide] as any).image}
-                          poster={(featuredExhibitions[currentSlide] as any).fallbackUrl}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover opacity-80"
-                        />
-                      ) : (
-                        <LazyImage
-                          src={(featuredExhibitions[currentSlide] as any).image}
-                          alt={featuredExhibitions[currentSlide].title}
-                          className="opacity-80"
-                          loading="eager"
-                          width={1920}
-                          height={1080}
-                          style={{ objectFit: "cover" }}
-                        />
-                      )
+                      <FullPageHeroBackground
+                        src={(featuredExhibitions[currentSlide] as any).image}
+                        fallback={(featuredExhibitions[currentSlide] as any).fallbackUrl}
+                        alt={featuredExhibitions[currentSlide].title}
+                      />
                     )}
-                  <div className="absolute top-[55%] md:top-1/2 -translate-y-1/2 left-0 w-full px-6 md:px-[25px] lg:px-20 text-white flex justify-center lg:justify-start">
-                    <motion.div
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="inline-block bg-[#121212]/60 backdrop-blur-md p-6 md:p-10 rounded-[32px] max-w-4xl text-left"
+                  <FullPageHeroOverlay />
+                  <FullPageHeroContent
+                    hasTagImage={Boolean(
+                      (featuredExhibitions[currentSlide] as any).tagImage?.trim?.(),
+                    )}
+                  >
+                    <FullPageHeroCard
+                      tagImage={(featuredExhibitions[currentSlide] as any).tagImage}
+                      tagAlt={
+                        getLocalizedField(featuredExhibitions[currentSlide], "preTitolo", lang) ||
+                        featuredExhibitions[currentSlide].preTitolo ||
+                        featuredExhibitions[currentSlide].owner ||
+                        "Tag"
+                      }
                     >
-                      <motion.p className="font-['Karla'] font-bold text-[clamp(16px,2.5vw,28px)] uppercase tracking-widest text-[#FF4F00] mb-2">
+                      <motion.p className="hero-pretitle mb-2">
                         {getLocalizedField(featuredExhibitions[currentSlide], "preTitolo", lang) || featuredExhibitions[currentSlide].preTitolo || featuredExhibitions[currentSlide].owner}
                       </motion.p>
-                      <motion.h1 className="heading-hero mb-2 md:mb-6 text-white leading-none uppercase">
+                      <motion.h1 className="heading-hero mb-2 text-white md:mb-6">
                         {getLocalizedField(
                           featuredExhibitions[currentSlide],
                           "titolo",
@@ -468,7 +468,7 @@ export default function PublicHome() {
                           ) ||
                           featuredExhibitions[currentSlide].title}
                       </motion.h1>
-                      <motion.p className="text-[clamp(16px,2.5vw,28px)] font-medium mb-6 md:mb-12 max-w-lg md:max-w-2xl leading-snug uppercase">
+                      <motion.p className="hero-subtitle mb-6 md:mb-12">
                         {getLocalizedField(
                           featuredExhibitions[currentSlide],
                           "intro",
@@ -484,31 +484,31 @@ export default function PublicHome() {
                       <motion.div className="flex flex-col items-start">
                         <Link
                           to={featuredExhibitions[currentSlide].link}
-                          className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
+                          className="btn-text inline-flex items-center gap-4 rounded-full bg-[#FF4F00] px-10 py-4 uppercase text-white shadow-lg shadow-[#FF4F00]/20 transition-colors hover:bg-white hover:text-[#121212]"
                         >
                           {t("home.visitExhibition", "VISITA LA MOSTRA")}
                           <ArrowRight size={24} />
                         </Link>
                       </motion.div>
-                    </motion.div>
-                  </div>
+                    </FullPageHeroCard>
+                  </FullPageHeroContent>
                 </motion.div>
               </AnimatePresence>
             ) : (
-              <div className="flex items-center justify-center h-full text-white">
+              <div className="flex h-full items-center justify-center text-white">
                 <p className="font-['Shamgod'] text-4xl">CARICAMENTO...</p>
               </div>
             )}
-            <div className="absolute bottom-10 right-10 flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-10 right-10 z-[3] flex gap-4 opacity-0 transition-opacity group-hover:opacity-100">
               <button
                 onClick={prevSlide}
-                className="p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-colors"
+                className="rounded-full bg-white/10 p-4 text-white backdrop-blur-md transition-colors hover:bg-white/20"
               >
                 <ChevronLeft size={24} />
               </button>
               <button
                 onClick={nextSlide}
-                className="p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-colors"
+                className="rounded-full bg-white/10 p-4 text-white backdrop-blur-md transition-colors hover:bg-white/20"
               >
                 <ChevronRight size={24} />
               </button>

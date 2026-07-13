@@ -18,6 +18,7 @@ import { getLocalizedField } from "../utils/localization";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
+import FullPageHero from "../components/FullPageHero";
 import LazyImage from "../components/LazyImage";
 
 interface Exhibition {
@@ -28,6 +29,7 @@ interface Exhibition {
   sottotitolo?: string;
   bannerHero?: string;
   bannerHeroFallback?: string;
+  tagImage?: string;
   dataApertura?: string;
   artistaIds?: string[];
   slug?: string;
@@ -277,97 +279,72 @@ export default function PublicExhibitions() {
             visibleExhibitions.map((ex, index) => {
               const titolo = getLocalizedField(ex, 'titolo', lang) || getLocalizedField(ex, 'title', lang) || "MOSTRA";
               return (
-              <div
+              <FullPageHero
                 key={ex.id}
-                className="relative h-[100svh] w-full overflow-hidden bg-[#121212]"
+                src={ex.bannerHero}
+                fallback={ex.bannerHeroFallback}
+                alt={titolo}
+                tagImage={ex.tagImage}
+                tagAlt={
+                  getLocalizedField(ex, "preTitolo", lang) ||
+                  ex.preTitolo ||
+                  ex.artistNames?.join(", ") ||
+                  "Tag"
+                }
               >
-                {ex.bannerHero && ex.bannerHero.trim() !== "" && (
-                  ex.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
-                    <video
-                      src={ex.bannerHero}
-                      poster={ex.bannerHeroFallback}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="absolute inset-0 w-full h-full object-cover opacity-80"
-                    />
-                  ) : (
-                    <LazyImage
-                      src={ex.bannerHero}
-                      alt={titolo}
-                      className="absolute inset-0 opacity-80"
-                    />
-                  )
-                )}
+                <motion.p
+                  initial={{ y: 12 }}
+                  animate={{ y: 0 }}
+                  transition={{ delay: 0.25 }}
+                  className="hero-pretitle mb-2"
+                >
+                  {getLocalizedField(ex, 'preTitolo', lang) || ex.preTitolo || ex.artistNames?.join(", ") || "MOSTRA"}
+                </motion.p>
+                <motion.h2
+                  initial={{ y: 12 }}
+                  animate={{ y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="heading-hero mb-2 text-white md:mb-6"
+                >
+                  {titolo}
+                </motion.h2>
+                <motion.p
+                  initial={{ y: 12 }}
+                  animate={{ y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="hero-subtitle mb-6 md:mb-12"
+                >
+                  {getLocalizedField(ex, 'intro', lang) || getLocalizedField(ex, 'sottotitolo', lang)}
+                </motion.p>
 
-                <div className="absolute top-[55%] md:top-1/2 -translate-y-1/2 left-0 w-full px-6 md:px-[25px] lg:px-20 text-white flex justify-center lg:justify-start mt-8 md:mt-0">
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="inline-block bg-[#121212]/60 backdrop-blur-md p-6 md:p-10 rounded-[32px] max-w-4xl text-left"
+                <motion.div
+                  initial={{ y: 12 }}
+                  animate={{ y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex flex-col items-start"
+                >
+                  <Link
+                    to={`${langPrefix}/exhibitions/${ex.slug || ex.id}`}
+                    className="btn-text inline-flex items-center gap-4 rounded-full bg-[#FF4F00] px-10 py-4 uppercase text-white transition-colors hover:bg-white hover:text-[#121212]"
                   >
-                    <motion.p
-                      initial={{ y: 20, opacity: 0 }}
-                      whileInView={{ y: 0, opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.25 }}
-                      className="font-['Karla'] font-bold text-[clamp(16px,2.5vw,28px)] uppercase tracking-widest text-[#FF4F00] mb-2"
+                    {t("home.visitExhibition", "VISITA LA MOSTRA")}
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-arrow-right"
                     >
-                      {getLocalizedField(ex, 'preTitolo', lang) || ex.preTitolo || ex.artistNames?.join(", ") || "MOSTRA"}
-                    </motion.p>
-                    <motion.h2
-                      initial={{ y: 20, opacity: 0 }}
-                      whileInView={{ y: 0, opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.3 }}
-                      className="heading-hero mb-2 md:mb-6 text-white leading-none uppercase"
-                    >
-                      {titolo}
-                    </motion.h2>
-                    <motion.p
-                      initial={{ y: 20, opacity: 0 }}
-                      whileInView={{ y: 0, opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.4 }}
-                      className="text-[clamp(16px,2.5vw,28px)] font-medium mb-6 md:mb-12 max-w-lg md:max-w-2xl leading-snug uppercase text-white/90"
-                    >
-                      {getLocalizedField(ex, 'intro', lang) || getLocalizedField(ex, 'sottotitolo', lang)}
-                    </motion.p>
-
-                    <motion.div
-                      initial={{ y: 20, opacity: 0 }}
-                      whileInView={{ y: 0, opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.5 }}
-                      className="flex flex-col items-start"
-                    >
-                      <Link
-                        to={`${langPrefix}/exhibitions/${ex.slug || ex.id}`}
-                        className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
-                      >
-                        {t("home.visitExhibition", "VISITA LA MOSTRA")}
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="lucide lucide-arrow-right"
-                        >
-                          <path d="M5 12h14" />
-                          <path d="m12 5 7 7-7 7" />
-                        </svg>
-                      </Link>
-                    </motion.div>
-                  </motion.div>
-                </div>
-              </div>
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </Link>
+                </motion.div>
+              </FullPageHero>
             )})
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px] md:gap-[25px] px-[25px]">

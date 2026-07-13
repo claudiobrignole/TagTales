@@ -17,6 +17,7 @@ import SEO from "../components/SEO";
 import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
+import FullPageHero from "../components/FullPageHero";
 
 export default function PublicExhibitionDetail() {
   const { slug } = useParams();
@@ -92,6 +93,7 @@ export default function PublicExhibitionDetail() {
     titolo: getLocalizedField(rawExhibitionData, 'titolo', lang) || getLocalizedField(rawExhibitionData, 'title', lang) || "MOSTRA",
     preTitolo: getLocalizedField(rawExhibitionData, 'preTitolo', lang) || rawExhibitionData.preTitolo,
     bannerHero: rawExhibitionData.bannerHero || rawExhibitionData.coverImageUrl,
+    tagImage: rawExhibitionData.tagImage || "",
     intro: getLocalizedField(rawExhibitionData, 'intro', lang) || getLocalizedField(rawExhibitionData, 'sottotitolo', lang) || getLocalizedField(rawExhibitionData, 'subtitle', lang) || "",
     testoCuratela: getLocalizedField(rawExhibitionData, 'testoCuratela', lang) || getLocalizedField(rawExhibitionData, 'descrizione', lang) || getLocalizedField(rawExhibitionData, 'description', lang) || ""
   } : null;
@@ -145,90 +147,56 @@ export default function PublicExhibitionDetail() {
       )}
       {isPreviewMode && <PreviewBanner />}
       <div className="pb-[25px]">
-        <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
-          {exhibition.bannerHero && exhibition.bannerHero.trim() !== '' && (
-            exhibition.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ? (
-              <video
-                src={exhibition.bannerHero}
-                poster={exhibition.bannerHeroFallback}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-80"
-              />
-            ) : (
-              <LazyImage
-                src={exhibition.bannerHero}
-                alt={exhibition.titolo}
-                className="opacity-80"
-                wrapperClassName="absolute inset-0 w-full h-full"
-                loading="eager"
-                width={1920}
-                height={1080}
-                style={{ objectFit: "cover" }}
-              />
-            )
-          )}
-
-          <Link
-            to="/exhibitions"
-            className="absolute top-[80px] md:top-[100px] left-6 md:left-[25px] lg:left-20 z-10 text-white hover:text-[#FF4F00] font-bold uppercase tracking-widest text-sm transition-colors"
+        <FullPageHero
+          src={exhibition.bannerHero}
+          fallback={exhibition.bannerHeroFallback}
+          alt={exhibition.titolo}
+          tagImage={exhibition.tagImage}
+          tagAlt={exhibition.preTitolo || exhibition.artistNames?.join(", ") || "Tag"}
+          backLink={{ to: "/exhibitions", label: t('nav.allExhibitions', 'Tutte le Mostre') }}
+        >
+          <motion.p
+            initial={{ y: 12 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="hero-pretitle mb-2"
           >
-            &larr; {t('nav.allExhibitions', 'Tutte le Mostre')}
-          </Link>
-
-          <div className="absolute top-[55%] md:top-1/2 -translate-y-1/2 left-0 w-full px-6 md:px-[25px] lg:px-20 text-white flex justify-center lg:justify-start mt-8 md:mt-0">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="inline-block bg-[#121212]/60 backdrop-blur-md p-6 md:p-10 rounded-[32px] max-w-4xl text-left"
+            {exhibition.preTitolo || exhibition.artistNames?.join(", ") || "MOSTRA"}
+          </motion.p>
+          <motion.h1
+            initial={{ y: 12 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="heading-hero mb-2 text-white md:mb-6"
+          >
+            {exhibition.titolo}
+          </motion.h1>
+          <motion.p
+            initial={{ y: 12 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="hero-subtitle"
+          >
+            {exhibition.intro || exhibition.sottotitolo}
+          </motion.p>
+          {isValidDate(exhibition.dataApertura) && (
+            <motion.p
+              initial={{ y: 12 }}
+              animate={{ y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-4 font-['Karla'] text-sm font-bold uppercase tracking-widest text-[#FF4F00]"
             >
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.25 }}
-                className="font-['Karla'] font-bold text-[clamp(14px,1.5vw,20px)] uppercase tracking-widest text-[#FF4F00] mb-2"
-              >
-                {exhibition.preTitolo || exhibition.artistNames?.join(", ") || "MOSTRA"}
-              </motion.p>
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="heading-hero mb-2 md:mb-6 text-white leading-none uppercase"
-              >
-                {exhibition.titolo}
-              </motion.h1>
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-[clamp(16px,2.5vw,28px)] font-medium max-w-lg md:max-w-2xl leading-snug uppercase text-white/90"
-              >
-                {exhibition.intro || exhibition.sottotitolo}
-              </motion.p>
-              {isValidDate(exhibition.dataApertura) && (
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-4 text-sm font-['Karla'] font-bold text-[#FF4F00] uppercase tracking-widest"
-                >
-                  {lang === 'EN' ? 'Opening ' : 'Inaugurazione '}
-                  {new Date(exhibition.dataApertura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  {isValidDate(exhibition.dataChiusura) && (
-                    <>
-                      {lang === 'EN' ? ' - Open until ' : ' - Aperta fino al '}
-                      {new Date(exhibition.dataChiusura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </>
-                  )}
-                </motion.p>
+              {lang === 'EN' ? 'Opening ' : 'Inaugurazione '}
+              {new Date(exhibition.dataApertura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {isValidDate(exhibition.dataChiusura) && (
+                <>
+                  {lang === 'EN' ? ' - Open until ' : ' - Aperta fino al '}
+                  {new Date(exhibition.dataChiusura).toLocaleDateString(lang === 'EN' ? 'en-US' : 'it-IT', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </>
               )}
-            </motion.div>
-          </div>
-        </div>
+            </motion.p>
+          )}
+        </FullPageHero>
 
         {exhibition.blocks && exhibition.blocks.length > 0 ? (
           <ModularExhibitionLayout blocks={exhibition.blocks} />

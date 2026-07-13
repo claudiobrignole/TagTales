@@ -146,6 +146,7 @@ export default function PublicWriterDetail() {
     citta: getLocalizedField(rawWriterData, 'citta', lang) || getLocalizedField(rawWriterData, 'city', lang) || "",
     paese: getLocalizedField(rawWriterData, 'paese', lang) || getLocalizedField(rawWriterData, 'country', lang) || "",
     fotoProfilo: rawWriterData.fotoProfilo || rawWriterData.profileImageUrl,
+    tagImage: rawWriterData.tagImage || "",
     bannerSocial: rawWriterData.bannerSocial || rawWriterData.coverImageUrl,
     bioBreve: getLocalizedField(rawWriterData, 'bioBreve', lang) || getLocalizedField(rawWriterData, 'bio', lang) || ""
   } : null;
@@ -191,7 +192,7 @@ export default function PublicWriterDetail() {
       {isPreviewMode && <PreviewBanner />}
       
       {/* Maximum Title Banner / Hero Section */}
-      <div className="relative w-full h-[30vh] md:h-[40vh] min-h-[300px] flex flex-col items-center justify-center bg-[#121212] overflow-hidden -mt-[65px] lg:-mt-[75px] pt-[65px] lg:pt-[75px]">
+      <div className="relative w-full h-[40vh] md:h-[50vh] min-h-[380px] flex flex-col items-center justify-center bg-[#121212] overflow-hidden -mt-[65px] lg:-mt-[75px] pt-[65px] lg:pt-[75px]">
         {writer.fotoProfilo && writer.fotoProfilo.trim() !== '' && (
           <div className="absolute inset-0 z-0">
             <LazyImage
@@ -214,6 +215,18 @@ export default function PublicWriterDetail() {
             <p className="text-xl md:text-3xl font-['Karla'] text-[#FF4F00] font-bold uppercase tracking-widest px-4 w-full break-words">
               {writer.citta} {writer.paese && `- ${writer.paese}`}
             </p>
+          )}
+          {writer.tagImage && writer.tagImage.trim() !== "" && (
+            <div className="mt-6 h-[100px] w-[100px] shrink-0 overflow-hidden rounded-full border-4 border-white/90 bg-[#121212] shadow-lg">
+              <LazyImage
+                src={writer.tagImage}
+                alt={writer.nickname}
+                loading="eager"
+                width={100}
+                height={100}
+                style={{ objectFit: "cover" }}
+              />
+            </div>
           )}
         </div>
         

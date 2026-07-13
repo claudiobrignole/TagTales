@@ -20,6 +20,7 @@ import SEO from "../components/SEO";
 import PreviewBanner from "../components/PreviewBanner";
 import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
+import FullPageHero from "../components/FullPageHero";
 
 export default function PublicArticleDetail() {
   const { slug } = useParams();
@@ -140,92 +141,67 @@ export default function PublicArticleDetail() {
       )}
       {isPreviewMode && <PreviewBanner />}
       <div className="pb-32">
-        <div className="relative min-h-[100svh] w-full overflow-hidden bg-[#121212]">
-          {coverImage && coverImage.trim() !== "" && (
-            <LazyImage
-              src={coverImage}
-              alt={article.titolo}
-              className="opacity-80"
-              wrapperClassName="absolute inset-0 w-full h-full"
-              loading="eager"
-              width={1920}
-              height={1080}
-              style={{ objectFit: "cover" }}
-            />
-          )}
-
-          <Link
-            to="/magazine"
-            className="absolute top-[80px] md:top-[100px] left-6 md:left-[25px] lg:left-20 z-10 text-white hover:text-[#FF4F00] font-bold uppercase tracking-widest text-sm transition-colors"
-          >
-            &larr; {t("nav.allArticles", "TUTTI GLI ARTICOLI")}
-          </Link>
-
-          <div className="absolute top-[55%] md:top-1/2 -translate-y-1/2 left-0 w-full px-6 md:px-[25px] lg:px-20 text-white flex justify-center lg:justify-start mt-8 md:mt-0">
+        <FullPageHero
+          src={coverImage ?? undefined}
+          alt={article.titolo}
+          backLink={{ to: "/magazine", label: t("nav.allArticles", "TUTTI GLI ARTICOLI") }}
+        >
+          {article.tag && article.tag.length > 0 && (
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="inline-block bg-[#121212]/60 backdrop-blur-md p-6 md:p-10 rounded-[32px] max-w-4xl text-left"
+              initial={{ y: 12 }}
+              animate={{ y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="mb-4 flex flex-wrap gap-2"
             >
-              {article.tag && article.tag.length > 0 && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="flex gap-2 flex-wrap mb-4"
+              {article.tag.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-[#FF4F00] px-3 py-1.5 font-['Karla'] text-xs font-bold uppercase tracking-widest text-[#FF4F00]"
                 >
-                  {article.tag.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="font-['Karla'] font-bold text-xs uppercase tracking-widest text-[#FF4F00] border border-[#FF4F00] rounded-full px-3 py-1.5"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </motion.div>
-              )}
-              {article.preTitolo && (
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.28 }}
-                  className="font-['Karla'] font-bold text-[clamp(14px,1.5vw,20px)] uppercase tracking-wider text-white/80 mb-2"
-                >
-                  {article.preTitolo}
-                </motion.p>
-              )}
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="heading-hero mb-2 md:mb-4 text-white leading-none uppercase break-normal whitespace-normal"
-              >
-                {article.titolo}
-              </motion.h1>
-              {article.sottotitolo && (
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                  className="text-[clamp(16px,2.5vw,28px)] font-medium max-w-lg md:max-w-2xl leading-snug uppercase text-white/90 mb-4 md:mb-6"
-                >
-                  {article.sottotitolo}
-                </motion.p>
-              )}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="flex flex-wrap items-center gap-2 md:gap-4 text-white/90 border-l-4 border-[#FF4F00] pl-4"
-              >
-                <span className="font-bold uppercase tracking-widest text-sm md:text-base">
-                  {article.autore ? `${t("article.by", "A cura di")} ${article.autore}` : t("article.editorial", "Redazione")}
+                  {tag}
                 </span>
-              </motion.div>
+              ))}
             </motion.div>
-          </div>
-        </div>
+          )}
+          {article.preTitolo && (
+            <motion.p
+              initial={{ y: 12 }}
+              animate={{ y: 0 }}
+              transition={{ delay: 0.28 }}
+              className="hero-pretitle mb-2 text-white/80"
+            >
+              {article.preTitolo}
+            </motion.p>
+          )}
+          <motion.h1
+            initial={{ y: 12 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="heading-hero mb-2 break-normal whitespace-normal text-white md:mb-4"
+          >
+            {article.titolo}
+          </motion.h1>
+          {article.sottotitolo && (
+            <motion.p
+              initial={{ y: 12 }}
+              animate={{ y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="hero-subtitle mb-4 md:mb-6"
+            >
+              {article.sottotitolo}
+            </motion.p>
+          )}
+          <motion.div
+            initial={{ y: 12 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap items-center gap-2 border-l-4 border-[#FF4F00] pl-4 text-white/90 md:gap-4"
+          >
+            <span className="text-sm font-bold uppercase tracking-widest md:text-base">
+              {article.autore ? `${t("article.by", "A cura di")} ${article.autore}` : t("article.editorial", "Redazione")}
+            </span>
+          </motion.div>
+        </FullPageHero>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

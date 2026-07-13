@@ -21,7 +21,16 @@
 /* Typography Hierarchy */
 @layer utilities {
   .heading-hero {
-    @apply font-['Shamgod'] text-[clamp(80px,12vw,200px)] leading-[0.8] tracking-normal uppercase;
+    @apply font-['Shamgod'] text-[clamp(2.5rem,11vw,12.5rem)] leading-[0.8] tracking-normal uppercase;
+  }
+  .hero-content-card {
+    @apply relative z-[3] bg-[#121212]/80 md:bg-[#121212]/65 backdrop-blur-md p-5 sm:p-6 md:p-10 rounded-[24px] md:rounded-[32px] min-w-0 text-white;
+  }
+  .hero-pretitle {
+    @apply font-['Karla'] font-bold text-[clamp(14px,3.5vw,28px)] uppercase tracking-widest text-[#FF4F00];
+  }
+  .hero-subtitle {
+    @apply text-[clamp(14px,3.5vw,28px)] font-medium max-w-full md:max-w-2xl leading-snug uppercase text-white/90;
   }
   .heading-h1 {
     @apply font-['Shamgod'] text-[clamp(60px,8vw,150px)] leading-[0.8] tracking-normal uppercase;

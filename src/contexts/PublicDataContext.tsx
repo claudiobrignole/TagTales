@@ -91,6 +91,7 @@ export const PublicDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           img: data.bannerHero || data.coverImageUrl,
           bannerHero: data.bannerHero || data.coverImageUrl,
           fallbackUrl: data.bannerHeroFallback || "",
+          tagImage: data.tagImage || "",
           dataApertura: data.dataApertura || "",
           title: data.titolo || data.title,
           preTitolo: data.preTitolo || "",

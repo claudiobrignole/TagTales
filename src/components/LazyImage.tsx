@@ -50,7 +50,7 @@ export default function LazyImage({
     <div className={`relative overflow-hidden ${wrapperClassName || 'w-full h-full'}`}>
       {/* Elegant fade-out placeholder */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-[#EAE3D9]/50 animate-pulse flex items-center justify-center z-10 transition-opacity duration-300">
+        <div className="absolute inset-0 z-[1] flex animate-pulse items-center justify-center bg-[#EAE3D9]/50 transition-opacity duration-300">
           <div className="w-6 h-6 border-2 border-t-[#FF4F00] border-[#FF4F00]/20 rounded-full animate-spin opacity-40" />
         </div>
       )}

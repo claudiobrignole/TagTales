@@ -56,6 +56,7 @@ export default function AdminExhibitions() {
     blocks: [] as any[],
     bannerHero: "",
     bannerHeroFallback: "",
+    tagImage: "",
     dataApertura: "",
     dataChiusura: "",
     published: false,
@@ -129,6 +130,7 @@ export default function AdminExhibitions() {
         blocks: exhibition.blocks || [],
         bannerHero: exhibition.bannerHero || "",
         bannerHeroFallback: exhibition.bannerHeroFallback || "",
+        tagImage: exhibition.tagImage || "",
         dataApertura: exhibition.dataApertura || "",
         dataChiusura: exhibition.dataChiusura || "",
         published: exhibition.published || false,
@@ -147,6 +149,7 @@ export default function AdminExhibitions() {
         blocks: [],
         bannerHero: "",
         bannerHeroFallback: "",
+        tagImage: "",
         dataApertura: "",
         dataChiusura: "",
         published: false,
@@ -284,7 +287,8 @@ export default function AdminExhibitions() {
         };
 
         if (data.bannerHero) await deleteImageFromStorage(data.bannerHero);
-        
+        if (data.tagImage) await deleteImageFromStorage(data.tagImage);
+
         if (data.galleria && Array.isArray(data.galleria)) {
           for (const img of data.galleria) {
             await deleteImageFromStorage(img);
@@ -639,6 +643,15 @@ export default function AdminExhibitions() {
                     onChange={(url) => setFormData({ ...formData, bannerHero: url })}
                     folder="exhibitions"
                   />
+                  <ImageUpload
+                    label="Tag (immagine writer)"
+                    value={formData.tagImage}
+                    onChange={(url) => setFormData({ ...formData, tagImage: url })}
+                    folder="exhibitions"
+                  />
+                  <p className="text-xs text-[#59554E]">
+                    Immagine circolare 100×100 px mostrata sopra il nome del writer nella hero della mostra.
+                  </p>
                   {formData.bannerHero && formData.bannerHero.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) && (
                     <ImageUpload
                       label="Immagine Fallback Copertina (SEO/Poster Opzionale)"

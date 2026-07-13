@@ -44,6 +44,7 @@ export default function AdminWriters() {
     paese: "",
     citta: "",
     fotoProfilo: "",
+    tagImage: "",
     bannerSocial: "",
     linkInstagram: "",
     linkInstagram_en: "",
@@ -126,6 +127,7 @@ export default function AdminWriters() {
         paese: writer.paese || "",
         citta: writer.citta || "",
         fotoProfilo: writer.fotoProfilo || "",
+        tagImage: writer.tagImage || "",
         bannerSocial: writer.bannerSocial || "",
         linkInstagram: writer.linkInstagram || "",
         linkInstagram_en: writer.linkInstagram_en || "",
@@ -146,6 +148,7 @@ export default function AdminWriters() {
         paese: "",
         citta: "",
         fotoProfilo: "",
+        tagImage: "",
         bannerSocial: "",
         linkInstagram: "",
         linkInstagram_en: "",
@@ -283,6 +286,7 @@ export default function AdminWriters() {
         };
 
         if (data.fotoProfilo) await deleteImageFromStorage(data.fotoProfilo);
+        if (data.tagImage) await deleteImageFromStorage(data.tagImage);
         if (data.bannerSocial) await deleteImageFromStorage(data.bannerSocial);
         
         if (data.blocks && Array.isArray(data.blocks)) {
@@ -590,6 +594,15 @@ export default function AdminWriters() {
                     onChange={(url) => setFormData({ ...formData, fotoProfilo: url })}
                     folder="writers"
                   />
+                  <ImageUpload
+                    label="Tag (immagine circolare)"
+                    value={formData.tagImage}
+                    onChange={(url) => setFormData({ ...formData, tagImage: url })}
+                    folder="writers"
+                  />
+                  <p className="text-xs text-[#59554E]">
+                    Immagine circolare 100×100 px mostrata sotto città e nazione nella pagina pubblica del writer.
+                  </p>
                   <ImageUpload
                     label="Banner Social"
                     value={formData.bannerSocial}
