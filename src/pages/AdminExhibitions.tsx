@@ -37,6 +37,7 @@ import { generatePreviewToken } from "../utils/previewAccess";
 import PreviewLinkPanel from "../components/PreviewLinkPanel";
 
 import { useTranslation } from "react-i18next";
+import { ADMIN_MODAL } from "../constants/theme";
 
 export default function AdminExhibitions() {
   const { t } = useTranslation();
@@ -436,7 +437,12 @@ export default function AdminExhibitions() {
                     </span>
                   )}
                 </div>
-                <h3 className="font-bold text-xl text-[#121212] font-['Shamgod'] uppercase tracking-wider mb-1 leading-none truncate">
+                {exhibition.preTitolo && (
+                  <p className="text-xs font-bold text-[#FF4F00] uppercase tracking-wider mb-1 truncate">
+                    {exhibition.preTitolo}
+                  </p>
+                )}
+                <h3 className="font-['Karla'] font-bold text-2xl text-[#121212] uppercase tracking-wider mb-1 leading-none truncate">
                   {exhibition.titolo}
                 </h3>
                 {exhibition.intro && (
@@ -467,7 +473,7 @@ export default function AdminExhibitions() {
 
       <AnimatePresence>
         {itemToDelete && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#121212]/50 backdrop-blur-sm">
+          <div className={clsx(ADMIN_MODAL.backdropElevated, "bg-[#121212]/50 backdrop-blur-sm")}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -501,12 +507,15 @@ export default function AdminExhibitions() {
 
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#121212]/50 backdrop-blur-sm">
+          <div className={clsx(ADMIN_MODAL.backdrop, "bg-[#121212]/50 backdrop-blur-sm")}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#F2EEE8] rounded-3xl shadow-2xl border border-[#EAE3D9] w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+              className={clsx(
+                "bg-[#F2EEE8] rounded-3xl shadow-2xl border border-[#EAE3D9] overflow-y-auto",
+                ADMIN_MODAL.panelWide,
+              )}
             >
               <div className="flex items-center justify-between p-6 border-b border-[#EAE3D9] sticky top-0 bg-[#F2EEE8] z-10">
                 <h2 className="text-2xl font-bold font-['Shamgod'] uppercase text-[#121212] tracking-widest">

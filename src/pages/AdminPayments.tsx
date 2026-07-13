@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { useI18n } from '../contexts/I18nContext';
 import { createNotification } from '../utils/notificationService';
+import { ADMIN_MODAL } from '../constants/theme';
 
 export default function AdminPayments() {
   const { t } = useI18n();
@@ -457,8 +458,8 @@ export default function AdminPayments() {
 
       {/* Confim payout modal (NO standard window.confirm, Rule 5 compliant) */}
       {showConfirmModal && selectedPayout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)} />
+        <div className={clsx(ADMIN_MODAL.backdrop)}>
+          <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)} />
           <div className="relative bg-white w-full max-w-lg p-8 rounded-3xl shadow-xl border border-[#EAE3D9] z-10 animate-in fade-in zoom-in duration-200">
             <h3 className="text-2xl font-['Shamgod'] uppercase leading-[0.9] text-[#121212] mb-4">
               Registra Erogazione Bonifico

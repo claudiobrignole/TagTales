@@ -16,7 +16,7 @@ const quillModules = {
 
 export interface ExhibitionBlock {
   id: string;
-  type: 'text' | 'paragraph' | 'image_fullscreen' | 'images_side_by_side_aligned' | 'images_side_by_side_creative' | 'video_embed';
+  type: 'text' | 'paragraph' | 'image_fullscreen' | 'images_side_by_side_aligned' | 'images_side_by_side_creative' | 'images_grid_4' | 'video_embed';
   text?: string;
   text_en?: string;
   backgroundColor?: 'black' | 'light';
@@ -30,10 +30,13 @@ export interface ExhibitionBlock {
     caption?: string; 
     caption_en?: string; 
     captionColor?: 'white' | 'black'; 
-    captionPosition?: 'top-left' | 'bottom-left';
+    captionPosition?: 'top-left' | 'top-right';
     isLimitedEdition?: boolean;
     limitedEditionQuantity?: number;
     isSold?: boolean;
+    /** @deprecated use watermarkMode; true treated as "both" */
+    watermarkEnabled?: boolean;
+    watermarkMode?: 'both' | 'text' | 'logo';
   }[];
   videoUrl?: string;
   hidden?: boolean;
@@ -60,6 +63,14 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     } else if (type === 'video_embed') {
       newBlock.videoUrl = '';
       newBlock.backgroundColor = 'light';
+    } else if (type === 'images_grid_4') {
+      newBlock.images = [
+        { url: '', ecwidLink: '' },
+        { url: '', ecwidLink: '' },
+        { url: '', ecwidLink: '' },
+        { url: '', ecwidLink: '' },
+      ];
+      newBlock.backgroundColor = 'light';
     } else if (type.startsWith('images_side_by_side')) {
       newBlock.images = [{ url: '', ecwidLink: '' }, { url: '', ecwidLink: '' }];
       newBlock.backgroundColor = 'light';
@@ -85,7 +96,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     onChange(newBlocks);
   };
 
-  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'bottom-left'; isLimitedEdition: boolean; limitedEditionQuantity: number; isSold: boolean }>) => {
+  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'top-right'; isLimitedEdition: boolean; limitedEditionQuantity: number; isSold: boolean; watermarkEnabled: boolean; watermarkMode: 'both' | 'text' | 'logo' }>) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
@@ -100,7 +111,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 border-b border-[#EAE3D9] bg-[#F2EEE8]/95 px-1 py-3 backdrop-blur-sm">
         <h3 className="font-bold text-[#121212]">Blocchi Layout Modulari</h3>
         <div className="flex gap-2 flex-wrap">
           <button type="button" onClick={() => addBlock('text')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Quote</button>
@@ -108,6 +119,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
           <button type="button" onClick={() => addBlock('image_fullscreen')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 1 Immagine</button>
           <button type="button" onClick={() => addBlock('images_side_by_side_aligned')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 2 Affiancate</button>
           <button type="button" onClick={() => addBlock('images_side_by_side_creative')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 2 Creative</button>
+          <button type="button" onClick={() => addBlock('images_grid_4')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 4 Quadrate</button>
           <button type="button" onClick={() => addBlock('video_embed')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Video</button>
         </div>
       </div>
@@ -136,6 +148,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                 {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
                 {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
                 {block.type === 'images_side_by_side_creative' && 'Due Immagini Sfalsate (Creative)'}
+                {block.type === 'images_grid_4' && 'Quattro Immagini Quadrate'}
                 {block.type === 'video_embed' && 'Video Embed (YouTube/Vimeo)'}
               </span>
               {block.hidden && (
@@ -204,7 +217,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
 
             {block.type !== 'text' && block.type !== 'paragraph' && block.type !== 'video_embed' && block.images && (
               <div className="space-y-4">
-                {(block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') && (
+                {(block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative' || block.type === 'images_grid_4') && (
                   <div className="flex gap-4 items-center mb-4">
                     <span className="text-sm font-medium">Sfondo Container:</span>
                     <label className="flex items-center gap-2 text-sm">
@@ -264,9 +277,9 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-gray-500 mb-1">Posizione</label>
-                          <select value={img.captionPosition || 'top-left'} onChange={e => updateImage(block.id, imgIndex, 'captionPosition', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm">
+                          <select value={img.captionPosition === 'top-right' ? 'top-right' : 'top-left'} onChange={e => updateImage(block.id, imgIndex, 'captionPosition', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm">
                             <option value="top-left">In alto a sinistra</option>
-                            <option value="bottom-left">In basso a sinistra</option>
+                            <option value="top-right">In alto a destra</option>
                           </select>
                         </div>
                       </div>
@@ -274,6 +287,48 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                         <label className="block text-xs font-medium text-[#121212] mb-2 uppercase tracking-wide">Opzioni di Vendita</label>
                         
                         <div className="space-y-4">
+                          <div className="space-y-2 p-2 border border-gray-100 rounded bg-white">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#59554E]">Filigrana</label>
+                            <select
+                              value={
+                                img.watermarkMode === 'both' || img.watermarkMode === 'text' || img.watermarkMode === 'logo'
+                                  ? img.watermarkMode
+                                  : img.watermarkEnabled
+                                    ? 'both'
+                                    : ''
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value as '' | 'both' | 'text' | 'logo';
+                                if (!value) {
+                                  onChange(blocks.map(b => {
+                                    if (b.id !== block.id || !b.images) return b;
+                                    const newImages = [...b.images];
+                                    const prev = { ...newImages[imgIndex] };
+                                    delete (prev as { watermarkMode?: string }).watermarkMode;
+                                    newImages[imgIndex] = { ...prev, watermarkEnabled: false };
+                                    return { ...b, images: newImages };
+                                  }));
+                                } else {
+                                  updateImageFields(block.id, imgIndex, {
+                                    watermarkMode: value,
+                                    watermarkEnabled: true,
+                                  });
+                                }
+                              }}
+                              className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm bg-white"
+                            >
+                              <option value="">Nessuna</option>
+                              <option value="both">Testo + logo</option>
+                              <option value="text">Solo testo</option>
+                              <option value="logo">Solo logo</option>
+                            </select>
+                            {(img.watermarkMode || img.watermarkEnabled) && (
+                              <p className="text-[11px] text-[#59554E]">
+                                Overlay a schermo e file servito già marcato. Non si applica ai video.
+                              </p>
+                            )}
+                          </div>
+
                           <div className="flex items-center justify-between p-2 border border-gray-100 rounded bg-white">
                             <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">Venduto</span>
                             <label className="relative inline-flex items-center cursor-pointer">

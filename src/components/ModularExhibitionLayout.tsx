@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { ExhibitionBlock } from './AdminExhibitionBlocksEditor';
 import VideoEmbed from './VideoEmbed';
+import ImageWatermarkOverlay, {
+  resolveExhibitionImageSrc,
+  resolveWatermarkMode,
+} from './ImageWatermarkOverlay';
 import { getLocalizedField } from '../utils/localization';
 import { cleanHtml } from '../utils/cleanHtml';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -36,6 +40,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
       isLimitedEdition?: boolean;
       limitedEditionQuantity?: number;
       isSold?: boolean;
+      watermarkEnabled?: boolean;
+      watermarkMode?: 'both' | 'text' | 'logo';
     }[] = [];
     if (!blocks) return images;
     blocks.forEach(block => {
@@ -53,31 +59,30 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           isLimitedEdition: block.images[0].isLimitedEdition,
           limitedEditionQuantity: block.images[0].limitedEditionQuantity,
           isSold: block.images[0].isSold,
+          watermarkEnabled: block.images[0].watermarkEnabled,
+          watermarkMode: block.images[0].watermarkMode,
         });
-      } else if (block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') {
-        if (block.images?.[0]?.url) images.push({ 
-          url: block.images[0].url, 
-          ecwidLink: block.images[0].ecwidLink, 
-          contactType: block.images[0].contactType, 
-          contactLink: block.images[0].contactLink, 
-          fallbackUrl: block.images[0].fallbackUrl, 
-          blockType: block.type, 
-          id: `${block.id}_0`,
-          isLimitedEdition: block.images[0].isLimitedEdition,
-          limitedEditionQuantity: block.images[0].limitedEditionQuantity,
-          isSold: block.images[0].isSold,
-        });
-        if (block.images?.[1]?.url) images.push({ 
-          url: block.images[1].url, 
-          ecwidLink: block.images[1].ecwidLink, 
-          contactType: block.images[1].contactType, 
-          contactLink: block.images[1].contactLink, 
-          fallbackUrl: block.images[1].fallbackUrl, 
-          blockType: block.type, 
-          id: `${block.id}_1`,
-          isLimitedEdition: block.images[1].isLimitedEdition,
-          limitedEditionQuantity: block.images[1].limitedEditionQuantity,
-          isSold: block.images[1].isSold,
+      } else if (
+        block.type === 'images_side_by_side_aligned' ||
+        block.type === 'images_side_by_side_creative' ||
+        block.type === 'images_grid_4'
+      ) {
+        (block.images || []).forEach((img, idx) => {
+          if (!img?.url) return;
+          images.push({
+            url: img.url,
+            ecwidLink: img.ecwidLink,
+            contactType: img.contactType,
+            contactLink: img.contactLink,
+            fallbackUrl: img.fallbackUrl,
+            blockType: block.type,
+            id: `${block.id}_${idx}`,
+            isLimitedEdition: img.isLimitedEdition,
+            limitedEditionQuantity: img.limitedEditionQuantity,
+            isSold: img.isSold,
+            watermarkEnabled: img.watermarkEnabled,
+            watermarkMode: img.watermarkMode,
+          });
         });
       }
     });
@@ -102,6 +107,53 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   }, [lightboxIndex, allImages.length]);
 
   const isVideo = (url: string) => url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null;
+
+  const captionPositionClass = (position?: string) =>
+    position === 'top-right' ? 'top-0 right-0 text-right' : 'top-0 left-0';
+
+  const renderMedia = (
+    img: {
+      url?: string;
+      fallbackUrl?: string;
+      watermarkEnabled?: boolean;
+      watermarkMode?: 'both' | 'text' | 'logo';
+    },
+    className: string,
+    alt: string,
+  ) => {
+    if (!img.url) return null;
+    if (isVideo(img.url)) {
+      return (
+        <video
+          src={img.url}
+          poster={img.fallbackUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className={className}
+        />
+      );
+    }
+    const originalUrl = img.url;
+    const watermarkMode = resolveWatermarkMode(img);
+    return (
+      <>
+        <img
+          src={resolveExhibitionImageSrc(img)}
+          alt={alt}
+          className={className}
+          onError={(e) => {
+            const el = e.currentTarget;
+            if (el.src !== originalUrl) {
+              el.src = originalUrl;
+            }
+          }}
+        />
+        {watermarkMode && <ImageWatermarkOverlay mode={watermarkMode} />}
+      </>
+    );
+  };
 
   const getButtonText = (img: any, isBuyButton: boolean) => {
     if (img.isSold) {
@@ -184,9 +236,29 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
 
   if (!blocks || blocks.length === 0) return null;
 
+  const galleryGapTypes = new Set([
+    'images_side_by_side_aligned',
+    'images_grid_4',
+  ]);
+
+  const getGallerySpacingClass = (blockIndex: number) => {
+    const prevVisible = [...blocks.slice(0, blockIndex)]
+      .reverse()
+      .find((b) => b && !b.hidden);
+    const prevIsGalleryGap = Boolean(
+      prevVisible && galleryGapTypes.has(prevVisible.type),
+    );
+    // Same step as horizontal gap between squares (15 / 25).
+    // Skip top padding when previous block is also a gallery row to avoid double spacing.
+    return clsx(
+      "pb-[15px] md:pb-[25px]",
+      !prevIsGalleryGap && "pt-[15px] md:pt-[25px]",
+    );
+  };
+
   return (
     <div className="w-full space-y-0">
-      {blocks.map((block) => {
+      {blocks.map((block, blockIndex) => {
         if (!block) return null;
         if (block.hidden) return null; // Skip rendering hidden blocks completely
 
@@ -202,8 +274,18 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 isBlack ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]"
               )}
             >
-              <div className={clsx("max-w-4xl mx-auto flex flex-col w-full min-w-0", alignment === 'center' ? 'items-center' : alignment === 'right' ? 'items-end' : 'items-start')}>
-                <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit text-[clamp(16px,2.5vw,28px)] font-medium leading-snug uppercase", isBlack ? "prose-invert text-white" : "")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+              <div className={clsx(
+                "max-w-4xl mx-auto flex flex-col w-full min-w-0",
+                alignment === 'center' ? 'items-center' : alignment === 'right' ? 'items-end' : 'items-start',
+              )}>
+                <div
+                  className={clsx(
+                    "prose max-w-none w-full break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit text-[clamp(16px,2.5vw,28px)] font-medium leading-snug uppercase",
+                    alignment === 'center' ? 'text-center mx-auto [&_p]:text-center [&_h1]:text-center [&_h2]:text-center [&_h3]:text-center [&_h4]:text-center' : alignment === 'right' ? 'text-right ml-auto [&_p]:text-right [&_h1]:text-right [&_h2]:text-right [&_h3]:text-right [&_h4]:text-right' : 'text-left mr-auto',
+                    isBlack ? "prose-invert text-white" : "",
+                  )}
+                  dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }}
+                />
               </div>
             </div>
           );
@@ -224,7 +306,10 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             >
               <div className={clsx("w-full max-w-4xl min-w-0", alignment === 'center' ? 'mx-auto' : alignment === 'right' ? 'ml-auto' : 'mr-auto')}>
                 <div 
-                  className={clsx("columns-1 md:columns-2 gap-8 text-lg leading-relaxed text-left font-['Karla'] font-normal prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 text-inherit", isBlack ? "prose-invert text-white" : "")} 
+                  className={clsx(
+                    "columns-1 md:columns-2 gap-8 text-lg leading-relaxed font-['Karla'] font-normal prose max-w-none w-full break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 text-inherit text-left [&_p]:text-left [&_h1]:text-left [&_h2]:text-left [&_h3]:text-left [&_h4]:text-left",
+                    isBlack ? "prose-invert text-white" : "",
+                  )} 
                   dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} 
                 />
               </div>
@@ -241,11 +326,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           
           return (
             <div key={block.id} className="w-full relative bg-[#121212] cursor-pointer" onClick={() => setLightboxIndex(currentIndex)}>
-              {isVideo(img.url) ? (
-                <video src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto" />
-              ) : (
-                <img src={img.url} alt="Mostra Fullscreen" className="w-full h-auto" />
-              )}
+              {renderMedia(img, "w-full h-auto", "Mostra Fullscreen")}
               {(img.isSold || img.ecwidLink || img.contactLink) && (
                 <div className="absolute bottom-6 right-6 z-10">
                   {renderImageAction(img)}
@@ -255,7 +336,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 <div className={clsx(
                   "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
                   img.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
-                  (img.captionPosition || 'top-left') === 'bottom-left' ? 'bottom-0 left-0' : 'top-0 left-0'
+                  captionPositionClass(img.captionPosition)
                 )}>
                   {getLocalizedField(img, 'caption', lang) || img.caption}
                 </div>
@@ -297,22 +378,17 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             <div 
               key={block.id} 
               className={clsx(
-                "w-full flex flex-col md:flex-row h-auto gap-[15px] md:gap-[25px] px-[25px] md:px-[50px] py-[35px]",
+                "w-full flex flex-col md:flex-row h-auto gap-[15px] md:gap-[25px] px-[25px] md:px-[50px]",
+                getGallerySpacingClass(blockIndex),
                 isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]"
               )}
             >
               {/* Image 1 */}
               <div 
-                className={clsx("w-full md:w-1/2 relative bg-black/5 aspect-square", img1.url ? "cursor-pointer" : "")} 
+                className={clsx("w-full md:w-1/2 relative bg-black/5", img1.url ? "cursor-pointer" : "")} 
                 onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
               >
-                {img1.url && (
-                  isVideo(img1.url) ? (
-                    <video src={img1.url} poster={img1.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={img1.url} alt="Mostra 1" className="w-full h-full object-cover" />
-                  )
-                )}
+                {renderMedia(img1, "w-full h-auto", "Mostra 1")}
                 {(img1.isSold || img1.ecwidLink || img1.contactLink) && (
                   <div className="absolute bottom-6 right-6 z-10">
                     {renderImageAction(img1)}
@@ -322,7 +398,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   <div className={clsx(
                     "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
                     img1.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
-                    (img1.captionPosition || 'top-left') === 'bottom-left' ? 'bottom-0 left-0' : 'top-0 left-0'
+                    captionPositionClass(img1.captionPosition)
                   )}>
                     {getLocalizedField(img1, 'caption', lang) || img1.caption}
                   </div>
@@ -330,16 +406,10 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
               </div>
               {/* Image 2 */}
               <div 
-                className={clsx("w-full md:w-1/2 relative bg-black/5 aspect-square", img2.url ? "cursor-pointer" : "")} 
+                className={clsx("w-full md:w-1/2 relative bg-black/5", img2.url ? "cursor-pointer" : "")} 
                 onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
               >
-                {img2.url && (
-                  isVideo(img2.url) ? (
-                    <video src={img2.url} poster={img2.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={img2.url} alt="Mostra 2" className="w-full h-full object-cover" />
-                  )
-                )}
+                {renderMedia(img2, "w-full h-auto", "Mostra 2")}
                 {(img2.isSold || img2.ecwidLink || img2.contactLink) && (
                   <div className="absolute bottom-6 right-6 z-10">
                     {renderImageAction(img2)}
@@ -349,7 +419,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   <div className={clsx(
                     "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
                     img2.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
-                    (img2.captionPosition || 'top-left') === 'bottom-left' ? 'bottom-0 left-0' : 'top-0 left-0'
+                    captionPositionClass(img2.captionPosition)
                   )}>
                     {getLocalizedField(img2, 'caption', lang) || img2.caption}
                   </div>
@@ -381,13 +451,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   className={clsx("md:-mt-24 relative block w-full", img1.url ? "cursor-pointer" : "")} 
                   onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
                 >
-                  {img1.url && (
-                    isVideo(img1.url) ? (
-                      <video src={img1.url} poster={img1.fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover" />
-                    ) : (
-                      <img src={img1.url} alt="Mostra Creative 1" className="w-full h-auto object-cover" />
-                    )
-                  )}
+                  {renderMedia(img1, "w-full h-auto object-cover", "Mostra Creative 1")}
                   {(img1.isSold || img1.ecwidLink || img1.contactLink) && (
                     <div className="absolute bottom-6 right-6 z-10">
                       {renderImageAction(img1)}
@@ -397,7 +461,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                     <div className={clsx(
                       "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
                       img1.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
-                      (img1.captionPosition || 'top-left') === 'bottom-left' ? 'bottom-0 left-0' : 'top-0 left-0'
+                      captionPositionClass(img1.captionPosition)
                     )}>
                       {getLocalizedField(img1, 'caption', lang) || img1.caption}
                     </div>
@@ -407,13 +471,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   className={clsx("md:mt-24 relative block w-full", img2.url ? "cursor-pointer" : "")} 
                   onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
                 >
-                  {img2.url && (
-                    isVideo(img2.url) ? (
-                      <video src={img2.url} poster={img2.fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover" />
-                    ) : (
-                      <img src={img2.url} alt="Mostra Creative 2" className="w-full h-auto object-cover" />
-                    )
-                  )}
+                  {renderMedia(img2, "w-full h-auto object-cover", "Mostra Creative 2")}
                   {(img2.isSold || img2.ecwidLink || img2.contactLink) && (
                     <div className="absolute bottom-6 right-6 z-10">
                       {renderImageAction(img2)}
@@ -423,12 +481,65 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                     <div className={clsx(
                       "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
                       img2.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
-                      (img2.captionPosition || 'top-left') === 'bottom-left' ? 'bottom-0 left-0' : 'top-0 left-0'
+                      captionPositionClass(img2.captionPosition)
                     )}>
                       {getLocalizedField(img2, 'caption', lang) || img2.caption}
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          );
+        }
+
+        // --- FOUR SQUARE IMAGES GRID ---
+        if (block.type === 'images_grid_4') {
+          const isBlack = block.backgroundColor === 'black';
+          const slots = [0, 1, 2, 3].map((idx) => ({
+            img: block.images?.[idx] || { url: '' },
+            index: block.images?.[idx]?.url
+              ? (imageIndexMap.get(`${block.id}_${idx}`) ?? -1)
+              : -1,
+          }));
+
+          return (
+            <div
+              key={block.id}
+              className={clsx(
+                "w-full px-[25px] md:px-[50px]",
+                getGallerySpacingClass(blockIndex),
+                isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]",
+              )}
+            >
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-[15px] md:gap-[25px]">
+                {slots.map(({ img, index }, slotIdx) => (
+                  <div
+                    key={`${block.id}_${slotIdx}`}
+                    className={clsx(
+                      "relative w-full aspect-square bg-black/5 overflow-hidden",
+                      img.url ? "cursor-pointer" : "",
+                    )}
+                    onClick={img.url && index >= 0 ? () => setLightboxIndex(index) : undefined}
+                  >
+                    {renderMedia(img, "w-full h-full object-cover", `Mostra grid ${slotIdx + 1}`)}
+                    {(img.isSold || img.ecwidLink || img.contactLink) && (
+                      <div className="absolute bottom-3 right-3 md:bottom-6 md:right-6 z-10">
+                        {renderImageAction(img)}
+                      </div>
+                    )}
+                    {img.caption && (
+                      <div
+                        className={clsx(
+                          "absolute z-10 p-3 md:p-4 text-[10px] md:text-xs font-['Karla'] font-bold uppercase tracking-widest",
+                          img.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
+                          captionPositionClass(img.captionPosition),
+                        )}
+                      >
+                        {getLocalizedField(img, 'caption', lang) || img.caption}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           );
@@ -467,11 +578,23 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                  className="max-w-full max-h-[85vh] object-contain shadow-2xl"
                />
              ) : (
-               <img 
-                 src={allImages[lightboxIndex].url} 
-                 className="max-w-full max-h-[85vh] object-contain shadow-2xl"
-                 alt=""
-               />
+               <div className="relative max-w-full max-h-[85vh]">
+                 <img 
+                   src={resolveExhibitionImageSrc(allImages[lightboxIndex])} 
+                   className="max-w-full max-h-[85vh] object-contain shadow-2xl"
+                   alt=""
+                   onError={(e) => {
+                     const originalUrl = allImages[lightboxIndex].url;
+                     const el = e.currentTarget;
+                     if (el.src !== originalUrl) {
+                       el.src = originalUrl;
+                     }
+                   }}
+                 />
+                 {resolveWatermarkMode(allImages[lightboxIndex]) && (
+                   <ImageWatermarkOverlay mode={resolveWatermarkMode(allImages[lightboxIndex])!} />
+                 )}
+               </div>
              )}
              {(allImages[lightboxIndex].isSold || allImages[lightboxIndex].ecwidLink || allImages[lightboxIndex].contactLink) && (
                <div className="mt-6">

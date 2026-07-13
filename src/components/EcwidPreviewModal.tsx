@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useI18n } from '../contexts/I18nContext';
+import { ADMIN_MODAL } from '../constants/theme';
 
 interface EcwidPreviewModalProps {
   productIds: number[];
@@ -39,8 +40,8 @@ export default function EcwidPreviewModal({ productIds, onClose }: EcwidPreviewM
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className={clsx(ADMIN_MODAL.backdrop, "bg-black/50 backdrop-blur-sm")}>
+      <div className={clsx("bg-white rounded-3xl flex flex-col shadow-2xl overflow-hidden", ADMIN_MODAL.panelWide)}>
         <div className="flex items-center justify-between p-6 border-b border-[#EAE3D9]">
           <h2 className="text-2xl font-bold text-[#121212]">Prodotti Connessi</h2>
           <button onClick={onClose} className="p-2 text-[#59554E] hover:bg-[#F2EEE8] rounded-full transition-colors">

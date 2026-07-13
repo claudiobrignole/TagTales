@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { sendEmailNotification } from '../utils/emailService';
 import { createNotification } from '../utils/notificationService';
 import { useI18n } from '../contexts/I18nContext';
+import { ADMIN_MODAL } from '../constants/theme';
 
 
 export default function AdminContracts() {
@@ -254,7 +255,7 @@ export default function AdminContracts() {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className={clsx(ADMIN_MODAL.backdrop, "bg-black/50 backdrop-blur-sm")}>
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-[#EAE3D9] flex justify-between items-center shrink-0">
               <h2 className="text-2xl font-bold text-[#121212]">{t('adminContracts.archiveSigned', 'Archivia Contratto Firmato')}</h2>
@@ -368,8 +369,8 @@ export default function AdminContracts() {
       )}
 
       {contractToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-[#EAE3D9]">
+        <div className={clsx(ADMIN_MODAL.backdrop, "bg-black/60 backdrop-blur-sm")}>
+          <div className={clsx("bg-[#FAF8F5] rounded-3xl overflow-hidden shadow-2xl border border-[#EAE3D9]", ADMIN_MODAL.panelConfirm)}>
             <div className="p-6 text-center">
               <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 size={32} />

@@ -31,6 +31,7 @@ import { useI18n } from '../contexts/I18nContext';
 import { generateSlug } from "../utils/slugify";
 import { generatePreviewToken } from "../utils/previewAccess";
 import PreviewLinkPanel from "../components/PreviewLinkPanel";
+import { ADMIN_MODAL } from "../constants/theme";
 
 export default function AdminArticles() {
   const { t } = useI18n();
@@ -423,7 +424,7 @@ export default function AdminArticles() {
 
       <AnimatePresence>
         {itemToDelete && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#121212]/50 backdrop-blur-sm">
+          <div className={clsx(ADMIN_MODAL.backdropElevated, "bg-[#121212]/50 backdrop-blur-sm")}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -457,12 +458,15 @@ export default function AdminArticles() {
 
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#121212]/50 backdrop-blur-sm">
+          <div className={clsx(ADMIN_MODAL.backdrop, "bg-[#121212]/50 backdrop-blur-sm")}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#F2EEE8] rounded-3xl shadow-2xl border border-[#EAE3D9] w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              className={clsx(
+                "bg-[#F2EEE8] rounded-3xl shadow-2xl border border-[#EAE3D9] overflow-y-auto",
+                ADMIN_MODAL.panelWide,
+              )}
             >
               <div className="flex items-center justify-between p-6 border-b border-[#EAE3D9] sticky top-0 bg-[#F2EEE8] z-10">
                 <h2 className="text-2xl font-bold font-['Shamgod'] uppercase text-[#121212] tracking-widest">

@@ -9,6 +9,8 @@ import { translateText, translateObjectFields } from '../utils/translate';
 import DirectChat from '../components/DirectChat';
 import { triggerGlobalCacheReset } from '../utils/cacheManager';
 import PageSpeedInsights from '../components/PageSpeedInsights';
+import { ADMIN_MODAL } from '../constants/theme';
+import clsx from 'clsx';
 
 export default function AdminDashboard() {
   const { t } = useI18n();
@@ -459,7 +461,7 @@ export default function AdminDashboard() {
       <PageSpeedInsights />
 
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className={clsx(ADMIN_MODAL.backdrop, "bg-black/60 backdrop-blur-sm")}>
           <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-[#EAE3D9]">
             <div className="p-6 text-center">
               <h2 className="text-xl font-bold text-[#121212] mb-2 font-['Shamgod'] uppercase">

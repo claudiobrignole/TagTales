@@ -72,6 +72,8 @@ export default function ImageUpload({ label, value, onChange, folder = 'uploads'
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           console.log('Upload successful:', downloadURL);
+          const { invalidateMediaLibraryCache } = await import('../utils/mediaLibraryCache');
+          invalidateMediaLibraryCache();
           onChange(downloadURL);
         } catch (err) {
           console.error('Error getting download URL:', err);

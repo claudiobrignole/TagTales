@@ -10,6 +10,11 @@ import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { isLocalDevRequest } from "./src/utils/isLocalDevRequest.ts";
 import { fetchPreviewDocument, fetchPublishedSlugs, getAdminFirestore } from "./src/utils/previewServer.ts";
+import {
+  createWatermarkedImage,
+  isAllowedWatermarkSrc,
+  parseWatermarkBakeMode,
+} from "./src/utils/watermarkImageServer.ts";
 
 dotenv.config();
 
@@ -117,6 +122,9 @@ async function sendEmailThroughSmtpOrService(to: string, subject: string, html: 
         user: smtpUser,
         pass: smtpPass,
       },
+      // Sandbox untrusted content paths/URLs (GHSA-p6gq-j5cr-w38f / GHSA-wqvq-jvpq-h66f)
+      disableFileAccess: true,
+      disableUrlAccess: true,
     });
 
     await transporter.sendMail({
@@ -124,6 +132,8 @@ async function sendEmailThroughSmtpOrService(to: string, subject: string, html: 
       to,
       subject,
       html,
+      disableFileAccess: true,
+      disableUrlAccess: true,
     });
     console.log("Email sent successfully via SMTP.");
     return { success: true, provider: "smtp" };
@@ -232,6 +242,36 @@ async function startServer() {
     res.json({
       ecwidStoreId: process.env.ECWID_STORE_ID || "",
     });
+  });
+
+  // Steganographic + micro-baked watermark proxy for exhibition images
+  app.get("/api/media/watermark", async (req, res) => {
+    try {
+      // Express already decodes query values once — do not decodeURIComponent again
+      // (would turn Firebase path %2F into / and break the object URL).
+      const src = typeof req.query.src === "string" ? req.query.src.trim() : "";
+      if (!src) {
+        return res.status(400).json({ error: "Missing src" });
+      }
+      if (!isAllowedWatermarkSrc(src)) {
+        return res.status(400).json({ error: "src host not allowed" });
+      }
+
+      const mode = parseWatermarkBakeMode(req.query.mode);
+      const { buffer, contentType } = await createWatermarkedImage(src, mode);
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=900, stale-while-revalidate=3600");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      return res.send(buffer);
+    } catch (err: any) {
+      console.error("Watermark proxy error:", err?.message || err);
+      const src = typeof req.query.src === "string" ? req.query.src.trim() : "";
+      // Keep <img> usable: redirect to the validated original when processing fails
+      if (src && isAllowedWatermarkSrc(src)) {
+        return res.redirect(302, src);
+      }
+      return res.status(502).json({ error: "Unable to watermark image" });
+    }
   });
 
   registerPreviewRoute(app, "exhibition", "mostre");

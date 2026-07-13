@@ -5,6 +5,8 @@ import {
   generatePreviewToken,
   type PreviewContentType,
 } from '../utils/previewAccess';
+import clsx from 'clsx';
+import { ADMIN_MODAL } from '../constants/theme';
 
 type PreviewLinkPanelProps = {
   type: PreviewContentType;
@@ -79,7 +81,7 @@ export default function PreviewLinkPanel({
       </div>
 
       {confirmRegenerate && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+        <div className={clsx(ADMIN_MODAL.backdropTop, "bg-black/50")}>
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-[#EAE3D9]">
             <h3 className="font-['Karla'] font-bold uppercase tracking-wider text-[#121212] mb-2">
               Rigenerare link anteprima?

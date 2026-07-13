@@ -18,7 +18,7 @@ const quillModules = {
 
 export interface PageBlock {
   id: string;
-  type: 'text' | 'paragraph' | 'image_fullscreen' | 'images_side_by_side_aligned' | 'video_embed' | 'qa_module' | 'home_section' | 'accordion' | 'contact_form' | 'large_title' | 'text_with_image_half' | 'image_width_paragraph';
+  type: 'text' | 'paragraph' | 'image_fullscreen' | 'images_side_by_side_aligned' | 'images_grid_4' | 'video_embed' | 'qa_module' | 'home_section' | 'accordion' | 'contact_form' | 'large_title' | 'text_with_image_half' | 'image_width_paragraph';
   text?: string;
   text_en?: string;
   title?: string;
@@ -58,6 +58,14 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
       newBlock.backgroundColor = 'light';
     } else if (type === 'images_side_by_side_aligned') {
       newBlock.images = [{ url: '', ecwidLink: '' }, { url: '', ecwidLink: '' }];
+      newBlock.backgroundColor = 'light';
+    } else if (type === 'images_grid_4') {
+      newBlock.images = [
+        { url: '', ecwidLink: '' },
+        { url: '', ecwidLink: '' },
+        { url: '', ecwidLink: '' },
+        { url: '', ecwidLink: '' },
+      ];
       newBlock.backgroundColor = 'light';
     } else if (type === 'qa_module') {
       newBlock.qa = [{ question: '', answer: '', question_en: '', answer_en: '' }];
@@ -148,7 +156,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-[#F2EEE8] p-4 rounded-xl border border-[#EAE3D9]">
+      <div className="sticky top-0 z-20 flex justify-between items-center gap-3 flex-wrap bg-[#F2EEE8]/95 p-4 rounded-xl border border-[#EAE3D9] backdrop-blur-sm">
         <h3 className="font-bold text-[#121212] uppercase tracking-wider text-sm font-['Shamgod']">Blocchi Layout</h3>
         <div className="flex gap-2 flex-wrap justify-end">
           <button type="button" onClick={() => addBlock('large_title')} className="text-[10px] bg-[#121212] text-white px-3 py-1.5 rounded-lg font-bold uppercase transition-all">+ Titolo Maxi</button>
@@ -157,6 +165,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
           <button type="button" onClick={() => addBlock('image_fullscreen')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Immagine Full</button>
           <button type="button" onClick={() => addBlock('image_width_paragraph')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Immagine Paragrafo</button>
           <button type="button" onClick={() => addBlock('images_side_by_side_aligned')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ 2 Immagini</button>
+          <button type="button" onClick={() => addBlock('images_grid_4')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ 4 Quadrate</button>
           <button type="button" onClick={() => addBlock('text_with_image_half')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Testo & Immagine</button>
           <button type="button" onClick={() => addBlock('video_embed')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Video</button>
           <button type="button" onClick={() => addBlock('accordion')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Accordion</button>
@@ -206,6 +215,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                 {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
                 {block.type === 'image_width_paragraph' && 'Immagine (Larghezza Paragrafo)'}
                 {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
+                {block.type === 'images_grid_4' && 'Quattro Immagini Quadrate'}
                 {block.type === 'video_embed' && 'Video Embed'}
                 {block.type === 'qa_module' && 'Modulo FAQ (Q&A)'}
                 {block.type === 'accordion' && 'Accordion (Menu a tendina)'}

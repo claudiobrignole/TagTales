@@ -1065,6 +1065,35 @@ export default function PublicHome() {
             </div>
           </section>
         );
+      case "images_grid_4":
+        return (
+          <section
+            key={block.id}
+            className={clsx(
+              "py-6 md:py-8 px-[25px]",
+              block.backgroundColor === "black" ? "bg-[#121212]" : "bg-white",
+            )}
+          >
+            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-[15px] md:gap-[25px]">
+              {(block.images || []).slice(0, 4).map((img: any, idx: number) => (
+                <div key={idx} className="w-full aspect-square overflow-hidden">
+                  {img?.url && (
+                    <LazyImage
+                      src={img.url}
+                      alt=""
+                      className="w-full h-full object-cover object-center"
+                      wrapperClassName="w-full h-full"
+                      loading="lazy"
+                      width={600}
+                      height={600}
+                      style={{ objectFit: "cover" }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
       case "accordion":
         return (
           <section

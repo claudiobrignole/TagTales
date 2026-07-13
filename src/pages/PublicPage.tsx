@@ -310,6 +310,31 @@ export default function PublicPage({ id: propId }: { id?: string }) {
             </div>
           </section>
         );
+      case 'images_grid_4':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-6 pt-4' : 'py-6 md:py-8'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
+            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-[15px] md:gap-[25px]">
+              {(block.images || []).slice(0, 4).map((img: any, idx: number) => (
+                <div key={idx} className="w-full aspect-square overflow-hidden">
+                  {img?.url && (isVideo(img.url) ? (
+                    <video src={img.url} poster={img.fallbackUrl} autoPlay loop muted playsInline className="w-full h-full object-cover object-center" />
+                  ) : (
+                    <LazyImage
+                      src={img.url}
+                      alt=""
+                      className="w-full h-full object-cover object-center"
+                      wrapperClassName="w-full h-full"
+                      loading="lazy"
+                      width={600}
+                      height={600}
+                      style={{ objectFit: "cover" }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
       case 'qa_module':
         return (
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-20 pt-4' : 'py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>

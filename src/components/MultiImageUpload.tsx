@@ -73,6 +73,8 @@ export default function MultiImageUpload({ label, values, onChange, folder = 'up
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             currentUrls = [...currentUrls, downloadURL];
+            const { invalidateMediaLibraryCache } = await import('../utils/mediaLibraryCache');
+            invalidateMediaLibraryCache();
             onChange(currentUrls);
           } catch (err) {
             console.error('Error getting download URL:', err);

@@ -11,8 +11,9 @@ const STATIC_PAGES = [
 ];
 
 import { translateDirtyFields, translateText, translateObjectFields } from '../utils/translate';
-
+import { ADMIN_MODAL } from '../constants/theme';
 import { useTranslation } from 'react-i18next';
+import clsx from 'clsx';
 
 export default function AdminPages() {
   const { t } = useTranslation();
@@ -283,7 +284,7 @@ export default function AdminPages() {
 
       <AnimatePresence>
         {pageToDelete && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#121212]/30 backdrop-blur-md">
+          <div className={clsx(ADMIN_MODAL.backdropElevated, "bg-[#121212]/30 backdrop-blur-md")}>
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -314,12 +315,15 @@ export default function AdminPages() {
 
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#121212]/30 backdrop-blur-md">
+          <div className={clsx(ADMIN_MODAL.backdrop, "bg-[#121212]/30 backdrop-blur-md")}>
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-[#F2EEE8] rounded-[40px] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-white"
+              className={clsx(
+                "bg-[#F2EEE8] rounded-[40px] shadow-2xl overflow-hidden flex flex-col border border-white",
+                ADMIN_MODAL.panelWide,
+              )}
             >
               <div className="flex items-center justify-between p-8 border-b border-[#EAE3D9] bg-white/50">
                 <div>
