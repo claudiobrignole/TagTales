@@ -896,7 +896,10 @@
     "statusPublished": "Pubblicata"
   },
   "exhibition": {
-    "buy": "Acquista"
+    "buy": "Acquista",
+    "sold": "Venduto",
+    "originalRequestInfo": "Opera originale: richiedi info",
+    "limitedEdition": "Edizione Limitata: {{qty}} disponibili"
   },
   "exhibitionInquiry": {
     "title": "Richiedi info",

@@ -881,7 +881,10 @@
     "statusPublished": "Published"
   },
   "exhibition": {
-    "buy": "Buy"
+    "buy": "Buy",
+    "sold": "Sold",
+    "originalRequestInfo": "Original work: request info",
+    "limitedEdition": "Limited edition: {{qty}} available"
   },
   "exhibitionInquiry": {
     "title": "Info Request",

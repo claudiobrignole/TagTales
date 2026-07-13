@@ -33,6 +33,7 @@ export interface ExhibitionBlock {
     captionPosition?: 'top-left' | 'bottom-left';
     isLimitedEdition?: boolean;
     limitedEditionQuantity?: number;
+    isSold?: boolean;
   }[];
   videoUrl?: string;
   hidden?: boolean;
@@ -84,7 +85,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     onChange(newBlocks);
   };
 
-  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'bottom-left'; isLimitedEdition: boolean; limitedEditionQuantity: number }>) => {
+  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'bottom-left'; isLimitedEdition: boolean; limitedEditionQuantity: number; isSold: boolean }>) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
@@ -273,6 +274,24 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                         <label className="block text-xs font-medium text-[#121212] mb-2 uppercase tracking-wide">Opzioni di Vendita</label>
                         
                         <div className="space-y-4">
+                          <div className="flex items-center justify-between p-2 border border-gray-100 rounded bg-white">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">Venduto</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={!!img.isSold} 
+                                onChange={e => updateImageFields(block.id, imgIndex, { isSold: e.target.checked })}
+                                className="sr-only peer" 
+                              />
+                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF4F00]"></div>
+                            </label>
+                          </div>
+                          {img.isSold && (
+                            <p className="text-[11px] text-[#59554E]">
+                              Mostra il badge «Venduto» / «Sold» in basso a destra al posto di «Opera originale: richiedi info».
+                            </p>
+                          )}
+
                           <div className="flex items-center justify-between p-2 border border-gray-100 rounded bg-white">
                             <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">Edizione Limitata</span>
                             <label className="relative inline-flex items-center cursor-pointer">

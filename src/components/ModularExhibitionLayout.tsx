@@ -35,6 +35,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
       id: string;
       isLimitedEdition?: boolean;
       limitedEditionQuantity?: number;
+      isSold?: boolean;
     }[] = [];
     if (!blocks) return images;
     blocks.forEach(block => {
@@ -50,7 +51,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           blockType: block.type, 
           id: `${block.id}_0`,
           isLimitedEdition: block.images[0].isLimitedEdition,
-          limitedEditionQuantity: block.images[0].limitedEditionQuantity
+          limitedEditionQuantity: block.images[0].limitedEditionQuantity,
+          isSold: block.images[0].isSold,
         });
       } else if (block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative') {
         if (block.images?.[0]?.url) images.push({ 
@@ -62,7 +64,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           blockType: block.type, 
           id: `${block.id}_0`,
           isLimitedEdition: block.images[0].isLimitedEdition,
-          limitedEditionQuantity: block.images[0].limitedEditionQuantity
+          limitedEditionQuantity: block.images[0].limitedEditionQuantity,
+          isSold: block.images[0].isSold,
         });
         if (block.images?.[1]?.url) images.push({ 
           url: block.images[1].url, 
@@ -73,7 +76,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           blockType: block.type, 
           id: `${block.id}_1`,
           isLimitedEdition: block.images[1].isLimitedEdition,
-          limitedEditionQuantity: block.images[1].limitedEditionQuantity
+          limitedEditionQuantity: block.images[1].limitedEditionQuantity,
+          isSold: block.images[1].isSold,
         });
       }
     });
@@ -100,20 +104,82 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   const isVideo = (url: string) => url.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) !== null;
 
   const getButtonText = (img: any, isBuyButton: boolean) => {
-    const isEn = lang && lang.toUpperCase() === 'EN';
+    if (img.isSold) {
+      return t('exhibition.sold', 'Venduto');
+    }
     if (img.isLimitedEdition) {
       const qty = img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0;
-      return isEn 
-        ? `Limited edition: ${qty} available` 
-        : `Edizione Limitata: ${qty} disponibili`;
+      return t('exhibition.limitedEdition', {
+        qty,
+        defaultValue: lang && lang.toUpperCase() === 'EN'
+          ? `Limited edition: ${qty} available`
+          : `Edizione Limitata: ${qty} disponibili`,
+      });
     }
     if (isBuyButton) {
       return t('exhibition.buy', 'Acquista');
-    } else {
-      return isEn 
-        ? "Original work: request info" 
-        : "Opera originale: richiedi info";
     }
+    return t('exhibition.originalRequestInfo', 'Opera originale: richiedi info');
+  };
+
+  const actionBtnClass =
+    "inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none";
+  const soldBadgeClass =
+    "inline-flex bg-[#FF4F00] text-red-700 px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-['Karla'] font-bold tracking-widest text-[10px] md:text-sm shadow-none md:shadow-md pointer-events-none";
+  const lightboxSoldBadgeClass =
+    "inline-flex bg-[#FF4F00] text-red-700 px-8 py-4 rounded-full uppercase font-['Karla'] font-bold tracking-widest text-sm shadow-lg pointer-events-none";
+  const lightboxActionBtnClass =
+    "inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg";
+
+  const renderImageAction = (
+    img: {
+      ecwidLink?: string;
+      contactLink?: string;
+      contactType?: string;
+      isSold?: boolean;
+      isLimitedEdition?: boolean;
+      limitedEditionQuantity?: number;
+    },
+    variant: "overlay" | "lightbox" = "overlay",
+  ) => {
+    if (!img.isSold && !img.ecwidLink && !img.contactLink) return null;
+
+    if (img.isSold) {
+      return (
+        <span className={variant === "lightbox" ? lightboxSoldBadgeClass : soldBadgeClass}>
+          {getButtonText(img, false)}
+        </span>
+      );
+    }
+
+    const btnClass = variant === "lightbox" ? lightboxActionBtnClass : actionBtnClass;
+
+    if (img.ecwidLink) {
+      return (
+        <a
+          href={img.ecwidLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className={btnClass}
+        >
+          {getButtonText(img, true)}
+        </a>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setInquiryLink(getContactUrl(img.contactType, img.contactLink));
+        }}
+        className={btnClass}
+      >
+        {getButtonText(img, false)}
+      </button>
+    );
   };
 
   if (!blocks || blocks.length === 0) return null;
@@ -180,26 +246,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
               ) : (
                 <img src={img.url} alt="Mostra Fullscreen" className="w-full h-auto" />
               )}
-              {(img.ecwidLink || img.contactLink) && (
+              {(img.isSold || img.ecwidLink || img.contactLink) && (
                 <div className="absolute bottom-6 right-6 z-10">
-                  {img.ecwidLink ? (
-                    <a 
-                      href={img.ecwidLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {getButtonText(img, true)}
-                    </a>
-                  ) : (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img.contactType, img.contactLink)); }}
-                      className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                    >
-                      {getButtonText(img, false)}
-                    </button>
-                  )}
+                  {renderImageAction(img)}
                 </div>
               )}
               {img.caption && (
@@ -264,26 +313,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                     <img src={img1.url} alt="Mostra 1" className="w-full h-full object-cover" />
                   )
                 )}
-                {(img1.ecwidLink || img1.contactLink) && (
+                {(img1.isSold || img1.ecwidLink || img1.contactLink) && (
                   <div className="absolute bottom-6 right-6 z-10">
-                     {img1.ecwidLink ? (
-                      <a 
-                        href={img1.ecwidLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                      >
-                        {getButtonText(img1, true)}
-                      </a>
-                    ) : (
-                      <button 
-                         onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img1.contactType, img1.contactLink)); }}
-                         className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                      >
-                        {getButtonText(img1, false)}
-                      </button>
-                    )}
+                    {renderImageAction(img1)}
                   </div>
                 )}
                 {img1.caption && (
@@ -308,26 +340,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                     <img src={img2.url} alt="Mostra 2" className="w-full h-full object-cover" />
                   )
                 )}
-                {(img2.ecwidLink || img2.contactLink) && (
+                {(img2.isSold || img2.ecwidLink || img2.contactLink) && (
                   <div className="absolute bottom-6 right-6 z-10">
-                     {img2.ecwidLink ? (
-                      <a 
-                        href={img2.ecwidLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                      >
-                        {getButtonText(img2, true)}
-                      </a>
-                    ) : (
-                      <button 
-                         onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img2.contactType, img2.contactLink)); }}
-                         className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                      >
-                        {getButtonText(img2, false)}
-                      </button>
-                    )}
+                    {renderImageAction(img2)}
                   </div>
                 )}
                 {img2.caption && (
@@ -373,26 +388,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                       <img src={img1.url} alt="Mostra Creative 1" className="w-full h-auto object-cover" />
                     )
                   )}
-                  {(img1.ecwidLink || img1.contactLink) && (
+                  {(img1.isSold || img1.ecwidLink || img1.contactLink) && (
                     <div className="absolute bottom-6 right-6 z-10">
-                      {img1.ecwidLink ? (
-                        <a 
-                          href={img1.ecwidLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                        >
-                          {getButtonText(img1, true)}
-                        </a>
-                      ) : (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img1.contactType, img1.contactLink)); }}
-                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                        >
-                          {getButtonText(img1, false)}
-                        </button>
-                      )}
+                      {renderImageAction(img1)}
                     </div>
                   )}
                   {img1.caption && (
@@ -406,7 +404,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   )}
                 </div>
                 <div 
-                  className={clsx("relative block w-full md:mt-24", img2.url ? "cursor-pointer" : "")} 
+                  className={clsx("md:mt-24 relative block w-full", img2.url ? "cursor-pointer" : "")} 
                   onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
                 >
                   {img2.url && (
@@ -416,26 +414,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                       <img src={img2.url} alt="Mostra Creative 2" className="w-full h-auto object-cover" />
                     )
                   )}
-                  {(img2.ecwidLink || img2.contactLink) && (
+                  {(img2.isSold || img2.ecwidLink || img2.contactLink) && (
                     <div className="absolute bottom-6 right-6 z-10">
-                      {img2.ecwidLink ? (
-                        <a 
-                          href={img2.ecwidLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                        >
-                          {getButtonText(img2, true)}
-                        </a>
-                      ) : (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setInquiryLink(getContactUrl(img2.contactType, img2.contactLink)); }}
-                          className="inline-flex bg-white/70 backdrop-blur-sm text-[#121212] px-4 py-2 md:px-6 md:py-3 rounded-full uppercase font-bold tracking-widest text-[10px] md:text-sm hover:bg-[#FF4F00] hover:text-white transition-colors shadow-none md:shadow-md border border-white/20 md:border-none"
-                        >
-                          {getButtonText(img2, false)}
-                        </button>
-                      )}
+                      {renderImageAction(img2)}
                     </div>
                   )}
                   {img2.caption && (
@@ -456,37 +437,24 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
         return null;
       })}
 
-      {/* Lightbox */}
+      {/* LIGHTBOX */}
       {lightboxIndex !== null && allImages[lightboxIndex] && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-12" onClick={() => setLightboxIndex(null)}>
-          {/* Close button */}
-          <button 
-            className="absolute top-6 right-6 md:top-10 md:right-10 text-white hover:text-[#FF4F00] transition-colors z-[110] p-4 cursor-pointer"
-            onClick={() => setLightboxIndex(null)}
-          >
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" onClick={() => setLightboxIndex(null)}>
+          <button className="absolute top-6 right-6 text-white hover:text-[#FF4F00] z-10" onClick={() => setLightboxIndex(null)}>
             <X size={32} />
           </button>
-          
-          {/* Prev button */}
-          {allImages.length > 1 && (
-            <button 
-              className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 text-white hover:text-[#FF4F00] transition-colors z-[110] p-4 cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev! - 1 + allImages.length) % allImages.length); }}
-            >
-              <ChevronLeft size={48} />
-            </button>
-          )}
-
-          {/* Next button */}
-          {allImages.length > 1 && (
-            <button 
-              className="absolute right-4 md:right-10 top-1/2 -translate-y-1/2 text-white hover:text-[#FF4F00] transition-colors z-[110] p-4 cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev! + 1) % allImages.length); }}
-            >
-              <ChevronRight size={48} />
-            </button>
-          )}
-
+          <button 
+            className="absolute left-4 md:left-8 text-white hover:text-[#FF4F00] z-10 p-2"
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev! - 1 + allImages.length) % allImages.length); }}
+          >
+            <ChevronLeft size={40} />
+          </button>
+          <button 
+            className="absolute right-4 md:right-8 text-white hover:text-[#FF4F00] z-10 p-2"
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev! + 1) % allImages.length); }}
+          >
+            <ChevronRight size={40} />
+          </button>
           {/* Image */}
           <div className="relative max-w-full max-h-full flex flex-col items-center justify-center p-4 md:p-12" onClick={(e) => e.stopPropagation()}>
              {isVideo(allImages[lightboxIndex].url) ? (
@@ -505,28 +473,9 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                  alt=""
                />
              )}
-             {(allImages[lightboxIndex].ecwidLink || allImages[lightboxIndex].contactLink) && (
+             {(allImages[lightboxIndex].isSold || allImages[lightboxIndex].ecwidLink || allImages[lightboxIndex].contactLink) && (
                <div className="mt-6">
-                 {allImages[lightboxIndex].ecwidLink ? (
-                   <a 
-                     href={allImages[lightboxIndex].ecwidLink}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg"
-                   >
-                     {getButtonText(allImages[lightboxIndex], true)}
-                   </a>
-                 ) : (
-                   <button 
-                     onClick={(e) => { 
-                       e.stopPropagation(); 
-                       setInquiryLink(getContactUrl(allImages[lightboxIndex].contactType, allImages[lightboxIndex].contactLink)); 
-                     }}
-                     className="inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg"
-                   >
-                     {getButtonText(allImages[lightboxIndex], false)}
-                   </button>
-                 )}
+                 {renderImageAction(allImages[lightboxIndex], "lightbox")}
                </div>
              )}
           </div>
@@ -558,3 +507,4 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     </div>
   );
 }
+
