@@ -46,7 +46,7 @@ Configurate in produzione (valori reali **solo** nel pannello Hostinger, mai in 
 - **Stato:** configurato (Firebase Functions)
 - File: `functions/src/ecwidWebhook.ts`
 - Evento: `order.created` con `paymentStatus === PAID`
-- Attributi prodotto: vedi ROADMAP.md sezione FEE_TABLE
+- Attributi prodotto e fee writers: procedura completa in [ECWID-WRITERS.md](./ECWID-WRITERS.md) (storico in ROADMAP.md)
 
 ## Firebase
 

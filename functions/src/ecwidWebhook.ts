@@ -234,22 +234,30 @@ export const ecwidWebhook = onRequest(
               if (block.images && Array.isArray(block.images)) {
                 let blockChanged = false;
                 const updatedImages = block.images.map((img: any) => {
-                  if (img.isLimitedEdition && img.ecwidLink) {
-                    // Find if any sold item productId is present in this ecwidLink
-                    const soldItem = items.find((itm: any) => {
-                      const pId = String(itm.productId);
-                      return img.ecwidLink.includes(pId);
-                    });
-                    if (soldItem) {
-                      const currentQty = img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0;
-                      const newQty = Math.max(0, currentQty - soldItem.quantity);
-                      logger.info(`Updating limited edition quantity for mostra ${mostreDoc.id}, block ${block.id}: from ${currentQty} to ${newQty}`);
-                      blockChanged = true;
-                      return {
-                        ...img,
-                        limitedEditionQuantity: newQty
-                      };
+                  if (!img.isLimitedEdition) return img;
+
+                  const linkUrls: string[] = [];
+                  if (Array.isArray(img.ecwidLinks)) {
+                    for (const entry of img.ecwidLinks) {
+                      if (entry?.url) linkUrls.push(String(entry.url));
                     }
+                  }
+                  if (img.ecwidLink) linkUrls.push(String(img.ecwidLink));
+                  if (linkUrls.length === 0) return img;
+
+                  const soldItem = items.find((itm: any) => {
+                    const pId = String(itm.productId);
+                    return linkUrls.some((url) => url.includes(pId));
+                  });
+                  if (soldItem) {
+                    const currentQty = img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0;
+                    const newQty = Math.max(0, currentQty - soldItem.quantity);
+                    logger.info(`Updating limited edition quantity for mostra ${mostreDoc.id}, block ${block.id}: from ${currentQty} to ${newQty}`);
+                    blockChanged = true;
+                    return {
+                      ...img,
+                      limitedEditionQuantity: newQty
+                    };
                   }
                   return img;
                 });

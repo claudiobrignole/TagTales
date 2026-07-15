@@ -9,6 +9,7 @@ import ImageWatermarkOverlay, {
 } from './ImageWatermarkOverlay';
 import { getLocalizedField } from '../utils/localization';
 import { cleanHtml } from '../utils/cleanHtml';
+import { hasEcwidLinks, normalizeEcwidLinks, type EcwidStoreLink } from '../utils/ecwidStoreLinks';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
@@ -32,6 +33,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     const images: {
       url: string;
       ecwidLink?: string;
+      ecwidLinks?: EcwidStoreLink[];
       contactLink?: string;
       contactType?: string;
       fallbackUrl?: string;
@@ -50,7 +52,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
       if (block.type === 'image_fullscreen' && block.images?.[0]?.url) {
         images.push({ 
           url: block.images[0].url, 
-          ecwidLink: block.images[0].ecwidLink, 
+          ecwidLink: block.images[0].ecwidLink,
+          ecwidLinks: block.images[0].ecwidLinks,
           contactType: block.images[0].contactType, 
           contactLink: block.images[0].contactLink, 
           fallbackUrl: block.images[0].fallbackUrl, 
@@ -72,6 +75,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           images.push({
             url: img.url,
             ecwidLink: img.ecwidLink,
+            ecwidLinks: img.ecwidLinks,
             contactType: img.contactType,
             contactLink: img.contactLink,
             fallbackUrl: img.fallbackUrl,
@@ -155,9 +159,13 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     );
   };
 
-  const getButtonText = (img: any, isBuyButton: boolean) => {
+  const getButtonText = (img: any, isBuyButton: boolean, link?: EcwidStoreLink) => {
     if (img.isSold) {
       return t('exhibition.sold', 'Venduto');
+    }
+    if (isBuyButton && link) {
+      const custom = getLocalizedField(link, 'label', lang);
+      if (custom) return custom;
     }
     if (img.isLimitedEdition) {
       const qty = img.limitedEditionQuantity !== undefined ? img.limitedEditionQuantity : 0;
@@ -183,9 +191,17 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   const lightboxActionBtnClass =
     "inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg";
 
+  const hasImageActions = (img: {
+    ecwidLink?: string;
+    ecwidLinks?: EcwidStoreLink[];
+    contactLink?: string;
+    isSold?: boolean;
+  }) => img.isSold || hasEcwidLinks(img) || !!img.contactLink;
+
   const renderImageAction = (
     img: {
       ecwidLink?: string;
+      ecwidLinks?: EcwidStoreLink[];
       contactLink?: string;
       contactType?: string;
       isSold?: boolean;
@@ -194,7 +210,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     },
     variant: "overlay" | "lightbox" = "overlay",
   ) => {
-    if (!img.isSold && !img.ecwidLink && !img.contactLink) return null;
+    if (!img.isSold && !hasEcwidLinks(img) && !img.contactLink) return null;
 
     if (img.isSold) {
       return (
@@ -205,18 +221,24 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     }
 
     const btnClass = variant === "lightbox" ? lightboxActionBtnClass : actionBtnClass;
+    const links = normalizeEcwidLinks(img);
 
-    if (img.ecwidLink) {
+    if (links.length > 0) {
       return (
-        <a
-          href={img.ecwidLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className={btnClass}
-        >
-          {getButtonText(img, true)}
-        </a>
+        <div className="flex flex-col items-end gap-2">
+          {links.map((link, i) => (
+            <a
+              key={`${link.url}-${i}`}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={btnClass}
+            >
+              {getButtonText(img, true, link)}
+            </a>
+          ))}
+        </div>
       );
     }
 
@@ -327,7 +349,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           return (
             <div key={block.id} className="w-full relative bg-[#121212] cursor-pointer" onClick={() => setLightboxIndex(currentIndex)}>
               {renderMedia(img, "w-full h-auto", "Mostra Fullscreen")}
-              {(img.isSold || img.ecwidLink || img.contactLink) && (
+              {hasImageActions(img) && (
                 <div className="absolute bottom-6 right-6 z-10">
                   {renderImageAction(img)}
                 </div>
@@ -389,7 +411,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
               >
                 {renderMedia(img1, "w-full h-auto", "Mostra 1")}
-                {(img1.isSold || img1.ecwidLink || img1.contactLink) && (
+                {hasImageActions(img1) && (
                   <div className="absolute bottom-6 right-6 z-10">
                     {renderImageAction(img1)}
                   </div>
@@ -410,7 +432,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
               >
                 {renderMedia(img2, "w-full h-auto", "Mostra 2")}
-                {(img2.isSold || img2.ecwidLink || img2.contactLink) && (
+                {hasImageActions(img2) && (
                   <div className="absolute bottom-6 right-6 z-10">
                     {renderImageAction(img2)}
                   </div>
@@ -452,7 +474,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   onClick={img1.url ? () => setLightboxIndex(index1) : undefined}
                 >
                   {renderMedia(img1, "w-full h-auto object-cover", "Mostra Creative 1")}
-                  {(img1.isSold || img1.ecwidLink || img1.contactLink) && (
+                  {hasImageActions(img1) && (
                     <div className="absolute bottom-6 right-6 z-10">
                       {renderImageAction(img1)}
                     </div>
@@ -472,7 +494,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   onClick={img2.url ? () => setLightboxIndex(index2) : undefined}
                 >
                   {renderMedia(img2, "w-full h-auto object-cover", "Mostra Creative 2")}
-                  {(img2.isSold || img2.ecwidLink || img2.contactLink) && (
+                  {hasImageActions(img2) && (
                     <div className="absolute bottom-6 right-6 z-10">
                       {renderImageAction(img2)}
                     </div>
@@ -522,7 +544,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                     onClick={img.url && index >= 0 ? () => setLightboxIndex(index) : undefined}
                   >
                     {renderMedia(img, "w-full h-full object-cover", `Mostra grid ${slotIdx + 1}`)}
-                    {(img.isSold || img.ecwidLink || img.contactLink) && (
+                    {hasImageActions(img) && (
                       <div className="absolute bottom-3 right-3 md:bottom-6 md:right-6 z-10">
                         {renderImageAction(img)}
                       </div>
@@ -596,7 +618,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                  )}
                </div>
              )}
-             {(allImages[lightboxIndex].isSold || allImages[lightboxIndex].ecwidLink || allImages[lightboxIndex].contactLink) && (
+             {hasImageActions(allImages[lightboxIndex]) && (
                <div className="mt-6">
                  {renderImageAction(allImages[lightboxIndex], "lightbox")}
                </div>

@@ -3,6 +3,12 @@ import { Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Eye, EyeOff } fro
 import ImageUpload from './ImageUpload';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import {
+  type EcwidStoreLink,
+  buildEcwidLinkUpdates,
+  getEcwidLinkSlots,
+  hasEcwidLinks,
+} from '../utils/ecwidStoreLinks';
 
 const quillModules = {
   toolbar: [
@@ -23,7 +29,10 @@ export interface ExhibitionBlock {
   alignment?: 'left' | 'center' | 'right';
   images?: { 
     url: string; 
-    ecwidLink?: string; 
+    /** @deprecated prefer ecwidLinks[0]; kept in sync for legacy / webhook */
+    ecwidLink?: string;
+    /** Up to 4 store links (e.g. poster A1 + A2 as separate Ecwid products) */
+    ecwidLinks?: EcwidStoreLink[];
     contactType?: 'email' | 'whatsapp' | 'link'; 
     contactLink?: string; 
     fallbackUrl?: string; 
@@ -96,7 +105,23 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     onChange(newBlocks);
   };
 
-  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{ url: string; ecwidLink: string; contactType: 'email' | 'whatsapp' | 'link'; contactLink: string; fallbackUrl: string; caption: string; caption_en: string; captionColor: 'white' | 'black'; captionPosition: 'top-left' | 'top-right'; isLimitedEdition: boolean; limitedEditionQuantity: number; isSold: boolean; watermarkEnabled: boolean; watermarkMode: 'both' | 'text' | 'logo' }>) => {
+  const updateImageFields = (blockId: string, imageIndex: number, updates: Partial<{
+    url: string;
+    ecwidLink: string;
+    ecwidLinks: EcwidStoreLink[];
+    contactType: 'email' | 'whatsapp' | 'link';
+    contactLink: string;
+    fallbackUrl: string;
+    caption: string;
+    caption_en: string;
+    captionColor: 'white' | 'black';
+    captionPosition: 'top-left' | 'top-right';
+    isLimitedEdition: boolean;
+    limitedEditionQuantity: number;
+    isSold: boolean;
+    watermarkEnabled: boolean;
+    watermarkMode: 'both' | 'text' | 'logo';
+  }>) => {
     onChange(blocks.map(b => {
       if (b.id !== blockId || !b.images) return b;
       const newImages = [...b.images];
@@ -107,6 +132,23 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
 
   const updateImage = (blockId: string, imageIndex: number, field: string, value: any) => {
     updateImageFields(blockId, imageIndex, { [field]: value });
+  };
+
+  const updateEcwidLinkSlot = (
+    blockId: string,
+    imageIndex: number,
+    slotIndex: number,
+    field: 'url' | 'label' | 'label_en',
+    value: string,
+    img: NonNullable<ExhibitionBlock['images']>[number],
+  ) => {
+    const slots = getEcwidLinkSlots(img);
+    slots[slotIndex] = { ...slots[slotIndex], [field]: value };
+    updateImageFields(blockId, imageIndex, {
+      ...buildEcwidLinkUpdates(slots),
+      contactLink: '',
+      contactType: undefined,
+    });
   };
 
   return (
@@ -377,16 +419,65 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                             </div>
                           )}
 
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Ecwid Store Link</label>
-                            <input
-                              type="url"
-                              value={img.ecwidLink || ''}
-                              onChange={e => updateImageFields(block.id, imgIndex, { ecwidLink: e.target.value, contactLink: '', contactType: undefined })}
-                              placeholder="https://..."
-                              disabled={!!img.contactLink}
-                              className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                            />
+                          <div className="space-y-3">
+                            <p className="text-xs font-medium text-gray-500">
+                              Ecwid Store Link (fino a 4 — es. Poster A1 e A2 come prodotti separati)
+                            </p>
+                            {getEcwidLinkSlots(img).map((slot, slotIndex) => {
+                              const ecwidDisabled = !!img.contactLink;
+                              return (
+                                <div
+                                  key={slotIndex}
+                                  className="rounded border border-gray-100 bg-gray-50/50 p-2.5 space-y-2"
+                                >
+                                  <label className="block text-xs font-medium text-gray-500">
+                                    Link {slotIndex + 1}
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={slot.url}
+                                    onChange={(e) =>
+                                      updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'url', e.target.value, img)
+                                    }
+                                    placeholder="https://..."
+                                    disabled={ecwidDisabled}
+                                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
+                                  />
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
+                                        Testo bottone IT
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={slot.label || ''}
+                                        onChange={(e) =>
+                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'label', e.target.value, img)
+                                        }
+                                        placeholder="Acquista"
+                                        disabled={ecwidDisabled}
+                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
+                                        Testo bottone EN
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={slot.label_en || ''}
+                                        onChange={(e) =>
+                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'label_en', e.target.value, img)
+                                        }
+                                        placeholder="Buy"
+                                        disabled={ecwidDisabled}
+                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
 
                           <div className="border-t border-gray-100 pt-3 relative">
@@ -396,7 +487,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                               <select 
                                 value={img.contactType || 'email'} 
                                 onChange={e => updateImage(block.id, imgIndex, 'contactType', e.target.value)}
-                                disabled={!!img.ecwidLink}
+                                disabled={hasEcwidLinks(img)}
                                 className="w-1/3 border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400"
                               >
                                 <option value="email">Email</option>
@@ -406,9 +497,13 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                               <input
                                 type="text"
                                 value={img.contactLink || ''}
-                                onChange={e => updateImageFields(block.id, imgIndex, { contactLink: e.target.value, ecwidLink: '' })}
+                                onChange={e => updateImageFields(block.id, imgIndex, {
+                                  contactLink: e.target.value,
+                                  ecwidLink: '',
+                                  ecwidLinks: [],
+                                })}
                                 placeholder={img.contactType === 'whatsapp' ? 'es. +393331234567' : img.contactType === 'email' ? 'es. info@email.com' : 'es. https://...'}
-                                disabled={!!img.ecwidLink}
+                                disabled={hasEcwidLinks(img)}
                                 className="w-2/3 border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400"
                               />
                             </div>
