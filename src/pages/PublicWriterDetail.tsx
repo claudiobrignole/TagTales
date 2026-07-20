@@ -19,6 +19,7 @@ import SEO from "../components/SEO";
 import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
+import { IMAGE_RADIUS } from "../constants/theme";
 
 export default function PublicWriterDetail() {
   const { slug } = useParams();
@@ -112,14 +113,13 @@ export default function PublicWriterDetail() {
           if (userEcwidProductIds.length > 0) {
             try {
               console.log("Fetching ecwid products for IDs:", userEcwidProductIds);
-              const ecwidRes = await fetch("/api/ecwid/products");
+              // Fetch by assigned IDs (order preserved) — avoids incomplete catalog pages
+              const idsParam = userEcwidProductIds.map(String).join(",");
+              const ecwidRes = await fetch(`/api/ecwid/products?ids=${encodeURIComponent(idsParam)}`);
               if (ecwidRes.ok) {
                 const ecwidData = await ecwidRes.json();
-                console.log("Total ecwid products fetched:", ecwidData.items?.length);
-                const allItems = ecwidData.items || [];
-                const safeIdsStr = userEcwidProductIds.map(String);
-                const writerProducts = allItems.filter((p: any) => safeIdsStr.includes(String(p.id)));
-                console.log("Matched ecwid products:", writerProducts);
+                const writerProducts = ecwidData.items || [];
+                console.log("Matched ecwid products:", writerProducts.length, "of", userEcwidProductIds.length);
                 setEcwidProducts(writerProducts);
               } else {
                 console.error("Ecwid fetch failed with status:", ecwidRes.status);
@@ -345,26 +345,53 @@ export default function PublicWriterDetail() {
 
           {ecwidProducts.length > 0 && (
              <div className="mt-16 pt-16 border-t border-[#121212]/10">
-               <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8">
+               <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8 leading-[0.8]">
                  {t('writer.products', 'Prodotti in Vendita')}
                </h2>
-               <div className="space-y-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                  {ecwidProducts.map(product => (
-                   <div key={product.id} className="flex items-center gap-4 p-4 border border-[#EAE3D9] rounded-xl hover:bg-[#F2EEE8]/30 transition-colors bg-white">
-                     {(product.thumbnailUrl || product.imageUrl) && (
-                       <img src={product.thumbnailUrl || product.imageUrl} alt={product.name} className="w-16 h-16 object-cover rounded-lg border border-[#EAE3D9]" />
-                     )}
-                     <div className="flex-1 min-w-0">
-                       <p className="font-bold text-[#121212] truncate">{product.name}</p>
-                       <p className="text-sm text-[#59554E]">{product.defaultDisplayedPriceFormatted || `${product.price?.toLocaleString()} Euro`}</p>
+                   <div
+                     key={product.id}
+                     className={`flex flex-col overflow-hidden border border-[#EAE3D9] bg-white hover:shadow-md transition-shadow ${IMAGE_RADIUS.MD}`}
+                   >
+                     <div className="aspect-square w-full overflow-hidden bg-[#F2EEE8]">
+                       {(product.thumbnailUrl || product.imageUrl) ? (
+                         <img
+                           src={product.thumbnailUrl || product.imageUrl}
+                           alt={product.name}
+                           className="w-full h-full object-cover"
+                           loading="lazy"
+                         />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center text-[#59554E] text-xs font-bold uppercase tracking-widest">
+                           No image
+                         </div>
+                       )}
                      </div>
-                     {product.url ? (
-                       <a href={product.url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#121212] text-white text-xs font-bold rounded-lg hover:bg-black transition-colors shrink-0">
-                         {t('writer.goToStore', 'Vai allo store')}
-                       </a>
-                     ) : (
-                       <span className="text-xs font-bold text-[#59554E] shrink-0">Non disponibile</span>
-                     )}
+                     <div className="flex flex-1 flex-col gap-3 p-4 min-w-0">
+                       <p className="font-['Karla'] font-bold uppercase tracking-wider text-[#121212] text-sm leading-snug line-clamp-2">
+                         {product.name}
+                       </p>
+                       <p className="font-['Karla'] text-[#59554E] text-sm">
+                         {product.defaultDisplayedPriceFormatted || `${product.price?.toLocaleString()} Euro`}
+                       </p>
+                       <div className="mt-auto pt-1">
+                         {product.url ? (
+                           <a
+                             href={product.url}
+                             target="_blank"
+                             rel="noreferrer"
+                             className="inline-flex w-full items-center justify-center px-4 py-2.5 bg-[#121212] text-white text-xs font-['Karla'] font-bold uppercase tracking-wider rounded-full hover:bg-[#FF4F00] transition-colors"
+                           >
+                             {t('writer.goToStore', 'Vai allo store')}
+                           </a>
+                         ) : (
+                           <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">
+                             Non disponibile
+                           </span>
+                         )}
+                       </div>
+                     </div>
                    </div>
                  ))}
                </div>

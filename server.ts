@@ -771,29 +771,83 @@ ${text}`,
         return res.status(500).json({ error: "Ecwid credentials not configured" });
       }
 
-      const keyword = req.query.keyword as string;
-      const params = new URLSearchParams();
-      if (keyword) {
-        params.append('keyword', keyword);
-      }
-      params.append('limit', '100');
+      const headers = {
+        Authorization: `Bearer ${secretToken}`,
+        Accept: "application/json",
+      };
 
-      const response = await fetch(`https://app.ecwid.com/api/v3/${storeId}/products?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${secretToken}`
+      const fetchPage = async (params: URLSearchParams) => {
+        const response = await fetch(
+          `https://app.ecwid.com/api/v3/${storeId}/products?${params.toString()}`,
+          { headers },
+        );
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Ecwid API Error:", errorData);
+          const err: any = new Error("Failed to fetch products from Ecwid");
+          err.status = response.status;
+          throw err;
         }
-      });
+        return response.json();
+      };
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("Ecwid API Error:", errorData);
-        return res.status(response.status).json({ error: "Failed to fetch products from Ecwid" });
+      // Fetch specific product IDs (preserves caller order; used by writer pages)
+      const idsRaw = (req.query.ids as string | undefined)?.trim();
+      if (idsRaw) {
+        const requestedIds = idsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const byId = new Map<string, any>();
+        const chunkSize = 100;
+        for (let i = 0; i < requestedIds.length; i += chunkSize) {
+          const chunk = requestedIds.slice(i, i + chunkSize);
+          const params = new URLSearchParams();
+          params.append("productIds", chunk.join(","));
+          params.append("enabled", "true");
+          params.append("limit", String(chunkSize));
+          const data = await fetchPage(params);
+          for (const item of data.items || []) {
+            if (item && item.enabled !== false) {
+              byId.set(String(item.id), item);
+            }
+          }
+        }
+        const ordered = requestedIds
+          .map((id) => byId.get(String(id)))
+          .filter(Boolean);
+        return res.json({ items: ordered, total: ordered.length });
       }
 
-      const data = await response.json();
-      res.json({ items: data.items || [] });
+      const keyword = (req.query.keyword as string | undefined)?.trim();
+      const pageSize = 100;
+      const maxPages = 50;
+      const allItems: any[] = [];
+      let offset = 0;
+      let total = Infinity;
+
+      for (let page = 0; page < maxPages && offset < total; page++) {
+        const params = new URLSearchParams();
+        if (keyword) params.append("keyword", keyword);
+        params.append("enabled", "true");
+        params.append("limit", String(pageSize));
+        params.append("offset", String(offset));
+
+        const data = await fetchPage(params);
+        const items = Array.isArray(data.items) ? data.items : [];
+        allItems.push(...items.filter((p: any) => p && p.enabled !== false));
+
+        total = typeof data.total === "number" ? data.total : offset + items.length;
+        offset += items.length;
+        if (items.length === 0 || items.length < pageSize) break;
+      }
+
+      res.json({ items: allItems, total: allItems.length });
     } catch (error: any) {
       console.error("Fetch products error:", error);
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message || "Failed to fetch products from Ecwid" });
+      }
       res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
