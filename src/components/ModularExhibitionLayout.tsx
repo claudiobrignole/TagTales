@@ -533,7 +533,7 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                 isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]",
               )}
             >
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-[15px] md:gap-[25px]">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[15px] md:gap-[25px]">
                 {slots.map(({ img, index }, slotIdx) => (
                   <div
                     key={`${block.id}_${slotIdx}`}

@@ -272,7 +272,14 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                     </label>
                   </div>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  className={clsx(
+                    'grid gap-4',
+                    block.type === 'images_grid_4'
+                      ? 'grid-cols-1 lg:grid-cols-2'
+                      : 'grid-cols-1 md:grid-cols-2',
+                  )}
+                >
                   {block.images.map((img, imgIndex) => (
                     <div key={imgIndex} className="bg-gray-50 p-4 border border-gray-100 rounded-lg space-y-3">
                       <ImageUpload
