@@ -66,6 +66,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           watermarkMode: block.images[0].watermarkMode,
         });
       } else if (
+        block.type === 'image_half_centered' ||
+        block.type === 'text_with_image_half' ||
         block.type === 'images_side_by_side_aligned' ||
         block.type === 'images_side_by_side_creative' ||
         block.type === 'images_grid_4'
@@ -261,6 +263,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   const galleryGapTypes = new Set([
     'images_side_by_side_aligned',
     'images_grid_4',
+    'image_half_centered',
+    'text_with_image_half',
   ]);
 
   const getGallerySpacingClass = (blockIndex: number) => {
@@ -363,6 +367,108 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
                   {getLocalizedField(img, 'caption', lang) || img.caption}
                 </div>
               )}
+            </div>
+          );
+        }
+
+        // --- HALF-WIDTH CENTERED IMAGE (same column width as one side-by-side photo) ---
+        if (block.type === 'image_half_centered') {
+          const img = block.images?.[0];
+          if (!img || !img.url) return null;
+          const isBlack = block.backgroundColor === 'black';
+          const currentIndex = imageIndexMap.get(`${block.id}_0`) ?? -1;
+
+          return (
+            <div
+              key={block.id}
+              className={clsx(
+                "w-full flex justify-center px-[25px] md:px-[50px]",
+                getGallerySpacingClass(blockIndex),
+                isBlack ? "bg-[#121212]" : "bg-[#F2EEE8]",
+              )}
+            >
+              <div
+                className={clsx("w-full md:w-1/2 relative bg-black/5", img.url ? "cursor-pointer" : "")}
+                onClick={() => setLightboxIndex(currentIndex)}
+              >
+                {renderMedia(img, "w-full h-auto", "Mostra Centrata")}
+                {hasImageActions(img) && (
+                  <div className="absolute bottom-6 right-6 z-10">
+                    {renderImageAction(img)}
+                  </div>
+                )}
+                {img.caption && (
+                  <div className={clsx(
+                    "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
+                    img.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
+                    captionPositionClass(img.captionPosition)
+                  )}>
+                    {getLocalizedField(img, 'caption', lang) || img.caption}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        // --- TEXT + IMAGE HALF (left/right desktop, above/below mobile) ---
+        if (block.type === 'text_with_image_half') {
+          const img = block.images?.[0] || { url: '' };
+          const isBlack = block.backgroundColor === 'black';
+          const imageOnRight = block.imagePosition === 'right';
+          const mobileBelow = block.mobileImageStack === 'below';
+          const currentIndex = img.url ? (imageIndexMap.get(`${block.id}_0`) ?? -1) : -1;
+          const textHtml = cleanHtml(getLocalizedField(block, 'text', lang) || block.text || '');
+
+          return (
+            <div
+              key={block.id}
+              className={clsx(
+                "w-full flex flex-col md:flex-row h-auto gap-[15px] md:gap-[25px] px-[25px] md:px-[50px] items-center",
+                getGallerySpacingClass(blockIndex),
+                isBlack ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]",
+              )}
+            >
+              <div
+                className={clsx(
+                  "w-full md:w-1/2 relative bg-black/5 min-w-0",
+                  img.url ? "cursor-pointer" : "",
+                  mobileBelow ? "order-2" : "order-1",
+                  imageOnRight ? "md:order-2" : "md:order-1",
+                )}
+                onClick={img.url && currentIndex >= 0 ? () => setLightboxIndex(currentIndex) : undefined}
+              >
+                {img.url && renderMedia(img, "w-full h-auto", "Mostra Testo Immagine")}
+                {img.url && hasImageActions(img) && (
+                  <div className="absolute bottom-6 right-6 z-10">
+                    {renderImageAction(img)}
+                  </div>
+                )}
+                {img.caption && (
+                  <div className={clsx(
+                    "absolute z-10 p-4 text-xs font-['Karla'] font-bold uppercase tracking-widest",
+                    img.captionColor === 'black' ? 'text-[#121212]' : 'text-white',
+                    captionPositionClass(img.captionPosition)
+                  )}>
+                    {getLocalizedField(img, 'caption', lang) || img.caption}
+                  </div>
+                )}
+              </div>
+              <div
+                className={clsx(
+                  "w-full md:w-1/2 min-w-0 py-4 md:py-0",
+                  mobileBelow ? "order-1" : "order-2",
+                  imageOnRight ? "md:order-1" : "md:order-2",
+                )}
+              >
+                <div
+                  className={clsx(
+                    "prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-lg leading-relaxed font-normal text-inherit",
+                    isBlack ? "prose-invert text-white" : "",
+                  )}
+                  dangerouslySetInnerHTML={{ __html: textHtml }}
+                />
+              </div>
             </div>
           );
         }

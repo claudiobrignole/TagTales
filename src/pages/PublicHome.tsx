@@ -923,7 +923,9 @@ export default function PublicHome() {
             </div>
           </section>
         );
-      case "text_with_image_half":
+      case "text_with_image_half": {
+        const imageOnRight = block.imagePosition === "right";
+        const mobileBelow = block.mobileImageStack === "below";
         return (
           <section
             key={block.id}
@@ -934,15 +936,14 @@ export default function PublicHome() {
                 : "bg-[#F2EEE8] text-[#121212]",
             )}
           >
-            <div
-              className={clsx(
-                "max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center md:items-start",
-                block.imagePosition === "right"
-                  ? "md:flex-row-reverse"
-                  : "md:flex-row",
-              )}
-            >
-              <div className="w-full md:w-1/2 space-y-6 min-w-0">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 md:gap-16 items-center md:items-start">
+              <div
+                className={clsx(
+                  "w-full md:w-1/2 space-y-6 min-w-0",
+                  mobileBelow ? "order-1" : "order-2",
+                  imageOnRight ? "md:order-1" : "md:order-2",
+                )}
+              >
                 {(getLocalizedField(block, "title", lang) || block.title) && (
                   <h3 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase">
                     {getLocalizedField(block, "title", lang) || block.title}
@@ -950,7 +951,7 @@ export default function PublicHome() {
                 )}
                 <div
                   className={clsx(
-                    "prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit !text-xl leading-[1.35]",
+                    "prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit !text-xl md:!text-2xl opacity-80",
                     block.backgroundColor === "black" ? "prose-invert text-white" : ""
                   )}
                   dangerouslySetInnerHTML={{
@@ -960,6 +961,42 @@ export default function PublicHome() {
                   }}
                 />
               </div>
+              <div
+                className={clsx(
+                  "w-full md:w-1/2 min-w-0",
+                  mobileBelow ? "order-2" : "order-1",
+                  imageOnRight ? "md:order-2" : "md:order-1",
+                )}
+              >
+                {block.images?.[0]?.url && (
+                  <LazyImage
+                    src={block.images[0].url}
+                    alt=""
+                    className="w-full h-auto object-cover"
+                    wrapperClassName="w-full h-full rounded-3xl"
+                    loading="lazy"
+                    width={800}
+                    height={600}
+                    style={{ objectFit: "cover" }}
+                  />
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      }
+      case "image_half_centered":
+        return (
+          <section
+            key={block.id}
+            className={clsx(
+              "py-12 md:py-16 px-[25px]",
+              block.backgroundColor === "black"
+                ? "bg-[#121212] text-white"
+                : "bg-[#F2EEE8] text-[#121212]",
+            )}
+          >
+            <div className="max-w-7xl mx-auto flex justify-center">
               <div className="w-full md:w-1/2 min-w-0">
                 {block.images?.[0]?.url && (
                   <LazyImage

@@ -23,11 +23,15 @@ const quillModules = {
 
 export interface ExhibitionBlock {
   id: string;
-  type: 'text' | 'paragraph' | 'image_fullscreen' | 'images_side_by_side_aligned' | 'images_side_by_side_creative' | 'images_grid_4' | 'video_embed';
+  type: 'text' | 'paragraph' | 'image_fullscreen' | 'image_half_centered' | 'images_side_by_side_aligned' | 'images_side_by_side_creative' | 'images_grid_4' | 'text_with_image_half' | 'video_embed';
   text?: string;
   text_en?: string;
   backgroundColor?: 'black' | 'light';
   alignment?: 'left' | 'center' | 'right';
+  /** For text_with_image_half: which side shows the image on desktop */
+  imagePosition?: 'left' | 'right';
+  /** For text_with_image_half: image above or below text on mobile */
+  mobileImageStack?: 'above' | 'below';
   images?: { 
     url: string; 
     /** @deprecated prefer ecwidLinks[0]; kept in sync for legacy / webhook */
@@ -68,8 +72,15 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
       newBlock.text = '';
       newBlock.text_en = '';
       newBlock.backgroundColor = 'light';
-    } else if (type === 'image_fullscreen') {
+    } else if (type === 'image_fullscreen' || type === 'image_half_centered') {
       newBlock.images = [{ url: '', ecwidLink: '' }];
+      newBlock.backgroundColor = 'light';
+    } else if (type === 'text_with_image_half') {
+      newBlock.text = '';
+      newBlock.images = [{ url: '', ecwidLink: '' }];
+      newBlock.imagePosition = 'left';
+      newBlock.mobileImageStack = 'above';
+      newBlock.backgroundColor = 'light';
     } else if (type === 'video_embed') {
       newBlock.videoUrl = '';
       newBlock.backgroundColor = 'light';
@@ -160,8 +171,10 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
           <button type="button" onClick={() => addBlock('text')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Quote</button>
           <button type="button" onClick={() => addBlock('paragraph')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Paragrafo</button>
           <button type="button" onClick={() => addBlock('image_fullscreen')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 1 Immagine</button>
+          <button type="button" onClick={() => addBlock('image_half_centered')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 1 Centrata</button>
           <button type="button" onClick={() => addBlock('images_side_by_side_aligned')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 2 Affiancate</button>
           <button type="button" onClick={() => addBlock('images_side_by_side_creative')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 2 Creative</button>
+          <button type="button" onClick={() => addBlock('text_with_image_half')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Testo & Immagine</button>
           <button type="button" onClick={() => addBlock('images_grid_4')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ 4 Quadrate</button>
           <button type="button" onClick={() => addBlock('video_embed')} className="text-xs bg-[#F2EEE8] text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:bg-white font-medium">+ Video</button>
         </div>
@@ -189,8 +202,10 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                 {block.type === 'text' && 'Blocco Quote'}
                 {block.type === 'paragraph' && 'Blocco Paragrafo'}
                 {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
+                {block.type === 'image_half_centered' && 'Immagine Centrata (Metà)'}
                 {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
                 {block.type === 'images_side_by_side_creative' && 'Due Immagini Sfalsate (Creative)'}
+                {block.type === 'text_with_image_half' && 'Testo e Immagine (Metà)'}
                 {block.type === 'images_grid_4' && 'Quattro Immagini Quadrate'}
                 {block.type === 'video_embed' && 'Video Embed (YouTube/Vimeo)'}
               </span>
@@ -258,9 +273,67 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
               </div>
             )}
 
+            {block.type === 'text_with_image_half' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Testo</label>
+                  <div className="bg-white border border-[#EAE3D9] rounded-xl relative quill-wrapper-override">
+                    <ReactQuill
+                      theme="snow"
+                      value={block.text || ''}
+                      onChange={content => updateBlock(block.id, { text: content })}
+                      modules={quillModules}
+                      placeholder="Testo accanto all'immagine..."
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4 bg-gray-50 border border-gray-100 rounded-lg p-4">
+                  <div className="space-y-2">
+                    <span className="block text-xs font-medium text-gray-500">Posizione immagine (desktop)</span>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" checked={block.imagePosition !== 'right'} onChange={() => updateBlock(block.id, { imagePosition: 'left' })} />
+                        Sinistra
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" checked={block.imagePosition === 'right'} onChange={() => updateBlock(block.id, { imagePosition: 'right' })} />
+                        Destra
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="block text-xs font-medium text-gray-500">Su mobile l’immagine</span>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" checked={block.mobileImageStack !== 'below'} onChange={() => updateBlock(block.id, { mobileImageStack: 'above' })} />
+                        Sopra il testo
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" checked={block.mobileImageStack === 'below'} onChange={() => updateBlock(block.id, { mobileImageStack: 'below' })} />
+                        Sotto il testo
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="block text-xs font-medium text-gray-500">Sfondo container</span>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" checked={block.backgroundColor === 'light'} onChange={() => updateBlock(block.id, { backgroundColor: 'light' })} />
+                        Chiaro
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" checked={block.backgroundColor === 'black'} onChange={() => updateBlock(block.id, { backgroundColor: 'black' })} />
+                        Scuro
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {block.type !== 'text' && block.type !== 'paragraph' && block.type !== 'video_embed' && block.images && (
               <div className="space-y-4">
-                {(block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative' || block.type === 'images_grid_4') && (
+                {(block.type === 'images_side_by_side_aligned' || block.type === 'images_side_by_side_creative' || block.type === 'images_grid_4' || block.type === 'image_half_centered') && (
                   <div className="flex gap-4 items-center mb-4">
                     <span className="text-sm font-medium">Sfondo Container:</span>
                     <label className="flex items-center gap-2 text-sm">
@@ -278,7 +351,9 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                     'grid gap-4',
                     block.type === 'images_grid_4'
                       ? 'grid-cols-1 lg:grid-cols-2'
-                      : 'grid-cols-1 md:grid-cols-2',
+                      : block.type === 'text_with_image_half' || block.type === 'image_half_centered' || block.type === 'image_fullscreen'
+                        ? 'grid-cols-1'
+                        : 'grid-cols-1 md:grid-cols-2',
                   )}
                 >
                   {block.images.map((img, imgIndex) => (

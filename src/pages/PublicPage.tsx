@@ -203,18 +203,58 @@ export default function PublicPage({ id: propId }: { id?: string }) {
             </div>
           </section>
         );
-      case 'text_with_image_half':
+      case 'text_with_image_half': {
+        const imageOnRight = block.imagePosition === 'right';
+        const mobileBelow = block.mobileImageStack === 'below';
         return (
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 md:pb-20 pt-28' : 'py-12 md:py-20'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
-            <div className={clsx("max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 items-center md:items-start", block.imagePosition === 'right' ? "md:flex-row-reverse" : "md:flex-row")}>
-              <div className="w-full md:w-1/2 space-y-6 min-w-0">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 md:gap-16 items-center md:items-start">
+              <div
+                className={clsx(
+                  "w-full md:w-1/2 space-y-6 min-w-0",
+                  mobileBelow ? "order-1" : "order-2",
+                  imageOnRight ? "md:order-1" : "md:order-2",
+                )}
+              >
                 {(getLocalizedField(block, 'title', lang) || block.title) && (
                   <h3 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase">
                     {getLocalizedField(block, 'title', lang) || block.title}
                   </h3>
                 )}
-                <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] text-inherit !text-xl leading-[1.35]", block.backgroundColor === 'black' ? "prose-invert text-white" : "")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
+                <div className={clsx("prose max-w-none w-full mx-auto break-words whitespace-pre-wrap prose-p:my-2 prose-p:leading-[1.4] prose-headings:my-4 prose-img:my-4 font-['Karla'] !text-xl leading-[1.35] text-inherit", block.backgroundColor === 'black' ? "prose-invert text-white" : "")} dangerouslySetInnerHTML={{ __html: cleanHtml(getLocalizedField(block, 'text', lang) || block.text) }} />
               </div>
+              <div
+                className={clsx(
+                  "w-full md:w-1/2 min-w-0",
+                  mobileBelow ? "order-2" : "order-1",
+                  imageOnRight ? "md:order-2" : "md:order-1",
+                )}
+              >
+                {block.images?.[0]?.url && (
+                  isVideo(block.images[0].url) ? (
+                    <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-3xl" />
+                  ) : (
+                    <LazyImage
+                      src={block.images[0].url}
+                      alt=""
+                      className="w-full h-auto object-cover rounded-3xl"
+                      wrapperClassName="w-full h-auto"
+                      loading="lazy"
+                      width={600}
+                      height={450}
+                      style={{ objectFit: "cover" }}
+                    />
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      }
+      case 'image_half_centered':
+        return (
+          <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-12 pt-4' : 'py-12'}`, block.backgroundColor === 'black' ? "bg-[#121212]" : "bg-[#F2EEE8]")}>
+            <div className="max-w-7xl mx-auto flex justify-center">
               <div className="w-full md:w-1/2 min-w-0">
                 {block.images?.[0]?.url && (
                   isVideo(block.images[0].url) ? (

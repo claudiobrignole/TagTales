@@ -18,12 +18,14 @@ const quillModules = {
 
 export interface PageBlock {
   id: string;
-  type: 'text' | 'paragraph' | 'image_fullscreen' | 'images_side_by_side_aligned' | 'images_grid_4' | 'video_embed' | 'qa_module' | 'home_section' | 'accordion' | 'contact_form' | 'large_title' | 'text_with_image_half' | 'image_width_paragraph';
+  type: 'text' | 'paragraph' | 'image_fullscreen' | 'image_half_centered' | 'images_side_by_side_aligned' | 'images_grid_4' | 'video_embed' | 'qa_module' | 'home_section' | 'accordion' | 'contact_form' | 'large_title' | 'text_with_image_half' | 'image_width_paragraph';
   text?: string;
   text_en?: string;
   title?: string;
   title_en?: string;
   imagePosition?: 'left' | 'right';
+  /** For text_with_image_half: image above or below text on mobile */
+  mobileImageStack?: 'above' | 'below';
   backgroundColor?: 'black' | 'light';
   images?: { url: string; ecwidLink?: string; fallbackUrl?: string }[];
   videoUrl?: string;
@@ -50,7 +52,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
       newBlock.text = '';
       newBlock.text_en = '';
       newBlock.backgroundColor = 'light';
-    } else if (type === 'image_fullscreen') {
+    } else if (type === 'image_fullscreen' || type === 'image_half_centered') {
       newBlock.images = [{ url: '', ecwidLink: '' }];
       newBlock.backgroundColor = 'light';
     } else if (type === 'video_embed') {
@@ -79,9 +81,9 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
       newBlock.title = '';
       newBlock.title_en = '';
       newBlock.text = '';
-      newBlock.text_en = '';
       newBlock.images = [{ url: '', ecwidLink: '' }];
       newBlock.imagePosition = 'left';
+      newBlock.mobileImageStack = 'above';
       newBlock.backgroundColor = 'light';
     } else if (type === 'image_width_paragraph') {
       newBlock.images = [{ url: '', ecwidLink: '' }];
@@ -163,6 +165,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
           <button type="button" onClick={() => addBlock('text')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Quote</button>
           <button type="button" onClick={() => addBlock('paragraph')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Paragrafo</button>
           <button type="button" onClick={() => addBlock('image_fullscreen')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Immagine Full</button>
+          <button type="button" onClick={() => addBlock('image_half_centered')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Immagine Centrata</button>
           <button type="button" onClick={() => addBlock('image_width_paragraph')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ Immagine Paragrafo</button>
           <button type="button" onClick={() => addBlock('images_side_by_side_aligned')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ 2 Immagini</button>
           <button type="button" onClick={() => addBlock('images_grid_4')} className="text-[10px] bg-white text-[#121212] px-3 py-1.5 rounded-lg border border-[#EAE3D9] hover:border-[#121212] font-bold uppercase transition-all">+ 4 Quadrate</button>
@@ -213,6 +216,7 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                 {block.type === 'large_title' && 'Titolo Gigante (Shamgod)'}
                 {block.type === 'text_with_image_half' && 'Testo e Immagine (Metà)'}
                 {block.type === 'image_fullscreen' && 'Immagine Schermo Intero'}
+                {block.type === 'image_half_centered' && 'Immagine Centrata (Metà)'}
                 {block.type === 'image_width_paragraph' && 'Immagine (Larghezza Paragrafo)'}
                 {block.type === 'images_side_by_side_aligned' && 'Due Immagini Allineate'}
                 {block.type === 'images_grid_4' && 'Quattro Immagini Quadrate'}
@@ -303,9 +307,9 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Testo (IT)</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Testo</label>
                     <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
                       <ReactQuill 
                         theme="snow" 
@@ -316,29 +320,34 @@ export default function AdminPageBlocksEditor({ blocks, onChange, pageId }: Prop
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider font-['Karla'] text-[#121212] mb-1">Text (EN)</label>
-                    <div className="bg-[#F8F6F3] rounded-xl quill-wrapper-override border border-transparent focus-within:border-[#FF4F00] focus-within:bg-white transition-all">
-                      <ReactQuill 
-                        theme="snow" 
-                        value={block.text_en || ''} 
-                        onChange={val => updateBlock(block.id, { text_en: val })}
-                        modules={quillModules}
-                        className="text-lg"
-                      />
+                  <div className="space-y-4 bg-[#F8F6F3] rounded-xl border border-[#EAE3D9] p-4">
+                    <div className="space-y-2">
+                      <span className="block text-xs font-bold uppercase tracking-wider text-[#59554E]">Posizione immagine (desktop)</span>
+                      <div className="flex flex-wrap gap-4">
+                        <label className="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer">
+                          <input type="radio" className="accent-[#FF4F00]" checked={block.imagePosition === 'left' || !block.imagePosition} onChange={() => updateBlock(block.id, { imagePosition: 'left' })} />
+                          Sinistra
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer">
+                          <input type="radio" className="accent-[#FF4F00]" checked={block.imagePosition === 'right'} onChange={() => updateBlock(block.id, { imagePosition: 'right' })} />
+                          Destra
+                        </label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="block text-xs font-bold uppercase tracking-wider text-[#59554E]">Su mobile l’immagine</span>
+                      <div className="flex flex-wrap gap-4">
+                        <label className="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer">
+                          <input type="radio" className="accent-[#FF4F00]" checked={block.mobileImageStack !== 'below'} onChange={() => updateBlock(block.id, { mobileImageStack: 'above' })} />
+                          Sopra il testo
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer">
+                          <input type="radio" className="accent-[#FF4F00]" checked={block.mobileImageStack === 'below'} onChange={() => updateBlock(block.id, { mobileImageStack: 'below' })} />
+                          Sotto il testo
+                        </label>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex gap-4 items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">Posizione Immagine:</span>
-                  <label className="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer">
-                    <input type="radio" className="accent-[#FF4F00]" checked={block.imagePosition === 'left' || !block.imagePosition} onChange={() => updateBlock(block.id, { imagePosition: 'left' })} />
-                    Sinistra
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer">
-                    <input type="radio" className="accent-[#FF4F00]" checked={block.imagePosition === 'right'} onChange={() => updateBlock(block.id, { imagePosition: 'right' })} />
-                    Destra
-                  </label>
                 </div>
               </div>
             )}
