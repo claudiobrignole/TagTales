@@ -1,5 +1,6 @@
 export type EcwidStoreLink = {
   url: string;
+  url_en?: string;
   label?: string;
   label_en?: string;
 };
@@ -15,10 +16,11 @@ export function normalizeEcwidLinks(img: {
     const fromArray = img.ecwidLinks
       .map((l) => ({
         url: (l?.url || '').trim(),
+        url_en: (l?.url_en || '').trim() || undefined,
         label: l?.label?.trim() || undefined,
         label_en: l?.label_en?.trim() || undefined,
       }))
-      .filter((l) => l.url)
+      .filter((l) => l.url || l.url_en)
       .slice(0, ECWID_LINKS_MAX);
     if (fromArray.length > 0) return fromArray;
   }
@@ -50,6 +52,7 @@ export function getEcwidLinkSlots(img: {
     const entry = source[i];
     slots.push({
       url: entry?.url || '',
+      url_en: entry?.url_en || '',
       label: entry?.label || '',
       label_en: entry?.label_en || '',
     });
@@ -64,11 +67,15 @@ export function buildEcwidLinkUpdates(slots: EcwidStoreLink[]): {
 } {
   const normalized = slots.slice(0, ECWID_LINKS_MAX).map((s) => ({
     url: (s.url || '').trim(),
+    url_en: (s.url_en || '').trim() || undefined,
     // Keep label text as typed (spaces allowed); trim only when rendering (normalizeEcwidLinks)
     label: s.label || undefined,
     label_en: s.label_en || undefined,
   }));
-  const firstUrl = normalized.find((s) => s.url)?.url || '';
+  const firstUrl =
+    normalized.find((s) => s.url)?.url ||
+    normalized.find((s) => s.url_en)?.url_en ||
+    '';
   return {
     ecwidLinks: normalized,
     ecwidLink: firstUrl,

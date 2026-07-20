@@ -228,18 +228,22 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     if (links.length > 0) {
       return (
         <div className="flex flex-col items-end gap-2">
-          {links.map((link, i) => (
-            <a
-              key={`${link.url}-${i}`}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className={btnClass}
-            >
-              {getButtonText(img, true, link)}
-            </a>
-          ))}
+          {links.map((link, i) => {
+            const href =
+              getLocalizedField(link, 'url', lang) || link.url || link.url_en || '';
+            return (
+              <a
+                key={`${href}-${i}`}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className={btnClass}
+              >
+                {getButtonText(img, true, link)}
+              </a>
+            );
+          })}
         </div>
       );
     }

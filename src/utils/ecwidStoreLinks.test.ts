@@ -30,6 +30,20 @@ describe('ecwidStoreLinks', () => {
     ]);
   });
 
+  it('keeps slots that only have url_en', () => {
+    expect(
+      normalizeEcwidLinks({
+        ecwidLinks: [
+          { url: '', url_en: ' https://en-only ' },
+          { url: 'https://it', url_en: 'https://en' },
+        ],
+      }),
+    ).toEqual([
+      { url: '', url_en: 'https://en-only' },
+      { url: 'https://it', url_en: 'https://en' },
+    ]);
+  });
+
   it('pads admin slots to 2 and syncs legacy on build', () => {
     const slots = getEcwidLinkSlots({ ecwidLink: 'https://only' });
     expect(slots).toHaveLength(2);
@@ -46,6 +60,15 @@ describe('ecwidStoreLinks', () => {
     expect(built.ecwidLinks).toHaveLength(2);
     expect(built.ecwidLinks[0]).toEqual({ url: 'https://a1', label: 'Poster A1' });
     expect(built.ecwidLinks[1]).toEqual({ url: 'https://a2', label_en: 'Poster A2' });
+  });
+
+  it('persists url_en and falls back legacy ecwidLink to url_en', () => {
+    const built = buildEcwidLinkUpdates([
+      { url: '', url_en: 'https://en-product' },
+      { url: '  ', url_en: '' },
+    ]);
+    expect(built.ecwidLinks[0]).toEqual({ url: '', url_en: 'https://en-product' });
+    expect(built.ecwidLink).toBe('https://en-product');
   });
 
   it('preserves spaces in button labels while editing', () => {

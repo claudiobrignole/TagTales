@@ -240,6 +240,7 @@ export const ecwidWebhook = onRequest(
                   if (Array.isArray(img.ecwidLinks)) {
                     for (const entry of img.ecwidLinks) {
                       if (entry?.url) linkUrls.push(String(entry.url));
+                      if (entry?.url_en) linkUrls.push(String(entry.url_en));
                     }
                   }
                   if (img.ecwidLink) linkUrls.push(String(img.ecwidLink));

@@ -150,7 +150,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     blockId: string,
     imageIndex: number,
     slotIndex: number,
-    field: 'url' | 'label' | 'label_en',
+    field: 'url' | 'url_en' | 'label' | 'label_en',
     value: string,
     img: NonNullable<ExhibitionBlock['images']>[number],
   ) => {
@@ -513,19 +513,41 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                                   key={slotIndex}
                                   className="rounded border border-gray-100 bg-gray-50/50 p-2.5 space-y-2"
                                 >
-                                  <label className="block text-xs font-medium text-gray-500">
+                                  <p className="text-xs font-medium text-gray-500">
                                     Link {slotIndex + 1}
-                                  </label>
-                                  <input
-                                    type="url"
-                                    value={slot.url}
-                                    onChange={(e) =>
-                                      updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'url', e.target.value, img)
-                                    }
-                                    placeholder="https://..."
-                                    disabled={ecwidDisabled}
-                                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
-                                  />
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
+                                        Link IT
+                                      </label>
+                                      <input
+                                        type="url"
+                                        value={slot.url}
+                                        onChange={(e) =>
+                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'url', e.target.value, img)
+                                        }
+                                        placeholder="https://... (IT)"
+                                        disabled={ecwidDisabled}
+                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
+                                        Link EN
+                                      </label>
+                                      <input
+                                        type="url"
+                                        value={slot.url_en || ''}
+                                        onChange={(e) =>
+                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'url_en', e.target.value, img)
+                                        }
+                                        placeholder="https://... (EN)"
+                                        disabled={ecwidDisabled}
+                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
+                                      />
+                                    </div>
+                                  </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                       <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
