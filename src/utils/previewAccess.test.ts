@@ -5,6 +5,7 @@ import {
   canViewContent,
   buildPreviewUrl,
   appendPreviewToLink,
+  isExhibitionLinkedToWriter,
 } from './previewAccess';
 
 describe('previewAccess', () => {
@@ -44,5 +45,16 @@ describe('previewAccess', () => {
   it('appendPreviewToLink adds or replaces preview param', () => {
     expect(appendPreviewToLink('/writers/foo', 't1')).toBe('/writers/foo?preview=t1');
     expect(appendPreviewToLink('/writers/foo?foo=bar', 't1')).toBe('/writers/foo?foo=bar&preview=t1');
+  });
+
+  it('isExhibitionLinkedToWriter matches artistaIds and legacy fields', () => {
+    expect(
+      isExhibitionLinkedToWriter({ artistaIds: ['w1', 'w2'] }, 'w2'),
+    ).toBe(true);
+    expect(
+      isExhibitionLinkedToWriter({ artistaPrincipaleId: 'w1' }, 'w1'),
+    ).toBe(true);
+    expect(isExhibitionLinkedToWriter({ writerIds: ['w9'] }, 'w9')).toBe(true);
+    expect(isExhibitionLinkedToWriter({ artistaIds: ['w1'] }, 'other')).toBe(false);
   });
 });

@@ -9,7 +9,7 @@ import compression from "compression";
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { isLocalDevRequest } from "./src/utils/isLocalDevRequest.ts";
-import { fetchPreviewDocument, fetchPublishedSlugs, getAdminFirestore } from "./src/utils/previewServer.ts";
+import { fetchPreviewDocument, fetchPublishedSlugs, fetchWriterRelatedExhibitions, getAdminFirestore } from "./src/utils/previewServer.ts";
 import {
   createWatermarkedImage,
   isAllowedWatermarkSrc,
@@ -277,6 +277,21 @@ async function startServer() {
   registerPreviewRoute(app, "exhibition", "mostre");
   registerPreviewRoute(app, "writer", "scrittori");
   registerPreviewRoute(app, "article", "articoli");
+
+  app.get("/api/preview/writer/:slug/exhibitions", async (req, res) => {
+    try {
+      const token = typeof req.query.token === "string" ? req.query.token : undefined;
+      const db = getPreviewFirestore();
+      const payload = await fetchWriterRelatedExhibitions(db, req.params.slug, token);
+      if (!payload) {
+        return res.status(404).json({ error: "Not found" });
+      }
+      res.json(payload);
+    } catch (error: any) {
+      console.error("Preview writer exhibitions error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
 
   // Dev-only: mint a Firebase custom token for the super-admin (localhost only).
   app.post("/api/dev/admin-login", async (req, res) => {

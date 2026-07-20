@@ -19,6 +19,25 @@ export function isPublished(doc: PreviewableDoc | null | undefined): boolean {
   return doc.published === true || doc.isPublished === true;
 }
 
+/** Whether a mostra document lists this scrittore id. */
+export function isExhibitionLinkedToWriter(
+  exhibition: {
+    artistaIds?: unknown;
+    artistaPrincipaleId?: unknown;
+    writerIds?: unknown;
+  },
+  writerId: string,
+): boolean {
+  if (!writerId) return false;
+  const artistaIds = Array.isArray(exhibition.artistaIds) ? exhibition.artistaIds : [];
+  const writerIds = Array.isArray(exhibition.writerIds) ? exhibition.writerIds : [];
+  return (
+    artistaIds.includes(writerId) ||
+    exhibition.artistaPrincipaleId === writerId ||
+    writerIds.includes(writerId)
+  );
+}
+
 export function canViewContent(
   doc: PreviewableDoc | null | undefined,
   options: { previewToken?: string | null; isAdmin?: boolean },
@@ -70,6 +89,11 @@ export function getPreviewApiPath(type: PreviewContentType, slug: string, token:
   const segment =
     type === 'exhibition' ? 'exhibition' : type === 'writer' ? 'writer' : 'article';
   return `/api/preview/${segment}/${encodeURIComponent(slug)}?token=${encodeURIComponent(token)}`;
+}
+
+/** Related exhibitions for a writer secret preview (includes unpublished). */
+export function getWriterExhibitionsPreviewApiPath(slug: string, token: string): string {
+  return `/api/preview/writer/${encodeURIComponent(slug)}/exhibitions?token=${encodeURIComponent(token)}`;
 }
 
 export const PREVIEW_QUERY_PARAM = PREVIEW_PARAM;

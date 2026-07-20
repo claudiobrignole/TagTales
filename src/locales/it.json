@@ -62,12 +62,14 @@
     "editorial": "Redazione"
   },
   "writer": {
-    "participatingExhibitions": "Mostre Partecipanti",
+    "participatingExhibitions": "Mostre",
     "backToWriters": "Tutti i Writers",
     "followInstagram": "Segui su Instagram",
     "contactWriter": "Contatta Writer",
     "artworks": "Opere",
-    "products": "Prodotti in Vendita"
+    "products": "Opere disponibili",
+    "viewExhibition": "Visualizza Mostra",
+    "goToStore": "Vai allo store"
   },
   "common": {
     "save": "Salva",

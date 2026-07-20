@@ -12,7 +12,13 @@ import { cleanHtml } from "../utils/cleanHtml";
 import { trackViewArtist } from "../utils/analytics";
 import { fetchPreviewableContent } from "../utils/fetchPreviewableContent";
 import { useIsAdmin } from "../hooks/useIsAdmin";
-import { PREVIEW_QUERY_PARAM, appendPreviewToLink, isPublished } from "../utils/previewAccess";
+import {
+  PREVIEW_QUERY_PARAM,
+  appendPreviewToLink,
+  getWriterExhibitionsPreviewApiPath,
+  isExhibitionLinkedToWriter,
+  isPublished,
+} from "../utils/previewAccess";
 
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
@@ -63,16 +69,37 @@ export default function PublicWriterDetail() {
           });
         }
 
-        const exhibitionsSnap = await getDocs(collection(db, "mostre"));
-        const exhibitionsData = exhibitionsSnap.docs
-          .map((eDoc) => ({ id: eDoc.id, ...eDoc.data() }))
-          .filter(
-            (ex: any) =>
-              (ex.artistaIds?.includes(data.id) ||
-                ex.artistaPrincipaleId === data.id ||
-                ex.writerIds?.includes(data.id)) &&
-              isPublished(ex),
-          );
+        // Related exhibitions: preview token unlocks unpublished shows via Admin SDK API;
+        // admins read unpublished via Firestore; public sees published only.
+        let exhibitionsData: any[] = [];
+        if (previewToken) {
+          try {
+            const exRes = await fetch(
+              getWriterExhibitionsPreviewApiPath(slug, previewToken),
+            );
+            if (exRes.ok) {
+              const payload = await exRes.json();
+              exhibitionsData = Array.isArray(payload.items) ? payload.items : [];
+            }
+          } catch (e) {
+            console.warn("Preview exhibitions fetch failed", e);
+          }
+        }
+
+        if (exhibitionsData.length === 0) {
+          try {
+            const exhibitionsSnap = await getDocs(collection(db, "mostre"));
+            exhibitionsData = exhibitionsSnap.docs
+              .map((eDoc) => ({ id: eDoc.id, ...eDoc.data() }))
+              .filter(
+                (ex: any) =>
+                  isExhibitionLinkedToWriter(ex, data.id) &&
+                  (isAdmin || isPublished(ex)),
+              );
+          } catch (e) {
+            console.warn("Could not load related exhibitions", e);
+          }
+        }
         setExhibitions(exhibitionsData);
 
           // Fetch ecwid products if assigned
@@ -293,15 +320,21 @@ export default function PublicWriterDetail() {
 
           {exhibitions.length > 0 && (
             <div className="mt-16 pt-16 border-t border-[#121212]/10">
-              <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8">
-                {t('writer.participatingExhibitions', 'Mostre Partecipanti')}
+              <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8 leading-[0.8]">
+                {t('writer.participatingExhibitions', 'Mostre')}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {exhibitions.map((ex) => (
+              <div className="flex flex-col gap-8">
+                {exhibitions.map((ex) => {
+                  const exSlug = ex.slug || ex.id;
+                  const exPreviewToken =
+                    !isPublished(ex) && typeof ex.previewToken === "string"
+                      ? ex.previewToken
+                      : null;
+                  return (
                   <Link
                     key={ex.id}
-                    to={appendPreviewToLink(`/exhibitions/${ex.slug || ex.id}`, previewToken)}
-                    className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group"
+                    to={appendPreviewToLink(`/exhibitions/${exSlug}`, exPreviewToken)}
+                    className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group w-full"
                   >
                     <div className="aspect-video bg-[#F2EEE8] relative overflow-hidden">
                       {ex.bannerHero && ex.bannerHero.trim() !== '' ? (
@@ -321,8 +354,8 @@ export default function PublicWriterDetail() {
                             alt={ex.titolo} 
                             className="group-hover:scale-105 transition-transform duration-500" 
                             loading="lazy"
-                            width={800}
-                            height={450}
+                            width={1200}
+                            height={675}
                             style={{ objectFit: "cover" }}
                           />
                         )
@@ -330,15 +363,16 @@ export default function PublicWriterDetail() {
                         <div className="w-full h-full flex items-center justify-center text-[#59554E]">NO IMAGE</div>
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white font-bold uppercase tracking-widest border-2 border-white px-6 py-2 rounded-full">Visualizza Mostra</span>
+                        <span className="text-white font-bold uppercase tracking-widest border-2 border-white px-6 py-2 rounded-full">{t('writer.viewExhibition', 'Visualizza Mostra')}</span>
                       </div>
                     </div>
                     <div className="p-6">
-                      <h3 className="font-bold text-2xl text-[#121212] font-['Shamgod'] uppercase mb-1 leading-none">{getLocalizedField(ex, 'titolo', lang) || ex.titolo}</h3>
+                      <h3 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-2 leading-[0.8]">{getLocalizedField(ex, 'titolo', lang) || ex.titolo}</h3>
                       <p className="text-[#FF4F00] font-bold uppercase tracking-widest text-sm">{getLocalizedField(ex, 'intro', lang) || ex.intro}</p>
                     </div>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -346,7 +380,7 @@ export default function PublicWriterDetail() {
           {ecwidProducts.length > 0 && (
              <div className="mt-16 pt-16 border-t border-[#121212]/10">
                <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8 leading-[0.8]">
-                 {t('writer.products', 'Prodotti in Vendita')}
+                 {t('writer.products', 'Opere disponibili')}
                </h2>
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                  {ecwidProducts.map(product => (

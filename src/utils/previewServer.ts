@@ -1,6 +1,6 @@
 import { getApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { canViewContent, isPublished } from './previewAccess.ts';
+import { canViewContent, isExhibitionLinkedToWriter, isPublished } from './previewAccess.ts';
 
 type CollectionName = 'mostre' | 'scrittori' | 'articoli';
 
@@ -54,6 +54,37 @@ export async function fetchPreviewDocument(
   }
 
   return sanitizePreviewPayload(doc);
+}
+
+/**
+ * Related exhibitions for a writer preview page.
+ * Requires a valid writer preview token so unpublished shows are never leaked publicly.
+ */
+export async function fetchWriterRelatedExhibitions(
+  db: Firestore,
+  writerSlug: string,
+  token: string | undefined,
+): Promise<{ items: Record<string, unknown>[] } | null> {
+  const writer = (await resolveDocBySlug(db, 'scrittori', writerSlug)) as Record<string, unknown> | null;
+  if (!writer) return null;
+
+  const writerId = String(writer.id || '');
+  // Require the writer's own preview token (not merely "can view published").
+  if (!token || writer.previewToken !== token) {
+    return null;
+  }
+
+  const snap = await db.collection('mostre').get();
+  const items = snap.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Record<string, unknown>)
+    .filter((ex) => isExhibitionLinkedToWriter(ex, writerId))
+    .map((ex) => {
+      // Keep previewToken on unpublished shows so the writer page can deep-link into exhibition preview.
+      if (isPublished(ex)) return sanitizePreviewPayload(ex);
+      return ex;
+    });
+
+  return { items };
 }
 
 export async function fetchPublishedSlugs(

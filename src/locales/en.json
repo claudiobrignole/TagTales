@@ -127,12 +127,14 @@
     "editorial": "Editorial Staff"
   },
   "writer": {
-    "participatingExhibitions": "Participating Exhibitions",
+    "participatingExhibitions": "Exhibitions",
     "backToWriters": "All Writers",
     "followInstagram": "Follow on Instagram",
     "contactWriter": "Contact Writer",
     "artworks": "Artworks",
-    "products": "Products for Sale"
+    "products": "Available Works",
+    "viewExhibition": "View Exhibition",
+    "goToStore": "Go to store"
   },
   "common": {
     "save": "Save",
