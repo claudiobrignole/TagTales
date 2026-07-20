@@ -791,6 +791,9 @@ ${text}`,
         return response.json();
       };
 
+      // Deploy fingerprint: production must return this header (proves new Ecwid filter/order code).
+      res.setHeader("X-TT-Ecwid-Api", "v2-enabled-ids");
+
       // Fetch specific product IDs (preserves caller order; used by writer pages)
       const idsRaw = (req.query.ids as string | undefined)?.trim();
       if (idsRaw) {

@@ -2,8 +2,10 @@
 
 ## Entry point
 
-- **Build:** `npm run build`
-- **Start:** `node dist/server.js`
+- **Build:** `npm run build` (obbligatorio: genera `dist/server.js` da `server.ts`)
+- **Start / Entry File Hostinger:** `dist/server.js` oppure `node dist/server.js`
+- **Non usare** il file root `server.js` come Entry File (è un mirror legacy; se Hostinger lo avvia, i fix in `server.ts` non vanno in produzione finché non fai build)
+- Verifica post-deploy: `curl -sI 'https://tagtalesgallery.com/api/ecwid/products' | grep X-TT-Ecwid-Api` deve mostrare `v2-enabled-ids`
 - **Non cambiare** gli script in `package.json` (Regola 7 AGENTS.md)
 
 ## URL produzione

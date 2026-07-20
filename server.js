@@ -173,6 +173,9 @@ async function sendEmailThroughSmtpOrService(to, subject, html) {
         user: smtpUser,
         pass: smtpPass,
       },
+      // Sandbox untrusted content paths/URLs (GHSA-p6gq-j5cr-w38f / GHSA-wqvq-jvpq-h66f)
+      disableFileAccess: true,
+      disableUrlAccess: true,
     });
 
     await transporter.sendMail({
@@ -180,6 +183,8 @@ async function sendEmailThroughSmtpOrService(to, subject, html) {
       to,
       subject,
       html,
+      disableFileAccess: true,
+      disableUrlAccess: true,
     });
     console.log("Email sent successfully via SMTP.");
     return { success: true, provider: "smtp" };
@@ -655,28 +660,86 @@ ${text}`,
             if (!storeId || !secretToken) {
                 return res.status(500).json({ error: "Ecwid credentials not configured" });
             }
-            const keyword = req.query.keyword;
-            const params = new URLSearchParams();
-            if (keyword) {
-                params.append('keyword', keyword);
-            }
-            params.append('limit', '100');
-            const response = await fetch(`https://app.ecwid.com/api/v3/${storeId}/products?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${secretToken}`
+
+            // Deploy fingerprint: production must return this header (proves new Ecwid filter/order code).
+            res.setHeader("X-TT-Ecwid-Api", "v2-enabled-ids");
+
+            const headers = {
+                Authorization: `Bearer ${secretToken}`,
+                Accept: "application/json",
+            };
+
+            const fetchPage = async (params) => {
+                const response = await fetch(
+                    `https://app.ecwid.com/api/v3/${storeId}/products?${params.toString()}`,
+                    { headers },
+                );
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error("Ecwid API Error:", errorData);
+                    const err = new Error("Failed to fetch products from Ecwid");
+                    err.status = response.status;
+                    throw err;
                 }
-            });
-            if (!response.ok) {
-                const errorData = await response.text();
-                console.error("Ecwid API Error:", errorData);
-                return res.status(response.status).json({ error: "Failed to fetch products from Ecwid" });
+                return response.json();
+            };
+
+            // Fetch specific product IDs (preserves caller order; used by writer pages)
+            const idsRaw = (typeof req.query.ids === "string" ? req.query.ids : "").trim();
+            if (idsRaw) {
+                const requestedIds = idsRaw
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                const byId = new Map();
+                const chunkSize = 100;
+                for (let i = 0; i < requestedIds.length; i += chunkSize) {
+                    const chunk = requestedIds.slice(i, i + chunkSize);
+                    const params = new URLSearchParams();
+                    params.append("productIds", chunk.join(","));
+                    params.append("enabled", "true");
+                    params.append("limit", String(chunkSize));
+                    const data = await fetchPage(params);
+                    for (const item of data.items || []) {
+                        if (item && item.enabled !== false) {
+                            byId.set(String(item.id), item);
+                        }
+                    }
+                }
+                const ordered = requestedIds
+                    .map((id) => byId.get(String(id)))
+                    .filter(Boolean);
+                return res.json({ items: ordered, total: ordered.length });
             }
-            const data = await response.json();
-            res.json({ items: data.items || [] });
+
+            const keyword = typeof req.query.keyword === "string" ? req.query.keyword.trim() : "";
+            const pageSize = 100;
+            const maxPages = 50;
+            const allItems = [];
+            let offset = 0;
+            let total = Infinity;
+            for (let page = 0; page < maxPages && offset < total; page++) {
+                const params = new URLSearchParams();
+                if (keyword) {
+                    params.append("keyword", keyword);
+                }
+                params.append("enabled", "true");
+                params.append("limit", String(pageSize));
+                params.append("offset", String(offset));
+                const data = await fetchPage(params);
+                const items = Array.isArray(data.items) ? data.items : [];
+                allItems.push(...items.filter((p) => p && p.enabled !== false));
+                total = typeof data.total === "number" ? data.total : offset + items.length;
+                offset += items.length;
+                if (items.length === 0 || items.length < pageSize)
+                    break;
+            }
+            res.json({ items: allItems, total: allItems.length });
         }
         catch (error) {
             console.error("Fetch products error:", error);
-            res.status(500).json({ error: error.message || "Internal server error" });
+            const status = error?.status && Number.isInteger(error.status) ? error.status : 500;
+            res.status(status).json({ error: error.message || "Internal server error" });
         }
     });
 
