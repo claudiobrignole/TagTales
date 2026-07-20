@@ -47,4 +47,12 @@ describe('ecwidStoreLinks', () => {
     expect(built.ecwidLinks[1]).toEqual({ url: 'https://a2', label_en: 'Poster A2' });
     expect(built.ecwidLinks[2].url).toBe('');
   });
+
+  it('preserves spaces in button labels while editing', () => {
+    const built = buildEcwidLinkUpdates([
+      { url: 'https://a1', label: 'Poster A1', label_en: 'Buy now' },
+    ]);
+    expect(built.ecwidLinks[0].label).toBe('Poster A1');
+    expect(built.ecwidLinks[0].label_en).toBe('Buy now');
+  });
 });

@@ -63,8 +63,9 @@ export function buildEcwidLinkUpdates(slots: EcwidStoreLink[]): {
 } {
   const normalized = slots.slice(0, ECWID_LINKS_MAX).map((s) => ({
     url: (s.url || '').trim(),
-    label: (s.label || '').trim() || undefined,
-    label_en: (s.label_en || '').trim() || undefined,
+    // Keep label text as typed (spaces allowed); trim only when rendering (normalizeEcwidLinks)
+    label: s.label || undefined,
+    label_en: s.label_en || undefined,
   }));
   const firstUrl = normalized.find((s) => s.url)?.url || '';
   return {

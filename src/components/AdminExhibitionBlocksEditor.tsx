@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import { Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import ReactQuill from 'react-quill-new';
