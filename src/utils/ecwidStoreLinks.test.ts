@@ -30,22 +30,22 @@ describe('ecwidStoreLinks', () => {
     ]);
   });
 
-  it('pads admin slots to 4 and syncs legacy on build', () => {
+  it('pads admin slots to 2 and syncs legacy on build', () => {
     const slots = getEcwidLinkSlots({ ecwidLink: 'https://only' });
-    expect(slots).toHaveLength(4);
+    expect(slots).toHaveLength(2);
     expect(slots[0].url).toBe('https://only');
     expect(slots[1].url).toBe('');
 
     const built = buildEcwidLinkUpdates([
       { url: 'https://a1', label: 'Poster A1' },
       { url: 'https://a2', label_en: 'Poster A2' },
-      { url: '' },
+      { url: 'https://ignored' },
       { url: '  ' },
     ]);
     expect(built.ecwidLink).toBe('https://a1');
+    expect(built.ecwidLinks).toHaveLength(2);
     expect(built.ecwidLinks[0]).toEqual({ url: 'https://a1', label: 'Poster A1' });
     expect(built.ecwidLinks[1]).toEqual({ url: 'https://a2', label_en: 'Poster A2' });
-    expect(built.ecwidLinks[2].url).toBe('');
   });
 
   it('preserves spaces in button labels while editing', () => {

@@ -6,6 +6,8 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   alt: string;
   className?: string;
   wrapperClassName?: string;
+  /** cover = fill box (default); natural = keep intrinsic aspect ratio */
+  fit?: 'cover' | 'natural';
 }
 
 export default function LazyImage({
@@ -14,6 +16,7 @@ export default function LazyImage({
   className = '',
   wrapperClassName = '',
   loading = 'lazy',
+  fit = 'cover',
   ...props
 }: LazyImageProps) {
   const bustedSrc = getBustedUrl(src);
@@ -46,11 +49,13 @@ export default function LazyImage({
     setError(true);
   };
 
+  const natural = fit === 'natural';
+
   return (
-    <div className={`relative overflow-hidden ${wrapperClassName || 'w-full h-full'}`}>
+    <div className={`relative overflow-hidden ${wrapperClassName || (natural ? 'w-full h-auto' : 'w-full h-full')}`}>
       {/* Elegant fade-out placeholder */}
       {!isLoaded && (
-        <div className="absolute inset-0 z-[1] flex animate-pulse items-center justify-center bg-[#EAE3D9]/50 transition-opacity duration-300">
+        <div className={`absolute inset-0 z-[1] flex animate-pulse items-center justify-center bg-[#EAE3D9]/50 transition-opacity duration-300 ${natural ? 'min-h-[120px]' : ''}`}>
           <div className="w-6 h-6 border-2 border-t-[#FF4F00] border-[#FF4F00]/20 rounded-full animate-spin opacity-40" />
         </div>
       )}
@@ -58,7 +63,7 @@ export default function LazyImage({
       <img
         src={bustedSrc}
         alt={alt}
-        className={`w-full h-full object-cover transition-all duration-700 ease-out select-none ${
+        className={`${natural ? 'block w-full h-auto object-contain' : 'w-full h-full object-cover'} transition-all duration-700 ease-out select-none ${
           isLoaded ? 'opacity-100 scale-100 filter-none' : 'opacity-0 scale-105 blur-sm'
         } ${className}`}
         loading={loading}

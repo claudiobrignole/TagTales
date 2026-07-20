@@ -36,7 +36,7 @@ export interface ExhibitionBlock {
     url: string; 
     /** @deprecated prefer ecwidLinks[0]; kept in sync for legacy / webhook */
     ecwidLink?: string;
-    /** Up to 4 store links (e.g. poster A1 + A2 as separate Ecwid products) */
+    /** Up to 2 store links (e.g. poster A1 + A2 as separate Ecwid products) */
     ecwidLinks?: EcwidStoreLink[];
     contactType?: 'email' | 'whatsapp' | 'link'; 
     contactLink?: string; 
@@ -504,7 +504,7 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
 
                           <div className="space-y-3">
                             <p className="text-xs font-medium text-gray-500">
-                              Ecwid Store Link (fino a 4 — es. Poster A1 e A2 come prodotti separati)
+                              Ecwid Store Link (fino a 2 — es. Poster A1 e A2 come prodotti separati)
                             </p>
                             {getEcwidLinkSlots(img).map((slot, slotIndex) => {
                               const ecwidDisabled = !!img.contactLink;

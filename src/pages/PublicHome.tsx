@@ -1002,12 +1002,10 @@ export default function PublicHome() {
                   <LazyImage
                     src={block.images[0].url}
                     alt=""
-                    className="w-full h-auto object-cover"
-                    wrapperClassName="w-full h-full rounded-3xl"
+                    fit="natural"
+                    className="rounded-3xl"
+                    wrapperClassName="w-full h-auto rounded-3xl"
                     loading="lazy"
-                    width={800}
-                    height={600}
-                    style={{ objectFit: "cover" }}
                   />
                 )}
               </div>

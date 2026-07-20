@@ -388,10 +388,13 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
               )}
             >
               <div
-                className={clsx("w-full md:w-1/2 relative bg-black/5", img.url ? "cursor-pointer" : "")}
+                className={clsx(
+                  "w-full md:w-1/2 relative min-w-0 h-auto",
+                  img.url ? "cursor-pointer" : "",
+                )}
                 onClick={() => setLightboxIndex(currentIndex)}
               >
-                {renderMedia(img, "w-full h-auto", "Mostra Centrata")}
+                {renderMedia(img, "block w-full h-auto max-w-full object-contain", "Mostra Centrata")}
                 {hasImageActions(img) && (
                   <div className="absolute bottom-6 right-6 z-10">
                     {renderImageAction(img)}

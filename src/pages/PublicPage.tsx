@@ -258,17 +258,15 @@ export default function PublicPage({ id: propId }: { id?: string }) {
               <div className="w-full md:w-1/2 min-w-0">
                 {block.images?.[0]?.url && (
                   isVideo(block.images[0].url) ? (
-                    <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-3xl" />
+                    <video src={block.images[0].url} poster={block.images[0].fallbackUrl} autoPlay loop muted playsInline className="block w-full h-auto object-contain rounded-3xl" />
                   ) : (
                     <LazyImage
                       src={block.images[0].url}
                       alt=""
-                      className="w-full h-auto object-cover rounded-3xl"
-                      wrapperClassName="w-full h-auto"
+                      fit="natural"
+                      className="rounded-3xl"
+                      wrapperClassName="w-full h-auto rounded-3xl"
                       loading="lazy"
-                      width={600}
-                      height={450}
-                      style={{ objectFit: "cover" }}
                     />
                   )
                 )}

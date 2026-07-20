@@ -4,7 +4,7 @@ export type EcwidStoreLink = {
   label_en?: string;
 };
 
-export const ECWID_LINKS_MAX = 4;
+export const ECWID_LINKS_MAX = 2;
 
 /** Non-empty links for the public UI (legacy `ecwidLink` included). */
 export function normalizeEcwidLinks(img: {
@@ -18,7 +18,8 @@ export function normalizeEcwidLinks(img: {
         label: l?.label?.trim() || undefined,
         label_en: l?.label_en?.trim() || undefined,
       }))
-      .filter((l) => l.url);
+      .filter((l) => l.url)
+      .slice(0, ECWID_LINKS_MAX);
     if (fromArray.length > 0) return fromArray;
   }
   const legacy = (img.ecwidLink || '').trim();
@@ -32,7 +33,7 @@ export function hasEcwidLinks(img: {
   return normalizeEcwidLinks(img).length > 0;
 }
 
-/** Exactly 4 slots for the admin form (legacy `ecwidLink` → slot 0). */
+/** Exactly 2 slots for the admin form (legacy `ecwidLink` → slot 0). */
 export function getEcwidLinkSlots(img: {
   ecwidLink?: string;
   ecwidLinks?: EcwidStoreLink[];
@@ -56,7 +57,7 @@ export function getEcwidLinkSlots(img: {
   return slots;
 }
 
-/** Persist up to 4 slots; sync legacy `ecwidLink` to the first filled URL. */
+/** Persist up to 2 slots; sync legacy `ecwidLink` to the first filled URL. */
 export function buildEcwidLinkUpdates(slots: EcwidStoreLink[]): {
   ecwidLinks: EcwidStoreLink[];
   ecwidLink: string;

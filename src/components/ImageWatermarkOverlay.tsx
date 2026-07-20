@@ -16,6 +16,9 @@ export function resolveWatermarkMode(img: {
   return null;
 }
 
+const TEXT_ROWS = 16;
+const TEXT_COLS = 10;
+
 export default function ImageWatermarkOverlay({
   mode = "both",
 }: {
@@ -23,7 +26,6 @@ export default function ImageWatermarkOverlay({
 }) {
   const showText = mode === "both" || mode === "text";
   const showLogo = mode === "both" || mode === "logo";
-  const tiles = Array.from({ length: 24 }, (_, i) => i);
 
   return (
     <div
@@ -31,15 +33,25 @@ export default function ImageWatermarkOverlay({
       aria-hidden="true"
     >
       {showText && (
-        <div className="absolute inset-[-35%] flex rotate-[-28deg] flex-wrap content-center justify-center gap-x-10 gap-y-14 opacity-[0.28]">
-          {tiles.map((i) => (
-            <span
-              key={i}
-              className="shrink-0 font-['Karla'] text-[11px] font-normal tracking-[0.18em] text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)] md:text-sm"
-            >
-              tagtalesgallery.com
-            </span>
-          ))}
+        <div className="absolute left-1/2 top-1/2 h-[220%] w-[220%] -translate-x-1/2 -translate-y-1/2 rotate-[-28deg] opacity-[0.28]">
+          <div className="flex h-full w-full flex-col justify-between py-2">
+            {Array.from({ length: TEXT_ROWS }, (_, row) => (
+              <div
+                key={row}
+                className="flex w-full shrink-0 justify-between gap-6 px-2 md:gap-10"
+                style={{ marginLeft: row % 2 === 1 ? "4%" : 0 }}
+              >
+                {Array.from({ length: TEXT_COLS }, (_, col) => (
+                  <span
+                    key={col}
+                    className="shrink-0 whitespace-nowrap font-['Karla'] text-[11px] font-normal tracking-[0.18em] text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)] md:text-sm"
+                  >
+                    tagtalesgallery.com
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

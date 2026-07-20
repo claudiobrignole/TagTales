@@ -107,16 +107,17 @@ async function buildOverlaySvg(width: number, height: number): Promise<Buffer> {
   const stepX = Math.max(120, Math.round(fontSize * 14));
   const stepY = Math.max(48, Math.round(fontSize * 5.5));
   const lines: string[] = [];
-  let count = 0;
-  const maxTiles = 180;
 
-  for (let y = 0; y < height + stepY && count < maxTiles; y += stepY) {
-    for (let x = -stepX; x < width + stepX && count < maxTiles; x += stepX) {
-      const offset = (Math.floor(y / stepY) % 2) * Math.round(stepX / 2);
+  // Cover full canvas including rotated overhang (no tile cap — large 1–2 col images need full fill)
+  const padX = stepX * 2;
+  const padY = stepY * 2;
+  for (let y = -padY; y < height + padY; y += stepY) {
+    const row = Math.floor((y + padY) / stepY);
+    const offset = (row % 2) * Math.round(stepX / 2);
+    for (let x = -padX; x < width + padX; x += stepX) {
       lines.push(
         `<text x="${x + offset}" y="${y}" transform="rotate(-28 ${x + offset} ${y})" fill="#ffffff" fill-opacity="0.12" font-family="Karla, Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="400">${WATERMARK_TEXT}</text>`,
       );
-      count += 1;
     }
   }
 
