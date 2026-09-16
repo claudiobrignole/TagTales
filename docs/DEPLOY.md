@@ -6,6 +6,7 @@
 - **Start / Entry File Hostinger:** `dist/server.js` oppure `node dist/server.js`
 - **Non usare** il file root `server.js` come Entry File (è un mirror legacy; se Hostinger lo avvia, i fix in `server.ts` non vanno in produzione finché non fai build)
 - Verifica post-deploy: `curl -sI 'https://tagtalesgallery.com/api/ecwid/products' | grep X-TT-Ecwid-Api` deve mostrare `v2-enabled-ids`
+- Verifica SEO: `curl -sI https://tagtalesgallery.com/sitemap.xml | grep X-TT-Sitemap` e `curl -sI https://tagtalesgallery.com/robots.txt | grep X-TT-Robots` devono mostrare `express`. Se robots non ha quel header, elimina i `robots.txt` statici orfani fuori da `hbuilds/current/` (LiteSpeed li serve prima di Node).
 - **Non cambiare** gli script in `package.json` (Regola 7 AGENTS.md)
 
 ## URL produzione

@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
@@ -318,6 +319,117 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // SEO files: register FIRST so Hostinger/Passenger never falls through to SPA.
+  // If /robots.txt still returns old content or HTML 404, a static file outside
+  // Node is intercepting the request (delete orphan robots.txt in File Manager).
+  app.get(["/robots.txt", "/robots.txt/"], (_req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-TT-Robots", "express");
+    res.send(`User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /login
+Disallow: /en/login
+Sitemap: https://tagtalesgallery.com/sitemap.xml
+`);
+  });
+
+  app.get(["/sitemap.xml", "/sitemap.xml/"], async (_req, res) => {
+    try {
+      const baseUrl = "https://tagtalesgallery.com";
+
+      let writers: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let exhibitions: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let articles: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let pages: string[] = [];
+
+      try {
+        const db = getPreviewFirestore();
+        [writers, exhibitions, articles] = await Promise.all([
+          fetchPublishedSlugs(db, "scrittori"),
+          fetchPublishedSlugs(db, "mostre"),
+          fetchPublishedSlugs(db, "articoli"),
+        ]);
+        const pagesSnap = await db
+          .collection("pagine")
+          .where("published", "==", true)
+          .get();
+        pages = pagesSnap.docs.map((docSnap) => docSnap.id);
+      } catch (err) {
+        console.warn(
+          "Sitemap: Firebase Admin unavailable, dynamic URLs omitted.",
+          err,
+        );
+      }
+
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
+
+      const addUrl = (
+        pathIt: string,
+        pathEn: string,
+        priority: string = "0.8",
+        changefreq: string = "weekly",
+      ) => {
+        const lastmod = new Date().toISOString().split("T")[0];
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}${pathIt}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <changefreq>${changefreq}</changefreq>\n`;
+        xml += `    <priority>${priority}</priority>\n`;
+        xml += `  </url>\n`;
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}${pathEn}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <changefreq>${changefreq}</changefreq>\n`;
+        xml += `    <priority>${priority}</priority>\n`;
+        xml += `  </url>\n`;
+      };
+
+      addUrl("/", "/en", "1.0", "weekly");
+      addUrl("/writers", "/en/writers", "0.9", "weekly");
+      addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly");
+      addUrl("/magazine", "/en/magazine", "0.9", "weekly");
+      addUrl("/assistenza", "/en/support", "0.5", "monthly");
+      addUrl("/su-di-noi", "/en/about", "0.6", "monthly");
+
+      writers.forEach((item) => {
+        const slug = item.slug || item.id;
+        const slugEn = item.slug_en || slug;
+        addUrl(`/writers/${slug}`, `/en/writers/${slugEn}`, "0.8");
+      });
+      exhibitions.forEach((item) => {
+        const slug = item.slug || item.id;
+        const slugEn = item.slug_en || slug;
+        addUrl(`/exhibitions/${slug}`, `/en/exhibitions/${slugEn}`, "0.8");
+      });
+      articles.forEach((item) => {
+        const slug = item.slug || item.id;
+        const slugEn = item.slug_en || slug;
+        addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8");
+      });
+      pages.forEach((id: string) =>
+        addUrl(`/info/${id}`, `/en/info/${id}`, "0.7"),
+      );
+
+      xml += `</urlset>`;
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.setHeader("X-TT-Sitemap", "express");
+      res.send(xml);
+    } catch (error) {
+      console.error("Sitemap error:", error);
+      res.status(500).send("Error generating sitemap");
+    }
+  });
 
   // API routes
   app.get("/api/config", (req, res) => {
@@ -1134,102 +1246,6 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
     }
   });
 
-  app.get("/sitemap.xml", async (req, res) => {
-    try {
-      const baseUrl = "https://tagtalesgallery.com";
-
-      let writers: Array<{ id: string; slug?: string; slug_en?: string }> = [];
-      let exhibitions: Array<{ id: string; slug?: string; slug_en?: string }> = [];
-      let articles: Array<{ id: string; slug?: string; slug_en?: string }> = [];
-      let pages: string[] = [];
-
-      try {
-        const db = getPreviewFirestore();
-        [writers, exhibitions, articles] = await Promise.all([
-          fetchPublishedSlugs(db, "scrittori"),
-          fetchPublishedSlugs(db, "mostre"),
-          fetchPublishedSlugs(db, "articoli"),
-        ]);
-        const pagesSnap = await db.collection("pagine").where("published", "==", true).get();
-        pages = pagesSnap.docs.map((docSnap) => docSnap.id);
-      } catch (err) {
-        console.warn("Sitemap: Firebase Admin unavailable, dynamic URLs omitted.", err);
-      }
-
-      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
-
-      const addUrl = (pathIt: string, pathEn: string, priority: string = "0.8", changefreq: string = "weekly") => {
-        const lastmod = new Date().toISOString().split('T')[0];
-        xml += `  <url>\n`;
-        xml += `    <loc>${baseUrl}${pathIt}</loc>\n`;
-        xml += `    <lastmod>${lastmod}</lastmod>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
-        xml += `    <changefreq>${changefreq}</changefreq>\n`;
-        xml += `    <priority>${priority}</priority>\n`;
-        xml += `  </url>\n`;
-        xml += `  <url>\n`;
-        xml += `    <loc>${baseUrl}${pathEn}</loc>\n`;
-        xml += `    <lastmod>${lastmod}</lastmod>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
-        xml += `    <changefreq>${changefreq}</changefreq>\n`;
-        xml += `    <priority>${priority}</priority>\n`;
-        xml += `  </url>\n`;
-      };
-
-      // Static routes (must match App.tsx public routes)
-      addUrl("/", "/en", "1.0", "weekly");
-      addUrl("/writers", "/en/writers", "0.9", "weekly");
-      addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly");
-      addUrl("/magazine", "/en/magazine", "0.9", "weekly");
-      addUrl("/assistenza", "/en/support", "0.5", "monthly");
-      addUrl("/su-di-noi", "/en/about", "0.6", "monthly");
-
-      // Dynamic routes (published only)
-      writers.forEach((item) => {
-        const slug = item.slug || item.id;
-        const slugEn = item.slug_en || slug;
-        addUrl(`/writers/${slug}`, `/en/writers/${slugEn}`, "0.8");
-      });
-      exhibitions.forEach((item) => {
-        const slug = item.slug || item.id;
-        const slugEn = item.slug_en || slug;
-        addUrl(`/exhibitions/${slug}`, `/en/exhibitions/${slugEn}`, "0.8");
-      });
-      articles.forEach((item) => {
-        const slug = item.slug || item.id;
-        const slugEn = item.slug_en || slug;
-        addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8");
-      });
-      pages.forEach((id: string) =>
-        addUrl(`/info/${id}`, `/en/info/${id}`, "0.7"),
-      );
-
-      xml += `</urlset>`;
-
-      res.header('Content-Type', 'application/xml');
-      res.send(xml);
-    } catch (error) {
-      console.error("Sitemap error:", error);
-      res.status(500).send("Error generating sitemap");
-    }
-  });
-
-  app.get("/robots.txt", (req, res) => {
-    res.header("Content-Type", "text/plain");
-    res.send(`User-agent: *
-Allow: /
-Disallow: /app/
-Disallow: /api/
-Disallow: /login
-Disallow: /en/login
-Sitemap: https://tagtalesgallery.com/sitemap.xml
-`);
-  });
-
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -1238,7 +1254,13 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    // Prefer dist next to this bundle (Passenger StartupFile=dist/server.js).
+    const distBesideBundle = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
+    const distFromCwd = path.join(process.cwd(), "dist");
+    const distPath = fs.existsSync(path.join(distBesideBundle, "index.html"))
+      ? distBesideBundle
+      : distFromCwd;
+
     app.use(express.static(distPath, {
       maxAge: '1y',
       setHeaders: (res, filePath) => {

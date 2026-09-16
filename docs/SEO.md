@@ -32,8 +32,13 @@ gerarchia heading corretta, meta IT/EN e link interni localizzati.
 - Liste (Mostre/Writers/Magazine): H1 = nome sezione; card = H3.
 - Home: H1 brand (anche `sr-only`); titoli carousel/sezione = H2.
 
-## Dopo il deploy
+## Hostinger (Git auto-deploy)
 
-- Verificare `https://tagtalesgallery.com/sitemap.xml` e `robots.txt`.
-- Search Console: invio sitemap + URL inspection su home e una detail.
-- Controllare che Admin → SEO Manager valori si vedano nel view-source (SSR).
+1. **Entry / Startup file:** `dist/server.js` (mai `server.js` in root).
+2. **Build command:** `npm install && npm run build`.
+3. **Start:** `npm start` oppure Passenger su `dist/server.js`.
+4. **robots.txt statico orfano:** se `/robots.txt` non mostra header `X-TT-Robots: express` (o ancora punta a `tagtales.gallery`), in File Manager **elimina** ogni `robots.txt` fuori da `hbuilds/current/` (es. legacy `nodejs/dist/robots.txt`, `public_html/robots.txt`). LiteSpeed/Apache serve quel file **prima** di Node.
+5. Verifica:
+   - `curl -sI https://tagtalesgallery.com/sitemap.xml | grep X-TT-Sitemap` → `express`
+   - `curl -sI https://tagtalesgallery.com/robots.txt | grep X-TT-Robots` → `express`
+   - Sitemap deve contenere `/assistenza` e `/su-di-noi` (non `/privacy` come route statica legacy).
