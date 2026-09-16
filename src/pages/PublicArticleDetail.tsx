@@ -29,6 +29,8 @@ export default function PublicArticleDetail() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { t } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === "EN" ? "/en" : "";
+  const magazineListPath = `${langPrefix}/magazine`;
 
   const [rawData, setRawData] = useState<any>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -118,7 +120,7 @@ export default function PublicArticleDetail() {
             Articolo non trovato
           </h1>
           <Link
-            to="/magazine"
+            to={magazineListPath}
             className="text-[#FF4F00] font-bold uppercase tracking-widest hover:underline"
           >
             Torna al Magazine
@@ -137,6 +139,21 @@ export default function PublicArticleDetail() {
           image={coverImage}
           article={true}
           noIndex={isPreviewMode}
+          keywords={(article.tag || []).join(", ")}
+          jsonLd={{
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: getLocalizedField(article, "titolo", lang) || article.titolo,
+            description:
+              getLocalizedField(article, "sottotitolo", lang) ||
+              article.sottotitolo ||
+              undefined,
+            image: coverImage || undefined,
+            author: article.autore
+              ? { "@type": "Person", name: article.autore }
+              : undefined,
+            datePublished: article.dataPubblicazione || article.publishedAt || undefined,
+          }}
         />
       )}
       {isPreviewMode && <PreviewBanner />}
@@ -144,7 +161,7 @@ export default function PublicArticleDetail() {
         <FullPageHero
           src={coverImage ?? undefined}
           alt={article.titolo}
-          backLink={{ to: "/magazine", label: t("nav.allArticles", "TUTTI GLI ARTICOLI") }}
+          backLink={{ to: magazineListPath, label: t("nav.allArticles", "TUTTI GLI ARTICOLI") }}
         >
           {article.tag && article.tag.length > 0 && (
             <motion.div
@@ -243,9 +260,9 @@ export default function PublicArticleDetail() {
 
           {article.galleria && article.galleria.length > 0 && (
             <div className="mt-12 mb-16">
-              <h3 className="text-2xl font-['Shamgod'] uppercase tracking-widest mb-8 text-[#121212]">
+              <h2 className="text-2xl font-['Shamgod'] uppercase tracking-widest mb-8 text-[#121212]">
                 Galleria
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {article.galleria
                   .filter((url: string) => url && url.trim() !== "")
@@ -270,14 +287,14 @@ export default function PublicArticleDetail() {
 
           {relatedArticles.length > 0 && (
             <div className="mt-12 md:mt-16">
-              <h3 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase mb-8 md:mb-10 text-[#121212]">
+              <h2 className="font-['Shamgod'] text-[50px] md:text-[75px] leading-[0.9] uppercase mb-8 md:mb-10 text-[#121212]">
                 {lang === 'EN' ? 'You might also read...' : 'Puoi leggere anche...'}
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[15px] md:gap-[25px]">
                 {relatedArticles.map((relArticle: any, i) => (
                   <Link
                     key={i}
-                    to={`/magazine/${relArticle.slug || relArticle.id}`}
+                    to={`${langPrefix}/magazine/${relArticle.slug || relArticle.id}`}
                     className="group cursor-pointer flex flex-col gap-4"
                   >
                     <div

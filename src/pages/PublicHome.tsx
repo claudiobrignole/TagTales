@@ -303,6 +303,9 @@ const HomeContactForm: React.FC<{ block: any }> = ({ block }) => {
 export default function PublicHome() {
   const { t, i18n } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === "EN" ? "/en" : "";
+  const lp = (itPath: string, enPath?: string) =>
+    lang === "EN" ? `/en${enPath ?? itPath}` : itPath;
 
   const [featuredExhibitions, setFeaturedExhibitions] = useState<Exhibition[]>(
     [],
@@ -455,7 +458,7 @@ export default function PublicHome() {
                       <motion.p className="hero-pretitle mb-2">
                         {getLocalizedField(featuredExhibitions[currentSlide], "preTitolo", lang) || featuredExhibitions[currentSlide].preTitolo || featuredExhibitions[currentSlide].owner}
                       </motion.p>
-                      <motion.h1 className="heading-hero mb-2 text-white md:mb-6">
+                      <motion.h2 className="heading-hero mb-2 text-white md:mb-6">
                         {getLocalizedField(
                           featuredExhibitions[currentSlide],
                           "titolo",
@@ -467,7 +470,7 @@ export default function PublicHome() {
                             lang,
                           ) ||
                           featuredExhibitions[currentSlide].title}
-                      </motion.h1>
+                      </motion.h2>
                       <motion.p className="hero-subtitle mb-6 md:mb-12">
                         {getLocalizedField(
                           featuredExhibitions[currentSlide],
@@ -483,7 +486,7 @@ export default function PublicHome() {
                       </motion.p>
                       <motion.div className="flex flex-col items-start">
                         <Link
-                          to={featuredExhibitions[currentSlide].link}
+                          to={`${langPrefix}/exhibitions/${(featuredExhibitions[currentSlide] as any).slug || featuredExhibitions[currentSlide].id}`}
                           className="btn-text inline-flex items-center gap-4 rounded-full bg-[#FF4F00] px-10 py-4 uppercase text-white shadow-lg shadow-[#FF4F00]/20 transition-colors hover:bg-white hover:text-[#121212]"
                         >
                           {t("home.visitExhibition", "VISITA LA MOSTRA")}
@@ -530,7 +533,7 @@ export default function PublicHome() {
               {mostre.map((item: any, i) => (
                 <Link
                   key={i}
-                  to={`/exhibitions/${item.slug || item.id}`}
+                  to={`${langPrefix}/exhibitions/${item.slug || item.id}`}
                   className="group cursor-pointer"
                 >
                   <div className="aspect-square bg-[#2A2A2A] rounded-2xl overflow-hidden relative">
@@ -574,7 +577,7 @@ export default function PublicHome() {
             </div>
             <div className="mt-20 flex justify-center w-full">
               <Link
-                to="/exhibitions"
+                to={lp("/exhibitions")}
                 className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
               >
                 {t("home.allExhibitions", "TUTTE LE MOSTRE")}{" "}
@@ -596,7 +599,7 @@ export default function PublicHome() {
               {articles.map((article: any, i) => (
                 <Link
                   key={i}
-                  to={`/magazine/${article.slug || article.id}`}
+                  to={`${langPrefix}/magazine/${article.slug || article.id}`}
                   className="group cursor-pointer flex flex-col gap-4"
                 >
                   <div
@@ -645,7 +648,7 @@ export default function PublicHome() {
             </div>
             <div className="mt-20 flex justify-center w-full">
               <Link
-                to="/magazine"
+                to={lp("/magazine")}
                 className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
               >
                 {t("home.allArticles", "TUTTI GLI ARTICOLI")}{" "}
@@ -667,7 +670,7 @@ export default function PublicHome() {
               {writers.map((writer: any, i) => (
                 <Link
                   key={i}
-                  to={`/writers/${writer.slug || writer.id}`}
+                  to={`${langPrefix}/writers/${writer.slug || writer.id}`}
                   className="group cursor-pointer"
                 >
                   <div className="aspect-square bg-white rounded-2xl overflow-hidden relative border border-[#EAE3D9]">
@@ -699,7 +702,7 @@ export default function PublicHome() {
             </div>
             <div className="mt-20 flex justify-center w-full">
               <Link
-                to="/writers"
+                to={lp("/writers")}
                 className="inline-flex items-center gap-4 btn-text bg-[#FF4F00] text-white py-4 px-10 rounded-full hover:bg-white hover:text-[#121212] transition-colors uppercase"
               >
                 {t("home.allWriters", "TUTTI I WRITERS")}{" "}
@@ -1161,27 +1164,38 @@ export default function PublicHome() {
   return (
     <PublicLayout>
       <SEO
+        pageId="home"
         title={
           pageData
             ? getLocalizedField(pageData, "titolo", lang) ||
               pageData.title ||
-              t("home.title", "Tag Tales")
-            : t("home.title", "Tag Tales")
+              t("seo.homeTitle", "Tag Tales Gallery")
+            : t("seo.homeTitle", "Tag Tales Gallery")
         }
         description={
           pageData
             ? getLocalizedField(pageData, "descrizione", lang) ||
               pageData.description ||
               t(
-                "home.desc",
-                "Tag Tales - Graffiti Culture, Exhibition and Magazine",
+                "seo.defaultDescription",
+                "Tag Tales Gallery — mostre di graffiti, writers, magazine e culture urbana.",
               )
             : t(
-                "home.desc",
-                "Tag Tales - Graffiti Culture, Exhibition and Magazine",
+                "seo.defaultDescription",
+                "Tag Tales Gallery — mostre di graffiti, writers, magazine e culture urbana.",
               )
         }
+        keywords={t(
+          "seo.defaultKeywords",
+          "tag tales, graffiti, street art, writers, mostre, magazine, urban art",
+        )}
       />
+      <h1 className="sr-only">
+        {t(
+          "seo.homeH1",
+          "Tag Tales Gallery — mostre, writers e magazine di graffiti",
+        )}
+      </h1>
       {loading ? (
         <div className="h-screen flex items-center justify-center font-['Shamgod'] text-4xl">
           CARICAMENTO...

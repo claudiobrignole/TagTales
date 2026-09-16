@@ -8,8 +8,8 @@ export default function PublicAssistance() {
   const { t, language } = useI18n();
 
   const title = language === 'IT' 
-    ? "Assistenza e Supporto | TagTales Gallery" 
-    : "Assistance and Support | TagTales Gallery";
+    ? "Assistenza e Supporto" 
+    : "Assistance and Support";
   
   const description = language === 'IT'
     ? "Hai domande? Il nostro assistente virtuale è pronto a darti tutto il supporto di cui hai bisogno sulla nostra galleria e i nostri servizi."
@@ -20,6 +20,11 @@ export default function PublicAssistance() {
       <SEO 
         title={title}
         description={description}
+        keywords={
+          language === "IT"
+            ? "assistenza tag tales, supporto galleria, help desk graffiti"
+            : "tag tales support, gallery help, graffiti assistance"
+        }
       />
       <div className="flex flex-col bg-[#121212] min-h-[calc(100vh-65px)] lg:min-h-[calc(100vh-75px)] pb-12">
         <div className="w-full pt-[25px] pb-[20px] px-4 md:px-[25px]">

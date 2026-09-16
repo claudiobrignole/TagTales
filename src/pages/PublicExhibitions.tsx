@@ -150,10 +150,15 @@ export default function PublicExhibitions() {
   return (
     <PublicLayout>
       <SEO
+        pageId="exhibitions"
         title={t("nav.mostre", "MOSTRE")}
         description={t(
           "seo.exhibitionsDesc",
           "Esplora le mini mostre di Tag Tales Gallery: opere originali e serie limitate.",
+        )}
+        keywords={t(
+          "seo.exhibitionsKeywords",
+          "mostre graffiti, mini mostre, street art gallery, opere originali, tag tales",
         )}
       />
 
@@ -168,9 +173,9 @@ export default function PublicExhibitions() {
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
-          <span className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none">
+          <h1 className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
             {t("nav.mostre", "MOSTRE")}
-          </span>
+          </h1>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
@@ -188,9 +193,9 @@ export default function PublicExhibitions() {
           )}
         >
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1 items-stretch md:items-center">
-            <span className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
+            <h1 className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
               {t("nav.mostre", "MOSTRE")}
-            </span>
+            </h1>
             <input
               type="text"
               placeholder={t("search.writerName", "Nome Writer...")}

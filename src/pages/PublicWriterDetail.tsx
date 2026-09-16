@@ -34,6 +34,8 @@ export default function PublicWriterDetail() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { t } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === "EN" ? "/en" : "";
+  const writersListPath = `${langPrefix}/writers`;
 
   const [rawWriterData, setRawWriterData] = useState<any>(null);
   const [exhibitions, setExhibitions] = useState<any[]>([]);
@@ -196,7 +198,7 @@ export default function PublicWriterDetail() {
             Writer non trovato
           </h1>
           <Link
-            to="/writers"
+            to={writersListPath}
             className="text-[#FF4F00] font-bold uppercase tracking-widest hover:underline"
           >
             Torna ai Writers
@@ -214,6 +216,22 @@ export default function PublicWriterDetail() {
           description={getLocalizedField(writer, 'bioBreve', lang) || writer.bioBreve || getLocalizedField(writer, 'bioStrada', lang) || writer.bioStrada} 
           image={writer.fotoProfilo || writer.fotoStrada}
           noIndex={isPreviewMode}
+          keywords={t(
+            "seo.writerKeywords",
+            "writer graffiti, street artist, tag tales writers",
+          )}
+          jsonLd={{
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: writer.nickname || getLocalizedField(writer, "nomeDarte", lang),
+            description:
+              getLocalizedField(writer, "bioBreve", lang) ||
+              writer.bioBreve ||
+              undefined,
+            image: writer.fotoProfilo || writer.fotoStrada || undefined,
+            url:
+              typeof window !== "undefined" ? window.location.href : undefined,
+          }}
         />
       )}
       {isPreviewMode && <PreviewBanner />}
@@ -259,7 +277,7 @@ export default function PublicWriterDetail() {
         
         <div className="absolute bottom-6 left-0 w-full flex justify-center z-20">
           <Link
-            to="/writers"
+            to={writersListPath}
             className="text-[#FF4F00] font-bold uppercase tracking-widest text-xs md:text-sm inline-block border-b border-[#FF4F00] pb-1 hover:text-white hover:border-white transition-colors"
           >
             &larr; {t('writer.backToWriters', 'Tutti i Writers')}
@@ -333,7 +351,7 @@ export default function PublicWriterDetail() {
                   return (
                   <Link
                     key={ex.id}
-                    to={appendPreviewToLink(`/exhibitions/${exSlug}`, exPreviewToken)}
+                    to={appendPreviewToLink(`${langPrefix}/exhibitions/${exSlug}`, exPreviewToken)}
                     className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group w-full"
                   >
                     <div className="aspect-video bg-[#F2EEE8] relative overflow-hidden">

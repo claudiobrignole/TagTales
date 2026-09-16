@@ -26,6 +26,8 @@ export default function PublicExhibitionDetail() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { t } = useTranslation();
   const { language: lang } = useI18n();
+  const langPrefix = lang === "EN" ? "/en" : "";
+  const exhibitionsListPath = `${langPrefix}/exhibitions`;
 
   const [rawExhibitionData, setRawExhibitionData] = useState<any>(null);
   const [artworks, setArtworks] = useState<any[]>([]);
@@ -125,7 +127,7 @@ export default function PublicExhibitionDetail() {
             Mostra non trovata
           </h1>
           <Link
-            to="/exhibitions"
+            to={exhibitionsListPath}
             className="text-[#FF4F00] font-bold uppercase tracking-widest hover:underline"
           >
             {t('nav.backToExhibitions', 'Torna alle Mostre')}
@@ -143,6 +145,22 @@ export default function PublicExhibitionDetail() {
           description={getLocalizedField(exhibition, 'intro', lang) || exhibition.intro || getLocalizedField(exhibition, 'testoCuratela', lang) || exhibition.testoCuratela} 
           image={exhibition.bannerHero}
           noIndex={isPreviewMode}
+          keywords={t(
+            "seo.exhibitionKeywords",
+            "mostra graffiti, street art exhibition, tag tales gallery",
+          )}
+          jsonLd={{
+            "@context": "https://schema.org",
+            "@type": "ExhibitionEvent",
+            name: getLocalizedField(exhibition, "titolo", lang) || exhibition.titolo,
+            description:
+              getLocalizedField(exhibition, "intro", lang) ||
+              exhibition.intro ||
+              undefined,
+            image: exhibition.bannerHero || undefined,
+            url:
+              typeof window !== "undefined" ? window.location.href : undefined,
+          }}
         />
       )}
       {isPreviewMode && <PreviewBanner />}
@@ -153,7 +171,7 @@ export default function PublicExhibitionDetail() {
           alt={exhibition.titolo}
           tagImage={exhibition.tagImage}
           tagAlt={exhibition.preTitolo || exhibition.artistNames?.join(", ") || "Tag"}
-          backLink={{ to: "/exhibitions", label: t('nav.allExhibitions', 'Tutte le Mostre') }}
+          backLink={{ to: exhibitionsListPath, label: t('nav.allExhibitions', 'Tutte le Mostre') }}
         >
           <motion.p
             initial={{ y: 12 }}
@@ -169,7 +187,7 @@ export default function PublicExhibitionDetail() {
             transition={{ delay: 0.3 }}
             className="heading-hero mb-2 text-white md:mb-6"
           >
-            {exhibition.titolo}
+            {getLocalizedField(exhibition, "titolo", lang) || exhibition.titolo}
           </motion.h1>
           <motion.p
             initial={{ y: 12 }}
@@ -177,7 +195,10 @@ export default function PublicExhibitionDetail() {
             transition={{ delay: 0.4 }}
             className="hero-subtitle"
           >
-            {exhibition.intro || exhibition.sottotitolo}
+            {getLocalizedField(exhibition, "intro", lang) ||
+              exhibition.intro ||
+              getLocalizedField(exhibition, "sottotitolo", lang) ||
+              exhibition.sottotitolo}
           </motion.p>
           {isValidDate(exhibition.dataApertura) && (
             <motion.p

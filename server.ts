@@ -207,6 +207,88 @@ function getPreviewFirestore() {
   return getAdminFirestore(databaseId);
 }
 
+async function getSeoConfig(pageId: string) {
+  try {
+    const db = getPreviewFirestore();
+    const docSnap = await db.collection("seoConfig").doc(pageId).get();
+    if (docSnap.exists) return docSnap.data();
+  } catch (e) {
+    console.error("Error fetching SEO Config", e);
+  }
+  return null;
+}
+
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function injectMetaTags(
+  html: string,
+  seoData: Record<string, any> | null,
+  lang: "it" | "en",
+): string {
+  let title = "Tag Tales Gallery";
+  let description = "";
+  let keywords = "";
+  let ogImageUrl = "";
+  let ogImageAlt = "";
+
+  if (seoData) {
+    title =
+      (lang === "en" ? seoData.titleEN : seoData.titleIT) || title;
+    description =
+      (lang === "en" ? seoData.descriptionEN : seoData.descriptionIT) || "";
+    const kw =
+      (lang === "en" ? seoData.keywordsEN : seoData.keywordsIT) || [];
+    keywords = Array.isArray(kw) ? kw.join(", ") : String(kw || "");
+    ogImageUrl = seoData.ogImageUrl || "";
+    ogImageAlt = seoData.ogImageAlt || "";
+  }
+
+  const titleTag = `<title>${escapeHtmlAttr(title)}</title>\n    <meta property="og:title" content="${escapeHtmlAttr(title)}">`;
+  const descTag = description
+    ? `<meta name="description" content="${escapeHtmlAttr(description)}">\n    <meta property="og:description" content="${escapeHtmlAttr(description)}">`
+    : "";
+  const keyTag = keywords
+    ? `<meta name="keywords" content="${escapeHtmlAttr(keywords)}">`
+    : "";
+  const ogImgTag = ogImageUrl
+    ? `<meta property="og:image" content="${escapeHtmlAttr(ogImageUrl)}">\n    <meta property="og:image:alt" content="${escapeHtmlAttr(ogImageAlt)}">`
+    : "";
+
+  return html
+    .replace("<!--META_TITLE-->", titleTag)
+    .replace("<!--META_DESCRIPTION-->", descTag)
+    .replace("<!--META_KEYWORDS-->", keyTag)
+    .replace("<!--META_OG_IMAGE-->", ogImgTag);
+}
+
+function resolveSeoPageId(reqPath: string): string | null {
+  if (reqPath === "/" || reqPath === "/en" || reqPath === "/en/") return "home";
+  if (reqPath === "/writers" || reqPath === "/en/writers") return "writers";
+  if (reqPath === "/exhibitions" || reqPath === "/en/exhibitions") {
+    return "exhibitions";
+  }
+  if (reqPath === "/magazine" || reqPath === "/en/magazine") return "magazine";
+
+  const writerMatch = reqPath.match(/^\/(?:en\/)?writers\/([^/]+)\/?$/);
+  if (writerMatch) return `writer_${writerMatch[1]}`;
+
+  const exhibitionMatch = reqPath.match(
+    /^\/(?:en\/)?exhibitions\/([^/]+)\/?$/,
+  );
+  if (exhibitionMatch) return `exhibition_${exhibitionMatch[1]}`;
+
+  const articleMatch = reqPath.match(/^\/(?:en\/)?magazine\/([^/]+)\/?$/);
+  if (articleMatch) return `article_${articleMatch[1]}`;
+
+  return null;
+}
+
 function registerPreviewRoute(
   app: express.Application,
   pathSegment: "exhibition" | "writer" | "article",
@@ -1098,15 +1180,13 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
         xml += `  </url>\n`;
       };
 
-      // Static routes
+      // Static routes (must match App.tsx public routes)
       addUrl("/", "/en", "1.0", "weekly");
       addUrl("/writers", "/en/writers", "0.9", "weekly");
       addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly");
       addUrl("/magazine", "/en/magazine", "0.9", "weekly");
-      addUrl("/privacy", "/en/privacy", "0.5", "monthly");
-      addUrl("/terms", "/en/terms", "0.5", "monthly");
-      addUrl("/cookies", "/en/cookies", "0.5", "monthly");
-      addUrl("/assistance", "/en/assistance", "0.5", "monthly");
+      addUrl("/assistenza", "/en/support", "0.5", "monthly");
+      addUrl("/su-di-noi", "/en/about", "0.6", "monthly");
 
       // Dynamic routes (published only)
       writers.forEach((item) => {
@@ -1124,7 +1204,9 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
         const slugEn = item.slug_en || slug;
         addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8");
       });
-      pages.forEach((id: string) => addUrl(`/page/${id}`, `/en/page/${id}`, "0.7"));
+      pages.forEach((id: string) =>
+        addUrl(`/info/${id}`, `/en/info/${id}`, "0.7"),
+      );
 
       xml += `</urlset>`;
 
@@ -1140,9 +1222,12 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
     res.header("Content-Type", "text/plain");
     res.send(`User-agent: *
 Allow: /
-Disallow: /admin
+Disallow: /app/
 Disallow: /api/
-Sitemap: https://tagtalesgallery.com/sitemap.xml`);
+Disallow: /login
+Disallow: /en/login
+Sitemap: https://tagtalesgallery.com/sitemap.xml
+`);
   });
 
   // Vite middleware for development
@@ -1164,8 +1249,27 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml`);
         }
       }
     }));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get('*', async (req, res) => {
+      if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API route not found' });
+      }
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      try {
+        let html = await fs.promises.readFile(
+          path.join(distPath, 'index.html'),
+          'utf8',
+        );
+        const lang: "it" | "en" =
+          req.path.startsWith('/en/') || req.path === '/en' ? 'en' : 'it';
+        const pageId = resolveSeoPageId(req.path);
+        const seoData = pageId ? await getSeoConfig(pageId) : null;
+        html = injectMetaTags(html, seoData, lang);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+      } catch (e) {
+        console.error('Error serving page with SEO', e);
+        res.sendFile(path.join(distPath, 'index.html'));
+      }
     });
   }
 

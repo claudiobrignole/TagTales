@@ -190,9 +190,15 @@ export default function PublicPage({ id: propId }: { id?: string }) {
       case 'large_title':
         return (
           <section key={block.id} className={clsx(`px-6 ${isFirst ? 'pb-20 md:pb-32 pt-28' : 'py-20 md:py-32'}`, block.backgroundColor === 'black' ? "bg-[#121212] text-white" : "bg-[#F2EEE8] text-[#121212]")}>
-             <h2 className="text-[18vw] sm:text-[15vw] md:text-[150px] lg:text-[200px] font-['Shamgod'] uppercase leading-[0.8] text-center w-full break-words">
-                {getLocalizedField(block, 'text', lang) || block.text}
-             </h2>
+             {isFirst ? (
+               <h1 className="text-[18vw] sm:text-[15vw] md:text-[150px] lg:text-[200px] font-['Shamgod'] uppercase leading-[0.8] text-center w-full break-words">
+                  {getLocalizedField(block, 'text', lang) || block.text}
+               </h1>
+             ) : (
+               <h2 className="text-[18vw] sm:text-[15vw] md:text-[150px] lg:text-[200px] font-['Shamgod'] uppercase leading-[0.8] text-center w-full break-words">
+                  {getLocalizedField(block, 'text', lang) || block.text}
+               </h2>
+             )}
           </section>
         );
       case 'paragraph':
@@ -443,7 +449,17 @@ export default function PublicPage({ id: propId }: { id?: string }) {
   return (
     <PublicLayout>
        <div className="min-h-screen bg-[#F2EEE8]">
-         <SEO title={data ? (getLocalizedField(data, 'titolo', lang) || data.title) : 'Tag Tales'} />
+         <SEO
+           title={data ? (getLocalizedField(data, 'titolo', lang) || data.title) : 'Tag Tales'}
+           description={
+             data
+               ? getLocalizedField(data, 'descrizione', lang) ||
+                 data.description ||
+                 getLocalizedField(data, 'titolo', lang) ||
+                 data.title
+               : undefined
+           }
+         />
          {loading ? (
            <div className="pb-20 px-[25px]">
              <div className="animate-pulse flex flex-col gap-4 max-w-4xl mx-auto mt-20">

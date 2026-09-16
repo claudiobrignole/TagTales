@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /login
+Disallow: /en/login
 
-Sitemap: https://tagtales.gallery/sitemap.xml
+Sitemap: https://tagtalesgallery.com/sitemap.xml

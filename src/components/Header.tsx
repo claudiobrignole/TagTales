@@ -97,7 +97,7 @@ export default function Header() {
               title: localizedTitle,
               type: t("common.exhibition", "Mostra"),
               image: data.bannerHero,
-              link: `/exhibitions/${data.slug || doc.id}`,
+              link: `${langPrefix}/exhibitions/${data.slug || doc.id}`,
             });
           }
         });
@@ -127,7 +127,7 @@ export default function Header() {
               title: localizedNickname,
               type: t("common.writer", "Writer"),
               image: data.fotoProfilo,
-              link: `/writers/${data.slug || doc.id}`,
+              link: `${langPrefix}/writers/${data.slug || doc.id}`,
             });
           }
         });
@@ -155,7 +155,7 @@ export default function Header() {
               title: localizedTitle,
               type: t("common.article", "Articolo"),
               image: data.immagineCopertina || data.coverImageUrl || data.coverImage,
-              link: `/magazine/${data.slug || doc.id}`,
+              link: `${langPrefix}/magazine/${data.slug || doc.id}`,
             });
           }
         });
@@ -179,17 +179,17 @@ export default function Header() {
         transition={{ duration: 0.2 }}
         className="fixed top-0 w-full z-50 bg-[#F2EEE8] text-[#121212] px-[25px] flex justify-between items-center h-[65px] lg:h-[75px]"
       >
-        <Link to="/" className="relative z-50 flex items-center h-full">
+        <Link to={localizedPath("/")} className="relative z-50 flex items-center h-full">
           <img
             src="/TAGTALES-logo-header.png"
-            alt="Tag Tales"
+            alt="Tag Tales Gallery"
             className="w-[190px] lg:w-[150px] xl:w-[260px] h-auto object-contain"
           />
         </Link>
 
         {/* Desktop Menu */}
         <div className="hidden lg:flex items-center lg:gap-2 xl:gap-5 font-bold text-[0.65rem] lg:text-[0.70rem] xl:text-[0.95rem] lg:tracking-[0.02em] xl:tracking-[0.05em] uppercase whitespace-nowrap">
-          <Link to="/" className="hover:text-[#FF4F00] transition-colors">
+          <Link to={localizedPath("/")} className="hover:text-[#FF4F00] transition-colors">
             {t("nav.home", "HOME")}
           </Link>
           <Link to={localizedPath('/exhibitions')} className="hover:text-[#FF4F00] transition-colors">
@@ -301,7 +301,7 @@ export default function Header() {
           >
             <div className="flex flex-col gap-6 font-['Shamgod'] text-5xl text-[#121212]">
               <Link
-                to="/"
+                to={localizedPath("/")}
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-[#FF4F00]"
               >

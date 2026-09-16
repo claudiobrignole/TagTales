@@ -70,10 +70,15 @@ export default function PublicWriters() {
   return (
     <PublicLayout>
       <SEO
+        pageId="writers"
         title={t("nav.writers", "WRITERS")}
         description={t(
           "seo.writersDesc",
           "Scopri i migliori writer della scena internazionale su Tag Tales Gallery.",
+        )}
+        keywords={t(
+          "seo.writersKeywords",
+          "writers graffiti, street artists, writer profiles, tag tales, urban artists",
         )}
       />
 
@@ -88,9 +93,9 @@ export default function PublicWriters() {
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
-          <span className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none">
-            Writers
-          </span>
+          <h1 className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
+            {t("nav.writers", "WRITERS")}
+          </h1>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
@@ -108,9 +113,9 @@ export default function PublicWriters() {
           )}
         >
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1 items-stretch md:items-center">
-            <span className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
-              WRITERS
-            </span>
+            <h1 className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
+              {t("nav.writers", "WRITERS")}
+            </h1>
             <input
               type="text"
               placeholder={t("search.writers", "Cerca writer, città...")}
@@ -184,9 +189,9 @@ export default function PublicWriters() {
                         </div>
                       )}
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9]">
+                    <h3 className="text-2xl md:text-3xl font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9]">
                       {nickname}
-                    </h2>
+                    </h3>
                     <p className="text-white/60 font-bold mt-1 uppercase tracking-wider text-[10px] md:text-sm">
                       {citta} {paese}
                     </p>

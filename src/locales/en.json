@@ -773,9 +773,18 @@
     "backHome": "Back to Home"
   },
   "seo": {
+    "homeTitle": "Tag Tales Gallery",
+    "homeH1": "Tag Tales Gallery — exhibitions, writers and graffiti magazine",
+    "defaultDescription": "Tag Tales Gallery — graffiti exhibitions, writers, magazine and urban culture.",
+    "defaultKeywords": "tag tales, graffiti, street art, writers, exhibitions, magazine, urban art",
     "writersDesc": "Discover the best writers on the international scene on Tag Tales Gallery.",
+    "writersKeywords": "graffiti writers, street artists, writer profiles, tag tales, urban artists",
     "exhibitionsDesc": "Explore Tag Tales Gallery exhibitions: original works and limited series.",
-    "magazineDesc": "Insights, interviews, and stories from the world of graffiti culture on Tag Tales Magazine."
+    "exhibitionsKeywords": "graffiti exhibitions, mini shows, street art gallery, original artworks, tag tales",
+    "magazineDesc": "Insights, interviews, and stories from the world of graffiti culture on Tag Tales Magazine.",
+    "magazineKeywords": "graffiti magazine, writer interviews, street art magazine, tag tales magazine",
+    "exhibitionKeywords": "graffiti exhibition, street art show, tag tales gallery",
+    "writerKeywords": "graffiti writer, street artist, tag tales writers"
   },
   "legal": {
     "privacyTitle": "Privacy Policy",

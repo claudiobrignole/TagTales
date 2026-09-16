@@ -134,7 +134,7 @@ export default function Footer() {
               </h4>
               <ul className="space-y-2 text-sm lg:text-lg font-medium text-white">
                 <li>
-                  <Link to="/" className="hover:text-[#FF4F00] transition-colors uppercase">
+                  <Link to={localizedPath("/")} className="hover:text-[#FF4F00] transition-colors uppercase">
                     {t("nav.home", "HOME")}
                   </Link>
                 </li>

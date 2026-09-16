@@ -2,16 +2,19 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useI18n } from '../contexts/I18nContext';
 import SEO from '../components/SEO';
 import PublicLayout from '../components/PublicLayout';
+import { homePath } from '../utils/paths';
 
 export default function NotFound() {
   const { t } = useTranslation();
+  const { language } = useI18n();
 
   return (
     <PublicLayout>
       <div className="min-h-screen bg-[#F2EEE8] flex flex-col items-center justify-center p-6 text-center">
-        <SEO title="404 - Not Found" />
+        <SEO title="404 - Not Found" noIndex />
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -31,7 +34,7 @@ export default function NotFound() {
           </p>
           
           <Link
-            to="/"
+            to={homePath(language)}
             className="inline-block bg-[#121212] text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-[#FF4F00] transition-colors"
           >
             {t('errors.backHome', 'Torna alla Home')}

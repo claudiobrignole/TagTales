@@ -60,10 +60,15 @@ export default function PublicMagazine() {
   return (
     <PublicLayout>
       <SEO
+        pageId="magazine"
         title={t("nav.magazine", "MAGAZINE")}
         description={t(
           "seo.magazineDesc",
           "Approfondimenti, interviste e storie dal mondo della graffiti culture su Tag Tales Magazine.",
+        )}
+        keywords={t(
+          "seo.magazineKeywords",
+          "magazine graffiti, interviste writers, street art magazine, tag tales magazine",
         )}
       />
 
@@ -78,9 +83,9 @@ export default function PublicMagazine() {
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
-          <span className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none">
-            Magazine
-          </span>
+          <h1 className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
+            {t("nav.magazine", "MAGAZINE")}
+          </h1>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
@@ -98,9 +103,9 @@ export default function PublicMagazine() {
           )}
         >
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1 items-stretch md:items-center">
-            <span className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
-              MAGAZINE
-            </span>
+            <h1 className="hidden md:block font-['Shamgod'] text-white text-[40px] leading-none uppercase shrink-0 mr-4 mt-1">
+              {t("nav.magazine", "MAGAZINE")}
+            </h1>
             <input
               type="text"
               placeholder={t(
@@ -165,10 +170,10 @@ export default function PublicMagazine() {
                         </p>
                       )}
 
-                      <h2 className="font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9] mb-2 md:mb-4 text-[40px] md:text-[50px]">
+                      <h3 className="font-['Shamgod'] uppercase text-white group-hover:text-[#FF4F00] transition-colors leading-[0.9] mb-2 md:mb-4 text-[40px] md:text-[50px]">
                         {getLocalizedField(article, "titolo", lang) ||
                           article.titolo}
-                      </h2>
+                      </h3>
 
                       {(getLocalizedField(article, "sottotitolo", lang) ||
                         article.sottotitolo ||
