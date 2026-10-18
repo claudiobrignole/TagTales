@@ -315,10 +315,21 @@ async function startServer() {
   initFirebaseAdmin();
 
   const app = express();
+  // Hostinger/LiteSpeed sits in front of Node — needed for correct host/proto on redirects
+  app.set("trust proxy", true);
   app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // Canonical host: www → non-www (301). Must run before other routes.
+  app.use((req, res, next) => {
+    const host = (req.headers.host || "").split(":")[0].toLowerCase();
+    if (host === "www.tagtalesgallery.com") {
+      return res.redirect(301, `https://tagtalesgallery.com${req.originalUrl}`);
+    }
+    next();
+  });
 
   // SEO files: register FIRST so Hostinger/Passenger never falls through to SPA.
   // If /robots.txt still returns old content or HTML 404, a static file outside
