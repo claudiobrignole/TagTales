@@ -343,6 +343,24 @@ function injectMetaTags(html: string, options: InjectMetaOptions): string {
     if (seoData.ogImageAlt) ogImageAlt = seoData.ogImageAlt;
   }
 
+  // Home: always use approved title/description (ignore stale seoConfig/home overrides).
+  const pathNorm = pathname.replace(/\/$/, "") || "/";
+  const isHome = pathNorm === "/" || pathNorm === "/en";
+  if (isHome) {
+    if (lang === "it") {
+      title = "Tag Tales Gallery - Galleria di graffiti internazionale";
+      description =
+        "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.";
+    } else {
+      title = "Tag Tales Gallery - International Graffiti Gallery";
+      description =
+        "Tag Tales Gallery — international street art and graffiti gallery. Discover exhibitions, writers and original works: explore and visit the shows.";
+    }
+    ogImageUrl = seoData?.ogImageUrl
+      ? toAbsoluteUrl(seoData.ogImageUrl)
+      : DEFAULT_OG_IMAGE;
+  }
+
   const pathNoSlash = pathname.replace(/\/$/, "") || "/";
   const canonicalHref =
     pathNoSlash === "/"
@@ -1525,7 +1543,9 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
       ? distBesideBundle
       : distFromCwd;
 
+    // index: false — otherwise GET / is served as raw dist/index.html and skips SEO inject.
     app.use(express.static(distPath, {
+      index: false,
       maxAge: '1y',
       setHeaders: (res, filePath) => {
         if (filePath.includes('/assets/') || filePath.endsWith('.woff2') || filePath.endsWith('.woff') || filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.webp') || filePath.endsWith('.ico') || filePath.endsWith('.svg')) {
