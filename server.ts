@@ -317,24 +317,43 @@ async function startServer() {
   const app = express();
   // Hostinger/LiteSpeed sits in front of Node — needed for correct host/proto on redirects
   app.set("trust proxy", true);
+
+  const canonicalHost = "tagtalesgallery.com";
+  const wwwHost = `www.${canonicalHost}`;
+
+  function requestHost(req: express.Request): string {
+    const forwarded = req.get("x-forwarded-host");
+    const raw = (forwarded || req.headers.host || "").split(",")[0].trim();
+    return raw.split(":")[0].toLowerCase();
+  }
+
+  function redirectWwwToCanonical(
+    req: express.Request,
+    res: express.Response,
+  ): boolean {
+    if (requestHost(req) !== wwwHost) return false;
+    res.redirect(301, `https://${canonicalHost}${req.originalUrl}`);
+    return true;
+  }
+
+  // Canonical host first — before compression, body parser, and robots/sitemap.
+  // If www /robots.txt still returns 200 without Location, LiteSpeed is serving a
+  // static file before Node: delete orphan robots.txt outside hbuilds/current/.
+  app.use((req, res, next) => {
+    if (redirectWwwToCanonical(req, res)) return;
+    next();
+  });
+
   app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '10mb' }));
 
-  // Canonical host: www → non-www (301). Must run before other routes.
-  app.use((req, res, next) => {
-    const host = (req.headers.host || "").split(":")[0].toLowerCase();
-    if (host === "www.tagtalesgallery.com") {
-      return res.redirect(301, `https://tagtalesgallery.com${req.originalUrl}`);
-    }
-    next();
-  });
-
-  // SEO files: register FIRST so Hostinger/Passenger never falls through to SPA.
+  // SEO files: after www redirect. Header X-TT-Robots proves Express served the file.
   // If /robots.txt still returns old content or HTML 404, a static file outside
   // Node is intercepting the request (delete orphan robots.txt in File Manager).
-  app.get(["/robots.txt", "/robots.txt/"], (_req, res) => {
+  app.get(["/robots.txt", "/robots.txt/"], (req, res) => {
+    if (redirectWwwToCanonical(req, res)) return;
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-TT-Robots", "express");
@@ -348,7 +367,8 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
 `);
   });
 
-  app.get(["/sitemap.xml", "/sitemap.xml/"], async (_req, res) => {
+  app.get(["/sitemap.xml", "/sitemap.xml/"], async (req, res) => {
+    if (redirectWwwToCanonical(req, res)) return;
     try {
       const baseUrl = "https://tagtalesgallery.com";
 
