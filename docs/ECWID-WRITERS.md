@@ -21,6 +21,7 @@ Le quote writer sono **importi fissi in euro**, non percentuali sul prezzo di li
 2. Nome, foto, prezzo, varianti → **Save**
 3. Aprire la scheda **Attributes** (visibilità attributi: `NOTSHOW`)
 4. Compilare i campi sotto (ignorare UPC, Brand e campi `[English]`)
+   - Nota: questa regola vale per **tutti** i campi `[English]` della scheda Attributes, inclusi quelli degli attributi custom (`artist_id [English]`, `product_type [English]`, `promo_active [English]`, `fee_override [English]`). Compilare solo il campo principale senza `[English]`.
 5. **Save**
 6. Copiare l’**ID prodotto** Ecwid (serve per il collegamento in admin)
 

@@ -13,11 +13,12 @@ import { useIsAdmin } from "../hooks/useIsAdmin";
 import { PREVIEW_QUERY_PARAM, appendPreviewToLink } from "../utils/previewAccess";
 
 import PublicLayout from "../components/PublicLayout";
-import SEO from "../components/SEO";
+import SEO, { CANONICAL_ORIGIN } from "../components/SEO";
 import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
 import FullPageHero from "../components/FullPageHero";
+import { usePublicData } from "../contexts/PublicDataContext";
 
 export default function PublicExhibitionDetail() {
   const { slug } = useParams();
@@ -26,6 +27,7 @@ export default function PublicExhibitionDetail() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { t } = useTranslation();
   const { language: lang } = useI18n();
+  const { writers } = usePublicData();
   const langPrefix = lang === "EN" ? "/en" : "";
   const exhibitionsListPath = `${langPrefix}/exhibitions`;
 
@@ -122,6 +124,7 @@ export default function PublicExhibitionDetail() {
   if (!exhibition) {
     return (
       <PublicLayout>
+        <SEO title="404 - Not Found" noIndex />
         <div className="flex flex-col items-center justify-center px-4 py-32 text-center">
           <h1 className="text-4xl font-['Shamgod'] uppercase mb-4">
             Mostra non trovata
@@ -137,6 +140,46 @@ export default function PublicExhibitionDetail() {
     );
   }
 
+  const artistIds: string[] =
+    exhibition.artistaIds ||
+    exhibition.writerIds ||
+    (exhibition.artistaPrincipaleId ? [exhibition.artistaPrincipaleId] : []);
+
+  const linkedWriters = artistIds
+    .map((id) => writers.find((w: any) => w.id === id))
+    .filter(Boolean);
+
+  const exhibitionSlug =
+    lang === "EN"
+      ? exhibition.slug_en || exhibition.slug || exhibition.id
+      : exhibition.slug || exhibition.id;
+  const canonicalUrl = `${CANONICAL_ORIGIN}${langPrefix}/exhibitions/${exhibitionSlug}`;
+
+  const exhibitionJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "ExhibitionEvent",
+    name: getLocalizedField(exhibition, "titolo", lang) || exhibition.titolo,
+    description:
+      getLocalizedField(exhibition, "intro", lang) ||
+      exhibition.intro ||
+      undefined,
+    image: exhibition.bannerHero || undefined,
+    url: canonicalUrl,
+  };
+  if (isValidDate(exhibition.dataApertura)) {
+    exhibitionJsonLd.startDate = exhibition.dataApertura;
+  }
+  if (isValidDate(exhibition.dataChiusura)) {
+    exhibitionJsonLd.endDate = exhibition.dataChiusura;
+  }
+  if (linkedWriters.length > 0) {
+    exhibitionJsonLd.performer = linkedWriters.map((w: any) => ({
+      "@type": "Person",
+      name: w.nickname || w.name || w.nomeDarte,
+      url: `${CANONICAL_ORIGIN}${langPrefix}/writers/${w.slug || w.id}`,
+    }));
+  }
+
   return (
     <PublicLayout>
       {exhibition && (
@@ -149,18 +192,7 @@ export default function PublicExhibitionDetail() {
             "seo.exhibitionKeywords",
             "mostra graffiti, street art exhibition, tag tales gallery",
           )}
-          jsonLd={{
-            "@context": "https://schema.org",
-            "@type": "ExhibitionEvent",
-            name: getLocalizedField(exhibition, "titolo", lang) || exhibition.titolo,
-            description:
-              getLocalizedField(exhibition, "intro", lang) ||
-              exhibition.intro ||
-              undefined,
-            image: exhibition.bannerHero || undefined,
-            url:
-              typeof window !== "undefined" ? window.location.href : undefined,
-          }}
+          jsonLd={exhibitionJsonLd}
         />
       )}
       {isPreviewMode && <PreviewBanner />}
@@ -239,7 +271,7 @@ export default function PublicExhibitionDetail() {
                         <div key={index} className="aspect-video sm:aspect-square rounded-2xl overflow-hidden border border-[#EAE3D9] shadow-sm">
                           <LazyImage 
                             src={url} 
-                            alt={`${exhibition.titolo} - ${index}`} 
+                            alt={`${exhibition.titolo} — immagine ${index + 1} della mostra`} 
                             loading="lazy"
                             width={800}
                             height={450}
@@ -253,21 +285,30 @@ export default function PublicExhibitionDetail() {
               </div>
 
               <div className="lg:col-span-4 space-y-8">
-                {exhibition.artistaIds && exhibition.artistaIds.length > 0 && (
+                {artistIds.length > 0 && (
                   <div className="bg-white rounded-3xl p-8 border border-[#EAE3D9]">
                     <h4 className="text-sm font-bold uppercase tracking-widest text-[#59554E] mb-4">
                       Writers in Primo Piano
                     </h4>
                     <div className="flex flex-col gap-4">
-                      {exhibition.artistaIds.map((aId: string) => (
-                        <Link
-                          key={aId}
-                          to={appendPreviewToLink(`/writers/${aId}`, previewToken)}
-                          className="text-lg font-bold hover:text-[#FF4F00] transition-colors flex items-center gap-2"
-                        >
-                          &rarr; Profilo Writer
-                        </Link>
-                      ))}
+                      {artistIds.map((aId: string) => {
+                        const writer = writers.find((w: any) => w.id === aId);
+                        const writerSlug = writer?.slug || aId;
+                        const writerName =
+                          writer?.nickname || writer?.name || writer?.nomeDarte || "Writer";
+                        return (
+                          <Link
+                            key={aId}
+                            to={appendPreviewToLink(
+                              `${langPrefix}/writers/${writerSlug}`,
+                              previewToken,
+                            )}
+                            className="text-lg font-bold hover:text-[#FF4F00] transition-colors flex items-center gap-2"
+                          >
+                            &rarr; {writerName}
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

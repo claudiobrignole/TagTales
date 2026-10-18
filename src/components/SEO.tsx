@@ -18,10 +18,19 @@ export interface SEOProps {
   pageId?: string;
   /** Schema.org JSON-LD object or array of objects. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  /** When true, emit ArtGallery schema (home). */
+  artGallery?: boolean;
 }
 
 const SITE_NAME = "Tag Tales";
 const SITE_NAME_LONG = "Tag Tales Gallery";
+export const CANONICAL_ORIGIN = "https://tagtalesgallery.com";
+
+const SAME_AS = [
+  "https://aelle.hiphop",
+  "https://www.instagram.com/tagtales.gallery/",
+  "https://www.youtube.com/@aellehiphopmagazine",
+];
 
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -45,6 +54,15 @@ function normalizeKeywords(value?: string | string[]): string {
   return value;
 }
 
+function toAbsoluteUrl(url: string | undefined, origin: string): string {
+  if (!url?.trim()) return `${origin}/og-default.jpg`;
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `${origin}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+}
+
 const SEO: React.FC<SEOProps> = ({
   title,
   description,
@@ -54,27 +72,27 @@ const SEO: React.FC<SEOProps> = ({
   noIndex,
   pageId,
   jsonLd,
+  artGallery,
 }) => {
   const { t, i18n } = useTranslation();
   const { config } = useSeoConfig(pageId);
   const lang = i18n.language?.toLowerCase().startsWith("en") ? "en" : "it";
 
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://tagtalesgallery.com";
+  const baseUrl = CANONICAL_ORIGIN;
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "/";
-  const defaultImage = `${baseUrl}/pwa-512x512.png`;
+  const defaultImage = `${baseUrl}/og-default.jpg`;
 
   const canonicalPath = pathname.startsWith("/en/")
     ? pathname.substring(3)
     : pathname === "/en"
       ? "/"
       : pathname;
-  const itUrl = `${baseUrl}${canonicalPath === "/" ? "" : canonicalPath}` || baseUrl;
-  const enUrl = `${baseUrl}/en${canonicalPath === "/" ? "" : canonicalPath}`;
-  const canonicalHref = `${baseUrl}${pathname.replace(/\/$/, "") || "/"}`;
+  const itPath = canonicalPath === "/" ? "" : canonicalPath.replace(/\/$/, "");
+  const itUrl = `${baseUrl}${itPath}` || baseUrl;
+  const enUrl = `${baseUrl}/en${itPath}`;
+  const pathNoSlash = pathname.replace(/\/$/, "") || "/";
+  const canonicalHref = `${baseUrl}${pathNoSlash === "/" ? "" : pathNoSlash}` || baseUrl;
 
   const resolved = useMemo(() => {
     const cfgTitle =
@@ -86,7 +104,7 @@ const SEO: React.FC<SEOProps> = ({
 
     const defaultDescription = t(
       "seo.defaultDescription",
-      "Tag Tales Gallery — mostre di graffiti, writers, magazine e culture urbana.",
+      "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.",
     );
 
     const desc = stripHtml(
@@ -105,25 +123,25 @@ const SEO: React.FC<SEOProps> = ({
       title: buildTitle(title || cfgTitle),
       description: desc,
       keywords: kw,
-      image: image || config?.ogImageUrl || defaultImage,
+      image: toAbsoluteUrl(image || config?.ogImageUrl || defaultImage, baseUrl),
       imageAlt: config?.ogImageAlt || SITE_NAME_LONG,
     };
-  }, [config, description, image, keywords, lang, t, title, defaultImage]);
+  }, [config, description, image, keywords, lang, t, title, defaultImage, baseUrl]);
 
   const locale = lang === "en" ? "en_US" : "it_IT";
   const jsonLdPayload = useMemo(() => {
+    const orgOrGallery: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": artGallery ? "ArtGallery" : "Organization",
+      name: SITE_NAME_LONG,
+      url: baseUrl,
+      logo: `${baseUrl}/pwa-512x512.png`,
+      image: `${baseUrl}/og-default.jpg`,
+      sameAs: SAME_AS,
+    };
+
     const graph: Record<string, unknown>[] = [
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: SITE_NAME_LONG,
-        url: baseUrl,
-        logo: `${baseUrl}/pwa-512x512.png`,
-        sameAs: [
-          "https://aelle.hiphop",
-          "https://www.instagram.com/tagtales.gallery/",
-        ],
-      },
+      orgOrGallery,
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
@@ -144,7 +162,7 @@ const SEO: React.FC<SEOProps> = ({
     }
 
     return graph;
-  }, [baseUrl, jsonLd]);
+  }, [baseUrl, jsonLd, artGallery]);
 
   return (
     <Helmet>
@@ -181,6 +199,8 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="og:description" content={resolved.description} />
       <meta property="og:image" content={resolved.image} />
       <meta property="og:image:alt" content={resolved.imageAlt} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={resolved.title} />

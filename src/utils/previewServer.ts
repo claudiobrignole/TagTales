@@ -8,7 +8,7 @@ export function getAdminFirestore(databaseId: string): Firestore {
   return getFirestore(getApp(), databaseId);
 }
 
-async function resolveDocBySlug(db: Firestore, collectionName: CollectionName, slug: string) {
+export async function resolveDocBySlug(db: Firestore, collectionName: CollectionName, slug: string) {
   const col = db.collection(collectionName);
 
   const bySlug = await col.where('slug', '==', slug).limit(1).get();
@@ -29,6 +29,17 @@ async function resolveDocBySlug(db: Firestore, collectionName: CollectionName, s
   }
 
   return null;
+}
+
+/** Published entity for SEO meta injection / HTTP 404 checks. */
+export async function fetchPublishedEntityForSeo(
+  db: Firestore,
+  collectionName: CollectionName,
+  slug: string,
+): Promise<Record<string, unknown> | null> {
+  const doc = (await resolveDocBySlug(db, collectionName, slug)) as Record<string, unknown> | null;
+  if (!doc || !isPublished(doc)) return null;
+  return sanitizePreviewPayload(doc);
 }
 
 function sanitizePreviewPayload(data: Record<string, unknown>) {
@@ -90,11 +101,29 @@ export async function fetchWriterRelatedExhibitions(
 export async function fetchPublishedSlugs(
   db: Firestore,
   collectionName: CollectionName,
-): Promise<Array<{ id: string; slug?: string; slug_en?: string }>> {
+): Promise<Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }>> {
   const snap = await db.collection(collectionName).where('published', '==', true).get();
-  return snap.docs.map((doc) => ({
-    id: doc.id,
-    slug: doc.data().slug as string | undefined,
-    slug_en: doc.data().slug_en as string | undefined,
-  }));
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    const updated =
+      data.updatedAt?.toDate?.() ||
+      data.updatedAt ||
+      data.publishedAt?.toDate?.() ||
+      data.publishedAt ||
+      doc.updateTime?.toDate?.() ||
+      null;
+    let lastmod: string | undefined;
+    if (updated instanceof Date && !isNaN(updated.getTime())) {
+      lastmod = updated.toISOString().split('T')[0];
+    } else if (typeof updated === 'string' && updated.trim()) {
+      const parsed = Date.parse(updated);
+      if (!isNaN(parsed)) lastmod = new Date(parsed).toISOString().split('T')[0];
+    }
+    return {
+      id: doc.id,
+      slug: data.slug as string | undefined,
+      slug_en: data.slug_en as string | undefined,
+      lastmod,
+    };
+  });
 }

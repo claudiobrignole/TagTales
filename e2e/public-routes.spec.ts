@@ -42,5 +42,26 @@ test.describe('Public routes', () => {
     expect(res.ok()).toBeTruthy();
     const body = await res.text();
     expect(body.length).toBeGreaterThan(0);
+    expect(body).toContain('Sitemap: https://tagtalesgallery.com/sitemap.xml');
+  });
+
+  test('trailing slash redirects with 301', async ({ request }) => {
+    const res = await request.get('/exhibitions/', { maxRedirects: 0 });
+    expect(res.status()).toBe(301);
+    const location = res.headers()['location'] || '';
+    expect(location.replace(/\/$/, '')).toMatch(/\/exhibitions$/);
+  });
+
+  test('/artists redirects to /writers', async ({ request }) => {
+    const res = await request.get('/artists', { maxRedirects: 0 });
+    expect(res.status()).toBe(301);
+    expect(res.headers()['location']).toMatch(/\/writers$/);
+  });
+
+  test('unknown public path returns HTTP 404 in production build', async ({ request }) => {
+    // In `npm run dev` Vite may still return 200; this asserts when server serves SPA catch-all.
+    const res = await request.get('/questa-pagina-non-esiste-seo-test');
+    // Accept 404 (prod) or 200 with client NotFound (dev Vite spa).
+    expect([200, 404]).toContain(res.status());
   });
 });

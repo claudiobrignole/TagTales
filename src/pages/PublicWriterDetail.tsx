@@ -21,7 +21,7 @@ import {
 } from "../utils/previewAccess";
 
 import PublicLayout from "../components/PublicLayout";
-import SEO from "../components/SEO";
+import SEO, { CANONICAL_ORIGIN } from "../components/SEO";
 import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
@@ -193,6 +193,7 @@ export default function PublicWriterDetail() {
   if (!writer) {
     return (
       <PublicLayout>
+        <SEO title="404 - Not Found" noIndex />
         <div className="flex flex-col items-center justify-center px-4 py-32 text-center">
           <h1 className="text-4xl font-['Shamgod'] uppercase mb-4">
             Writer non trovato
@@ -207,6 +208,13 @@ export default function PublicWriterDetail() {
       </PublicLayout>
     );
   }
+
+  const writerSlug = writer.slug || writer.id;
+  const writerCanonical = `${CANONICAL_ORIGIN}${langPrefix}/writers/${writerSlug}`;
+  const writerSameAs = [
+    writer.linkInstagram,
+    lang === "EN" ? writer.linkInstagram_en : undefined,
+  ].filter((u): u is string => typeof u === "string" && u.trim().length > 0);
 
   return (
     <PublicLayout>
@@ -229,8 +237,8 @@ export default function PublicWriterDetail() {
               writer.bioBreve ||
               undefined,
             image: writer.fotoProfilo || writer.fotoStrada || undefined,
-            url:
-              typeof window !== "undefined" ? window.location.href : undefined,
+            url: writerCanonical,
+            ...(writerSameAs.length > 0 ? { sameAs: writerSameAs } : {}),
           }}
         />
       )}

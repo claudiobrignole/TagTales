@@ -10,6 +10,7 @@ import { homePath } from '../utils/paths';
 export default function NotFound() {
   const { t } = useTranslation();
   const { language } = useI18n();
+  const langPrefix = language === 'EN' ? '/en' : '';
 
   return (
     <PublicLayout>
@@ -33,12 +34,26 @@ export default function NotFound() {
             {t('errors.notFoundDesc', 'Spiacenti, il tag che stai cercando non esiste o è stato cancellato.')}
           </p>
           
-          <Link
-            to={homePath(language)}
-            className="inline-block bg-[#121212] text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-[#FF4F00] transition-colors"
-          >
-            {t('errors.backHome', 'Torna alla Home')}
-          </Link>
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4">
+            <Link
+              to={homePath(language)}
+              className="inline-block bg-[#121212] text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-[#FF4F00] transition-colors"
+            >
+              {t('errors.backHome', 'Torna alla Home')}
+            </Link>
+            <Link
+              to={`${langPrefix}/exhibitions`}
+              className="inline-block border-2 border-[#121212] text-[#121212] px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-[#121212] hover:text-white transition-colors"
+            >
+              {t('errors.backExhibitions', 'Mostre')}
+            </Link>
+            <Link
+              to={`${langPrefix}/writers`}
+              className="inline-block border-2 border-[#121212] text-[#121212] px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-[#121212] hover:text-white transition-colors"
+            >
+              {t('errors.backWriters', 'Writers')}
+            </Link>
+          </div>
         </motion.div>
       </div>
     </PublicLayout>

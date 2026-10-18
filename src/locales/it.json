@@ -785,12 +785,14 @@
   "errors": {
     "notFoundTitle": "Pagina Non Trovata",
     "notFoundDesc": "La pagina che stai cercando non esiste o è stata spostata.",
-    "backHome": "Torna alla Home"
+    "backHome": "Torna alla Home",
+    "backExhibitions": "Mostre",
+    "backWriters": "Writers"
   },
   "seo": {
-    "homeTitle": "Tag Tales Gallery",
-    "homeH1": "Tag Tales Gallery — mostre, writers e magazine di graffiti",
-    "defaultDescription": "Tag Tales Gallery — mostre di graffiti, writers, magazine e culture urbana.",
+    "homeTitle": "Tag Tales Gallery - Galleria di graffiti internazionale",
+    "homeH1": "Tag Tales Gallery - Galleria di graffiti internazionale",
+    "defaultDescription": "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.",
     "defaultKeywords": "tag tales, graffiti, street art, writers, mostre, magazine, urban art, mini mostre",
     "writersDesc": "Scopri i migliori writer della scena internazionale su Tag Tales Gallery.",
     "writersKeywords": "writers graffiti, street artists, writer profiles, tag tales, urban artists",

@@ -11,5 +11,21 @@
   ],
   "storage": {
     "rules": "storage.rules"
+  },
+  "hosting": {
+    "site": "gen-lang-client-0591253558",
+    "public": "hosting-auth",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      }
+    ]
   }
 }

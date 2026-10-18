@@ -1165,26 +1165,15 @@ export default function PublicHome() {
     <PublicLayout>
       <SEO
         pageId="home"
-        title={
-          pageData
-            ? getLocalizedField(pageData, "titolo", lang) ||
-              pageData.title ||
-              t("seo.homeTitle", "Tag Tales Gallery")
-            : t("seo.homeTitle", "Tag Tales Gallery")
-        }
-        description={
-          pageData
-            ? getLocalizedField(pageData, "descrizione", lang) ||
-              pageData.description ||
-              t(
-                "seo.defaultDescription",
-                "Tag Tales Gallery — mostre di graffiti, writers, magazine e culture urbana.",
-              )
-            : t(
-                "seo.defaultDescription",
-                "Tag Tales Gallery — mostre di graffiti, writers, magazine e culture urbana.",
-              )
-        }
+        artGallery
+        title={t(
+          "seo.homeTitle",
+          "Tag Tales Gallery - Galleria di graffiti internazionale",
+        )}
+        description={t(
+          "seo.defaultDescription",
+          "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.",
+        )}
         keywords={t(
           "seo.defaultKeywords",
           "tag tales, graffiti, street art, writers, mostre, magazine, urban art",
@@ -1193,7 +1182,7 @@ export default function PublicHome() {
       <h1 className="sr-only">
         {t(
           "seo.homeH1",
-          "Tag Tales Gallery — mostre, writers e magazine di graffiti",
+          "Tag Tales Gallery - Galleria di graffiti internazionale",
         )}
       </h1>
       {loading ? (

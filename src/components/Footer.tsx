@@ -207,6 +207,16 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
+                  <a
+                    href="https://www.youtube.com/@aellehiphopmagazine"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[#FF4F00] transition-colors uppercase"
+                  >
+                    YOUTUBE
+                  </a>
+                </li>
+                <li>
                   <button
                     onClick={() => window.dispatchEvent(new Event('open-pwa-install'))}
                     className="hover:text-[#FF4F00] transition-colors uppercase cursor-pointer text-left font-medium block"

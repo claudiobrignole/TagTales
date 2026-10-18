@@ -10,12 +10,21 @@ import compression from "compression";
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { isLocalDevRequest } from "./src/utils/isLocalDevRequest.ts";
-import { fetchPreviewDocument, fetchPublishedSlugs, fetchWriterRelatedExhibitions, getAdminFirestore } from "./src/utils/previewServer.ts";
+import {
+  fetchPreviewDocument,
+  fetchPublishedEntityForSeo,
+  fetchPublishedSlugs,
+  fetchWriterRelatedExhibitions,
+  getAdminFirestore,
+} from "./src/utils/previewServer.ts";
 import {
   createWatermarkedImage,
   isAllowedWatermarkSrc,
   parseWatermarkBakeMode,
 } from "./src/utils/watermarkImageServer.ts";
+
+const CANONICAL_ORIGIN = "https://tagtalesgallery.com";
+const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-default.jpg`;
 
 dotenv.config();
 
@@ -227,41 +236,146 @@ function escapeHtmlAttr(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function injectMetaTags(
-  html: string,
-  seoData: Record<string, any> | null,
-  lang: "it" | "en",
-): string {
+function stripHtmlText(value: string): string {
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function toAbsoluteUrl(url: string | undefined): string {
+  if (!url?.trim()) return DEFAULT_OG_IMAGE;
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `${CANONICAL_ORIGIN}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+}
+
+type InjectMetaOptions = {
+  seoData?: Record<string, any> | null;
+  lang: "it" | "en";
+  pathname: string;
+  entity?: Record<string, unknown> | null;
+  entityKind?: "exhibition" | "writer" | "article" | null;
+};
+
+function injectMetaTags(html: string, options: InjectMetaOptions): string {
+  const { seoData, lang, pathname, entity, entityKind } = options;
   let title = "Tag Tales Gallery";
   let description = "";
   let keywords = "";
-  let ogImageUrl = "";
-  let ogImageAlt = "";
+  let ogImageUrl = DEFAULT_OG_IMAGE;
+  let ogImageAlt = "Tag Tales Gallery";
+
+  if (lang === "it") {
+    title = "Tag Tales Gallery - Galleria di graffiti internazionale";
+    description =
+      "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.";
+  } else {
+    title = "Tag Tales Gallery - International Graffiti Gallery";
+    description =
+      "Tag Tales Gallery — international street art and graffiti gallery. Discover exhibitions, writers and original works: explore and visit the shows.";
+  }
+
+  if (entity && entityKind === "exhibition") {
+    const entTitle =
+      (lang === "en"
+        ? (entity.titolo_en as string) || (entity.titolo as string)
+        : (entity.titolo as string)) || title;
+    title = String(entTitle);
+    const intro =
+      (lang === "en"
+        ? (entity.intro_en as string) || (entity.intro as string)
+        : (entity.intro as string)) ||
+      (entity.testoCuratela as string) ||
+      "";
+    if (intro) description = stripHtmlText(String(intro)).slice(0, 320);
+    const banner =
+      (entity.bannerHero as string) || (entity.coverImageUrl as string);
+    if (banner) ogImageUrl = toAbsoluteUrl(banner);
+    ogImageAlt = String(entTitle);
+  } else if (entity && entityKind === "writer") {
+    const name =
+      (entity.nickname as string) ||
+      (entity.nomeDarte as string) ||
+      (entity.artistName as string) ||
+      title;
+    title = String(name);
+    const bio =
+      (lang === "en"
+        ? (entity.bioBreve_en as string) || (entity.bioBreve as string)
+        : (entity.bioBreve as string)) ||
+      (entity.bioStrada as string) ||
+      "";
+    if (bio) description = stripHtmlText(String(bio)).slice(0, 320);
+    const photo =
+      (entity.fotoProfilo as string) ||
+      (entity.fotoStrada as string) ||
+      (entity.profileImageUrl as string);
+    if (photo) ogImageUrl = toAbsoluteUrl(photo);
+    ogImageAlt = String(name);
+  } else if (entity && entityKind === "article") {
+    const entTitle =
+      (lang === "en"
+        ? (entity.titolo_en as string) || (entity.titolo as string)
+        : (entity.titolo as string)) || title;
+    title = String(entTitle);
+    const excerpt =
+      (lang === "en"
+        ? (entity.estratto_en as string) || (entity.estratto as string)
+        : (entity.estratto as string)) || "";
+    if (excerpt) description = stripHtmlText(String(excerpt)).slice(0, 320);
+    const cover =
+      (entity.immagineCover as string) || (entity.coverImageUrl as string);
+    if (cover) ogImageUrl = toAbsoluteUrl(cover);
+    ogImageAlt = String(entTitle);
+  }
 
   if (seoData) {
-    title =
-      (lang === "en" ? seoData.titleEN : seoData.titleIT) || title;
-    description =
+    const cfgTitle =
+      (lang === "en" ? seoData.titleEN : seoData.titleIT) || "";
+    const cfgDesc =
       (lang === "en" ? seoData.descriptionEN : seoData.descriptionIT) || "";
+    if (cfgTitle) title = cfgTitle;
+    if (cfgDesc) description = cfgDesc;
     const kw =
       (lang === "en" ? seoData.keywordsEN : seoData.keywordsIT) || [];
     keywords = Array.isArray(kw) ? kw.join(", ") : String(kw || "");
-    ogImageUrl = seoData.ogImageUrl || "";
-    ogImageAlt = seoData.ogImageAlt || "";
+    if (seoData.ogImageUrl) ogImageUrl = toAbsoluteUrl(seoData.ogImageUrl);
+    if (seoData.ogImageAlt) ogImageAlt = seoData.ogImageAlt;
   }
 
-  const titleTag = `<title>${escapeHtmlAttr(title)}</title>\n    <meta property="og:title" content="${escapeHtmlAttr(title)}">`;
+  const pathNoSlash = pathname.replace(/\/$/, "") || "/";
+  const canonicalHref =
+    pathNoSlash === "/"
+      ? CANONICAL_ORIGIN
+      : `${CANONICAL_ORIGIN}${pathNoSlash}`;
+  const canonicalPath = pathname.startsWith("/en/")
+    ? pathname.substring(3).replace(/\/$/, "")
+    : pathname === "/en"
+      ? ""
+      : pathNoSlash === "/"
+        ? ""
+        : pathNoSlash;
+  const itUrl =
+    canonicalPath === "" || canonicalPath === "/"
+      ? CANONICAL_ORIGIN
+      : `${CANONICAL_ORIGIN}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
+  const enUrl =
+    canonicalPath === "" || canonicalPath === "/"
+      ? `${CANONICAL_ORIGIN}/en`
+      : `${CANONICAL_ORIGIN}/en${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
+
+  const titleTag = `<title>${escapeHtmlAttr(title)}</title>\n    <meta property="og:title" content="${escapeHtmlAttr(title)}">\n    <link rel="canonical" href="${escapeHtmlAttr(canonicalHref)}">\n    <link rel="alternate" hreflang="it" href="${escapeHtmlAttr(itUrl)}">\n    <link rel="alternate" hreflang="en" href="${escapeHtmlAttr(enUrl)}">\n    <link rel="alternate" hreflang="x-default" href="${escapeHtmlAttr(itUrl)}">`;
   const descTag = description
     ? `<meta name="description" content="${escapeHtmlAttr(description)}">\n    <meta property="og:description" content="${escapeHtmlAttr(description)}">`
     : "";
   const keyTag = keywords
     ? `<meta name="keywords" content="${escapeHtmlAttr(keywords)}">`
     : "";
-  const ogImgTag = ogImageUrl
-    ? `<meta property="og:image" content="${escapeHtmlAttr(ogImageUrl)}">\n    <meta property="og:image:alt" content="${escapeHtmlAttr(ogImageAlt)}">`
-    : "";
+  const ogImgTag = `<meta property="og:image" content="${escapeHtmlAttr(ogImageUrl)}">\n    <meta property="og:image:alt" content="${escapeHtmlAttr(ogImageAlt)}">\n    <meta property="og:image:width" content="1200">\n    <meta property="og:image:height" content="630">\n    <meta name="twitter:card" content="summary_large_image">\n    <meta name="twitter:image" content="${escapeHtmlAttr(ogImageUrl)}">`;
 
+  const htmlLang = lang === "en" ? "en" : "it";
   return html
+    .replace(/<html\s+lang="[^"]*"/, `<html lang="${htmlLang}"`)
     .replace("<!--META_TITLE-->", titleTag)
     .replace("<!--META_DESCRIPTION-->", descTag)
     .replace("<!--META_KEYWORDS-->", keyTag)
@@ -288,6 +402,94 @@ function resolveSeoPageId(reqPath: string): string | null {
   if (articleMatch) return `article_${articleMatch[1]}`;
 
   return null;
+}
+
+const STATIC_PUBLIC_PATHS = new Set([
+  "/",
+  "/en",
+  "/writers",
+  "/en/writers",
+  "/exhibitions",
+  "/en/exhibitions",
+  "/magazine",
+  "/en/magazine",
+  "/assistenza",
+  "/en/support",
+  "/su-di-noi",
+  "/en/about",
+  "/login",
+  "/en/login",
+]);
+
+type RouteResolveResult =
+  | { kind: "ok"; entity?: Record<string, unknown> | null; entityKind?: "exhibition" | "writer" | "article" | null }
+  | { kind: "not_found" }
+  | { kind: "spa" };
+
+async function resolvePublicRoute(reqPath: string): Promise<RouteResolveResult> {
+  const pathNoSlash = reqPath.replace(/\/$/, "") || "/";
+
+  if (pathNoSlash.startsWith("/app") || pathNoSlash.startsWith("/api")) {
+    return { kind: "spa" };
+  }
+
+  if (STATIC_PUBLIC_PATHS.has(pathNoSlash)) {
+    return { kind: "ok" };
+  }
+
+  const infoMatch = pathNoSlash.match(/^\/(?:en\/)?info\/([^/]+)$/);
+  if (infoMatch) {
+    try {
+      const db = getPreviewFirestore();
+      const docSnap = await db.collection("pagine").doc(infoMatch[1]).get();
+      if (!docSnap.exists) return { kind: "not_found" };
+      const data = docSnap.data() || {};
+      if (data.published !== true && data.isPublished !== true) {
+        return { kind: "not_found" };
+      }
+      return { kind: "ok" };
+    } catch {
+      return { kind: "ok" };
+    }
+  }
+
+  const exhibitionMatch = pathNoSlash.match(/^\/(?:en\/)?exhibitions\/([^/]+)$/);
+  if (exhibitionMatch) {
+    try {
+      const db = getPreviewFirestore();
+      const entity = await fetchPublishedEntityForSeo(db, "mostre", exhibitionMatch[1]);
+      if (!entity) return { kind: "not_found" };
+      return { kind: "ok", entity, entityKind: "exhibition" };
+    } catch {
+      return { kind: "ok" };
+    }
+  }
+
+  const writerMatch = pathNoSlash.match(/^\/(?:en\/)?writers\/([^/]+)$/);
+  if (writerMatch) {
+    try {
+      const db = getPreviewFirestore();
+      const entity = await fetchPublishedEntityForSeo(db, "scrittori", writerMatch[1]);
+      if (!entity) return { kind: "not_found" };
+      return { kind: "ok", entity, entityKind: "writer" };
+    } catch {
+      return { kind: "ok" };
+    }
+  }
+
+  const articleMatch = pathNoSlash.match(/^\/(?:en\/)?magazine\/([^/]+)$/);
+  if (articleMatch) {
+    try {
+      const db = getPreviewFirestore();
+      const entity = await fetchPublishedEntityForSeo(db, "articoli", articleMatch[1]);
+      if (!entity) return { kind: "not_found" };
+      return { kind: "ok", entity, entityKind: "article" };
+    } catch {
+      return { kind: "ok" };
+    }
+  }
+
+  return { kind: "not_found" };
 }
 
 function registerPreviewRoute(
@@ -317,24 +519,73 @@ async function startServer() {
   const app = express();
   // Hostinger/LiteSpeed sits in front of Node — needed for correct host/proto on redirects
   app.set("trust proxy", true);
+
+  const canonicalHost = "tagtalesgallery.com";
+  const wwwHost = `www.${canonicalHost}`;
+
+  function requestHost(req: express.Request): string {
+    const forwarded = req.get("x-forwarded-host");
+    const raw = (forwarded || req.headers.host || "").split(",")[0].trim();
+    return raw.split(":")[0].toLowerCase();
+  }
+
+  function redirectWwwToCanonical(
+    req: express.Request,
+    res: express.Response,
+  ): boolean {
+    if (requestHost(req) !== wwwHost) return false;
+    res.redirect(301, `https://${canonicalHost}${req.originalUrl}`);
+    return true;
+  }
+
+  // Canonical host first — before compression, body parser, and robots/sitemap routes.
+  // (If www /robots.txt still returns 200, LiteSpeed is serving a static file before Node:
+  // delete orphan robots.txt outside hbuilds/current/ in Hostinger File Manager.)
+  app.use((req, res, next) => {
+    if (redirectWwwToCanonical(req, res)) return;
+    next();
+  });
+
   app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '10mb' }));
 
-  // Canonical host: www → non-www (301). Must run before other routes.
+  // Canonical URL hygiene: strip trailing slash (except "/") and /artists → /writers
   app.use((req, res, next) => {
-    const host = (req.headers.host || "").split(":")[0].toLowerCase();
-    if (host === "www.tagtalesgallery.com") {
-      return res.redirect(301, `https://tagtalesgallery.com${req.originalUrl}`);
+    const rawPath = req.path || "/";
+    if (rawPath.length > 1 && rawPath.endsWith("/")) {
+      const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+      return res.redirect(301, `${rawPath.replace(/\/+$/, "")}${qs}`);
     }
+
+    const artistsMatch = rawPath.match(/^(\/en)?\/artists(\/.*)?$/);
+    if (artistsMatch) {
+      const prefix = artistsMatch[1] || "";
+      const rest = artistsMatch[2] || "";
+      const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+      return res.redirect(301, `${prefix}/writers${rest}${qs}`);
+    }
+
+    if (rawPath === "/coming-soon" || rawPath === "/en/coming-soon") {
+      return res.redirect(301, rawPath.startsWith("/en") ? "/en" : "/");
+    }
+
     next();
   });
 
-  // SEO files: register FIRST so Hostinger/Passenger never falls through to SPA.
+  // SEO files: register early so Hostinger/Passenger never falls through to SPA.
   // If /robots.txt still returns old content or HTML 404, a static file outside
   // Node is intercepting the request (delete orphan robots.txt in File Manager).
-  app.get(["/robots.txt", "/robots.txt/"], (_req, res) => {
+  // Common typo: Google/users sometimes request /robot.txt (missing "s")
+  app.get(["/robot.txt", "/robot.txt/"], (req, res) => {
+    if (redirectWwwToCanonical(req, res)) return;
+    res.setHeader("Cache-Control", "no-store");
+    res.redirect(301, "/robots.txt");
+  });
+
+  app.get(["/robots.txt", "/robots.txt/"], (req, res) => {
+    if (redirectWwwToCanonical(req, res)) return;
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-TT-Robots", "express");
@@ -348,14 +599,16 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
 `);
   });
 
-  app.get(["/sitemap.xml", "/sitemap.xml/"], async (_req, res) => {
+  app.get(["/sitemap.xml", "/sitemap.xml/"], async (req, res) => {
+    if (redirectWwwToCanonical(req, res)) return;
     try {
       const baseUrl = "https://tagtalesgallery.com";
 
-      let writers: Array<{ id: string; slug?: string; slug_en?: string }> = [];
-      let exhibitions: Array<{ id: string; slug?: string; slug_en?: string }> = [];
-      let articles: Array<{ id: string; slug?: string; slug_en?: string }> = [];
+      let writers: Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }> = [];
+      let exhibitions: Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }> = [];
+      let articles: Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }> = [];
       let pages: string[] = [];
+      const today = new Date().toISOString().split("T")[0];
 
       try {
         const db = getPreviewFirestore();
@@ -383,52 +636,52 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
         pathEn: string,
         priority: string = "0.8",
         changefreq: string = "weekly",
+        lastmod: string = today,
       ) => {
-        const lastmod = new Date().toISOString().split("T")[0];
         xml += `  <url>\n`;
-        xml += `    <loc>${baseUrl}${pathIt}</loc>\n`;
+        xml += `    <loc>${baseUrl}${pathIt === "/" ? "/" : pathIt}</loc>\n`;
         xml += `    <lastmod>${lastmod}</lastmod>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
         xml += `    <changefreq>${changefreq}</changefreq>\n`;
         xml += `    <priority>${priority}</priority>\n`;
         xml += `  </url>\n`;
         xml += `  <url>\n`;
         xml += `    <loc>${baseUrl}${pathEn}</loc>\n`;
         xml += `    <lastmod>${lastmod}</lastmod>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
         xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt}"/>\n`;
+        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
         xml += `    <changefreq>${changefreq}</changefreq>\n`;
         xml += `    <priority>${priority}</priority>\n`;
         xml += `  </url>\n`;
       };
 
-      addUrl("/", "/en", "1.0", "weekly");
-      addUrl("/writers", "/en/writers", "0.9", "weekly");
-      addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly");
-      addUrl("/magazine", "/en/magazine", "0.9", "weekly");
-      addUrl("/assistenza", "/en/support", "0.5", "monthly");
-      addUrl("/su-di-noi", "/en/about", "0.6", "monthly");
+      addUrl("/", "/en", "1.0", "weekly", today);
+      addUrl("/writers", "/en/writers", "0.9", "weekly", today);
+      addUrl("/exhibitions", "/en/exhibitions", "0.9", "weekly", today);
+      addUrl("/magazine", "/en/magazine", "0.9", "weekly", today);
+      addUrl("/assistenza", "/en/support", "0.5", "monthly", today);
+      addUrl("/su-di-noi", "/en/about", "0.6", "monthly", today);
 
       writers.forEach((item) => {
         const slug = item.slug || item.id;
         const slugEn = item.slug_en || slug;
-        addUrl(`/writers/${slug}`, `/en/writers/${slugEn}`, "0.8");
+        addUrl(`/writers/${slug}`, `/en/writers/${slugEn}`, "0.8", "weekly", item.lastmod || today);
       });
       exhibitions.forEach((item) => {
         const slug = item.slug || item.id;
         const slugEn = item.slug_en || slug;
-        addUrl(`/exhibitions/${slug}`, `/en/exhibitions/${slugEn}`, "0.8");
+        addUrl(`/exhibitions/${slug}`, `/en/exhibitions/${slugEn}`, "0.8", "weekly", item.lastmod || today);
       });
       articles.forEach((item) => {
         const slug = item.slug || item.id;
         const slugEn = item.slug_en || slug;
-        addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8");
+        addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8", "weekly", item.lastmod || today);
       });
       pages.forEach((id: string) =>
-        addUrl(`/info/${id}`, `/en/info/${id}`, "0.7"),
+        addUrl(`/info/${id}`, `/en/info/${id}`, "0.7", "monthly", today),
       );
 
       xml += `</urlset>`;
@@ -1294,9 +1547,35 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
         );
         const lang: "it" | "en" =
           req.path.startsWith('/en/') || req.path === '/en' ? 'en' : 'it';
+        const resolved = await resolvePublicRoute(req.path);
+
+        if (resolved.kind === "not_found") {
+          const pageId = resolveSeoPageId(req.path);
+          const seoData = pageId ? await getSeoConfig(pageId) : null;
+          html = injectMetaTags(html, {
+            seoData,
+            lang,
+            pathname: req.path,
+          });
+          // Soft-inject noindex for unknown URLs
+          html = html.replace(
+            "</head>",
+            '<meta name="robots" content="noindex, nofollow">\n</head>',
+          );
+          res.status(404);
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(html);
+        }
+
         const pageId = resolveSeoPageId(req.path);
         const seoData = pageId ? await getSeoConfig(pageId) : null;
-        html = injectMetaTags(html, seoData, lang);
+        html = injectMetaTags(html, {
+          seoData,
+          lang,
+          pathname: req.path,
+          entity: resolved.kind === "ok" ? resolved.entity : null,
+          entityKind: resolved.kind === "ok" ? resolved.entityKind : null,
+        });
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
       } catch (e) {
