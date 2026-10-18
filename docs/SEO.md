@@ -91,14 +91,42 @@ curl -s https://auth.tagtalesgallery.com/robots.txt
 
 Nessun link pubblico dal sito principale verso `auth.*` (solo config Firebase).
 
-## Post-deploy Search Console
+## Checklist post-deploy (aggiornata 2026-10-18)
 
-1. Proprietà `https://tagtalesgallery.com` (senza www).
-2. Invia sitemap: `https://tagtalesgallery.com/sitemap.xml`.
-3. Richiedi indicizzazione home IT/EN, `/exhibitions`, `/writers`, e slug chiave.
-4. Validare JSON-LD con [Rich Results Test](https://search.google.com/test/rich-results).
-5. Allineare Google Business Profile (senza inventare sede fisica).
-6. Audit CMS: bio/intro mostre e writers ≥ ~300 parole dove possibile.
+### Verificato in produzione (automatizzabile / già fatto)
+
+- Home IT/EN: title e description approvati + inject su `/` (non più placeholder)
+- Mostra `shaone-first-line` / writer `shaone`: title, description, og:image, canonical, hreflang
+- HTTP 404 su path e slug inesistenti
+- Redirect 301: trailing slash, `/artists`→`/writers`, `www`→non-www (pagine Express)
+- Sitemap Express con hreflang + URL mostra
+- `/og-default.jpg` raggiungibile
+
+### Ancora manuale (Google / Hostinger / Firebase Auth)
+
+1. **Google Search Console** (account Google del sito):
+   - Conferma proprietà `https://tagtalesgallery.com` (senza www)
+   - Sitemap: `https://tagtalesgallery.com/sitemap.xml` (se non già inviata)
+   - Ispezione URL → **Richiedi indicizzazione** su: `/`, `/en`, `/exhibitions/shaone-first-line`, `/writers/shaone` (+ altre prioritarie)
+   - Non spuntare ancora “problema risolto” sul report “Rilevata non indicizzata” finché non compaiono scansioni reali
+2. **Rich Results Test** (opzionale ma utile): home + una mostra + un writer  
+   https://search.google.com/test/rich-results
+3. **www `/robots.txt`**: ancora file statico CDN (200). Opzionale: redirect dominio www→apex nel pannello Hostinger (copre anche i file statici)
+4. **auth.tagtalesgallery.com**: config già in repo (`hosting-auth/` + `firebase.json`). Deploy Hosting ancora da fare a mano sul Mac:
+   ```bash
+   cd ~/Projects/TagTales && firebase login --reauth && firebase deploy --only hosting
+   ```
+   Poi verifica: `curl -sI https://auth.tagtalesgallery.com/robots.txt` → `X-Robots-Tag: noindex, nofollow`
+5. **CMS**: dove le pagine pubbliche hanno poco testo, allunga bio/intro (≥ ~300 parole) in Admin
+6. **Link UTM** su Instagram / YouTube (bio canale) — elenco sotto
+7. **Admin SEO `seoConfig/home`**: allinea title/description ai valori sotto (il server ora forza title/desc home; conviene comunque allineare l’admin)
+
+### Title / description home (canonici)
+
+| | IT | EN |
+|---|----|----|
+| Title | `Tag Tales Gallery - Galleria di graffiti internazionale` | `Tag Tales Gallery - International Graffiti Gallery` |
+| Description | `Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.` | `Tag Tales Gallery — international street art and graffiti gallery. Discover exhibitions, writers and original works: explore and visit the shows.` |
 
 ## UTM social (da usare a mano)
 
