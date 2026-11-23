@@ -9,14 +9,17 @@ import ImageWatermarkOverlay, {
 } from './ImageWatermarkOverlay';
 import { getLocalizedField } from '../utils/localization';
 import { cleanHtml } from '../utils/cleanHtml';
-import { hasEcwidLinks, normalizeEcwidLinks, type EcwidStoreLink } from '../utils/ecwidStoreLinks';
+import { hasEcwidLinks, type EcwidStoreLink } from '../utils/ecwidStoreLinks';
+import { exhibitionCollectionHref } from '../utils/fourthwallStore';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
   blocks: ExhibitionBlock[];
+  /** Slugs of the writers on this exhibition. Photos link to that collection. */
+  writerSlugs?: string[];
 }
 
-export default function ModularExhibitionLayout({ blocks }: Props) {
+export default function ModularExhibitionLayout({ blocks, writerSlugs = [] }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -34,6 +37,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
       url: string;
       ecwidLink?: string;
       ecwidLinks?: EcwidStoreLink[];
+      linkToWriterCollection?: boolean;
+      writerSlug?: string;
       contactLink?: string;
       contactType?: string;
       fallbackUrl?: string;
@@ -54,6 +59,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
           url: block.images[0].url, 
           ecwidLink: block.images[0].ecwidLink,
           ecwidLinks: block.images[0].ecwidLinks,
+          linkToWriterCollection: block.images[0].linkToWriterCollection,
+          writerSlug: block.images[0].writerSlug,
           contactType: block.images[0].contactType, 
           contactLink: block.images[0].contactLink, 
           fallbackUrl: block.images[0].fallbackUrl, 
@@ -78,6 +85,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
             url: img.url,
             ecwidLink: img.ecwidLink,
             ecwidLinks: img.ecwidLinks,
+            linkToWriterCollection: img.linkToWriterCollection,
+            writerSlug: img.writerSlug,
             contactType: img.contactType,
             contactLink: img.contactLink,
             fallbackUrl: img.fallbackUrl,
@@ -193,17 +202,27 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
   const lightboxActionBtnClass =
     "inline-flex bg-[#FF4F00] text-white px-8 py-4 rounded-full uppercase font-bold tracking-widest text-sm hover:bg-white hover:text-[#FF4F00] transition-colors shadow-lg";
 
+  const shopHrefFor = (img: { writerSlug?: string; linkToWriterCollection?: boolean; ecwidLink?: string; ecwidLinks?: EcwidStoreLink[] }) => {
+    const wantsShop = img.linkToWriterCollection || hasEcwidLinks(img);
+    if (!wantsShop) return null;
+    return exhibitionCollectionHref(writerSlugs, img.writerSlug);
+  };
+
   const hasImageActions = (img: {
     ecwidLink?: string;
     ecwidLinks?: EcwidStoreLink[];
+    linkToWriterCollection?: boolean;
+    writerSlug?: string;
     contactLink?: string;
     isSold?: boolean;
-  }) => img.isSold || hasEcwidLinks(img) || !!img.contactLink;
+  }) => img.isSold || !!shopHrefFor(img) || !!img.contactLink;
 
   const renderImageAction = (
     img: {
       ecwidLink?: string;
       ecwidLinks?: EcwidStoreLink[];
+      linkToWriterCollection?: boolean;
+      writerSlug?: string;
       contactLink?: string;
       contactType?: string;
       isSold?: boolean;
@@ -212,7 +231,8 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     },
     variant: "overlay" | "lightbox" = "overlay",
   ) => {
-    if (!img.isSold && !hasEcwidLinks(img) && !img.contactLink) return null;
+    const shopHref = shopHrefFor(img);
+    if (!img.isSold && !shopHref && !img.contactLink) return null;
 
     if (img.isSold) {
       return (
@@ -223,28 +243,18 @@ export default function ModularExhibitionLayout({ blocks }: Props) {
     }
 
     const btnClass = variant === "lightbox" ? lightboxActionBtnClass : actionBtnClass;
-    const links = normalizeEcwidLinks(img);
 
-    if (links.length > 0) {
+    if (shopHref) {
       return (
-        <div className="flex flex-col items-end gap-2">
-          {links.map((link, i) => {
-            const href =
-              getLocalizedField(link, 'url', lang) || link.url || link.url_en || '';
-            return (
-              <a
-                key={`${href}-${i}`}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className={btnClass}
-              >
-                {getButtonText(img, true, link)}
-              </a>
-            );
-          })}
-        </div>
+        <a
+          href={shopHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className={btnClass}
+        >
+          {getButtonText(img, true)}
+        </a>
       );
     }
 

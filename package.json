@@ -15,7 +15,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:all": "npm run lint && npm test && npm run test:e2e",
     "start": "node dist/server.js",
-    "update-locales": "tsx /update-locales.cjs"
+    "update-locales": "tsx /update-locales.cjs",
+    "fourthwall:discover": "tsx scripts/fourthwall-discover.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

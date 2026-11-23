@@ -6,10 +6,10 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import {
   type EcwidStoreLink,
-  buildEcwidLinkUpdates,
-  getEcwidLinkSlots,
   hasEcwidLinks,
+  normalizeEcwidLinks,
 } from '../utils/ecwidStoreLinks';
+import { writerCollectionUrl } from '../utils/fourthwallStore';
 
 const quillModules = {
   toolbar: [
@@ -36,8 +36,11 @@ export interface ExhibitionBlock {
     url: string; 
     /** @deprecated prefer ecwidLinks[0]; kept in sync for legacy / webhook */
     ecwidLink?: string;
-    /** Up to 2 store links (e.g. poster A1 + A2 as separate Ecwid products) */
+    /** Legacy product urls. The public page ignores them and opens the writer collection. */
     ecwidLinks?: EcwidStoreLink[];
+    /** Photo opens the Fourthwall collection of the writer, one url for the whole shop. */
+    linkToWriterCollection?: boolean;
+    writerSlug?: string;
     contactType?: 'email' | 'whatsapp' | 'link'; 
     contactLink?: string; 
     fallbackUrl?: string; 
@@ -56,12 +59,15 @@ export interface ExhibitionBlock {
   hidden?: boolean;
 }
 
+export type ExhibitionWriterOption = { id: string; slug: string; name: string };
+
 interface Props {
   blocks: ExhibitionBlock[];
+  writers?: ExhibitionWriterOption[];
   onChange: (blocks: ExhibitionBlock[]) => void;
 }
 
-export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props) {
+export default function AdminExhibitionBlocksEditor({ blocks, writers = [], onChange }: Props) {
   const addBlock = (type: ExhibitionBlock['type']) => {
     const newBlock: ExhibitionBlock = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -121,6 +127,8 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     url: string;
     ecwidLink: string;
     ecwidLinks: EcwidStoreLink[];
+    linkToWriterCollection: boolean;
+    writerSlug: string;
     contactType: 'email' | 'whatsapp' | 'link';
     contactLink: string;
     fallbackUrl: string;
@@ -146,20 +154,25 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
     updateImageFields(blockId, imageIndex, { [field]: value });
   };
 
-  const updateEcwidLinkSlot = (
+  const setWriterCollectionLink = (
     blockId: string,
     imageIndex: number,
-    slotIndex: number,
-    field: 'url' | 'url_en' | 'label' | 'label_en',
-    value: string,
     img: NonNullable<ExhibitionBlock['images']>[number],
+    enabled: boolean,
+    writerSlug?: string,
   ) => {
-    const slots = getEcwidLinkSlots(img);
-    slots[slotIndex] = { ...slots[slotIndex], [field]: value };
+    const slug = (writerSlug ?? img.writerSlug ?? (writers.length === 1 ? writers[0].slug : "")).trim();
+    const href = enabled ? writerCollectionUrl(slug) : null;
+    const previous = normalizeEcwidLinks(img)[0];
     updateImageFields(blockId, imageIndex, {
-      ...buildEcwidLinkUpdates(slots),
-      contactLink: '',
-      contactType: undefined,
+      linkToWriterCollection: enabled,
+      writerSlug: enabled ? slug : "",
+      ecwidLink: href || "",
+      ecwidLinks: href
+        ? [{ url: href, label: previous?.label, label_en: previous?.label_en }]
+        : [],
+      contactLink: enabled ? "" : img.contactLink,
+      contactType: enabled ? undefined : img.contactType,
     });
   };
 
@@ -503,86 +516,46 @@ export default function AdminExhibitionBlocksEditor({ blocks, onChange }: Props)
                           )}
 
                           <div className="space-y-3">
-                            <p className="text-xs font-medium text-gray-500">
-                              Ecwid Store Link (fino a 2 — es. Poster A1 e A2 come prodotti separati)
-                            </p>
-                            {getEcwidLinkSlots(img).map((slot, slotIndex) => {
-                              const ecwidDisabled = !!img.contactLink;
-                              return (
-                                <div
-                                  key={slotIndex}
-                                  className="rounded border border-gray-100 bg-gray-50/50 p-2.5 space-y-2"
-                                >
-                                  <p className="text-xs font-medium text-gray-500">
-                                    Link {slotIndex + 1}
-                                  </p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <div>
-                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
-                                        Link IT
-                                      </label>
-                                      <input
-                                        type="url"
-                                        value={slot.url}
-                                        onChange={(e) =>
-                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'url', e.target.value, img)
-                                        }
-                                        placeholder="https://... (IT)"
-                                        disabled={ecwidDisabled}
-                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
-                                        Link EN
-                                      </label>
-                                      <input
-                                        type="url"
-                                        value={slot.url_en || ''}
-                                        onChange={(e) =>
-                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'url_en', e.target.value, img)
-                                        }
-                                        placeholder="https://... (EN)"
-                                        disabled={ecwidDisabled}
-                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <div>
-                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
-                                        Testo bottone IT
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={slot.label || ''}
-                                        onChange={(e) =>
-                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'label', e.target.value, img)
-                                        }
-                                        placeholder="Acquista"
-                                        disabled={ecwidDisabled}
-                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
-                                        Testo bottone EN
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={slot.label_en || ''}
-                                        onChange={(e) =>
-                                          updateEcwidLinkSlot(block.id, imgIndex, slotIndex, 'label_en', e.target.value, img)
-                                        }
-                                        placeholder="Buy"
-                                        disabled={ecwidDisabled}
-                                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 bg-white"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                            <div className="flex items-center justify-between p-2 border border-gray-100 rounded bg-white">
+                              <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">Link alla collection del writer</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={!!img.linkToWriterCollection || hasEcwidLinks(img)}
+                                  onChange={(e) => setWriterCollectionLink(block.id, imgIndex, img, e.target.checked)}
+                                  disabled={!!img.contactLink || writers.length === 0}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF4F00] peer-disabled:opacity-40"></div>
+                              </label>
+                            </div>
+                            {writers.length === 0 ? (
+                              <p className="text-[11px] text-[#59554E]">
+                                Seleziona il writer della mostra. Lo slug del profilo è lo slug della collection sullo shop.
+                              </p>
+                            ) : (
+                              <>
+                                {writers.length > 1 && (
+                                  <select
+                                    value={img.writerSlug || ""}
+                                    onChange={(e) => setWriterCollectionLink(block.id, imgIndex, img, true, e.target.value)}
+                                    disabled={!!img.contactLink}
+                                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm bg-white disabled:bg-gray-100"
+                                  >
+                                    <option value="">Scegli il writer</option>
+                                    {writers.map((writer) => (
+                                      <option key={writer.id} value={writer.slug}>
+                                        {writer.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                                <p className="text-[11px] text-[#59554E] break-all">
+                                  {writerCollectionUrl(img.writerSlug || (writers.length === 1 ? writers[0].slug : ""))
+                                    || "Nessuna collection: controlla lo slug del writer."}
+                                </p>
+                              </>
+                            )}
                           </div>
 
                           <div className="border-t border-gray-100 pt-3 relative">

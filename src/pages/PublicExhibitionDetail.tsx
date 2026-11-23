@@ -252,7 +252,12 @@ export default function PublicExhibitionDetail() {
         </FullPageHero>
 
         {exhibition.blocks && exhibition.blocks.length > 0 ? (
-          <ModularExhibitionLayout blocks={exhibition.blocks} />
+          <ModularExhibitionLayout
+            blocks={exhibition.blocks}
+            writerSlugs={linkedWriters
+              .map((w: any) => (typeof w?.slug === "string" ? w.slug : ""))
+              .filter(Boolean)}
+          />
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

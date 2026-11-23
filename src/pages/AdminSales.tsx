@@ -76,7 +76,7 @@ export default function AdminSales() {
             id: doc.id,
             orderId: data.orderId || '-',
             date: createdAt.toISOString(),
-            artworkName: data.productType ? data.productType.replace(/_/g, ' ').toUpperCase() : 'ART',
+            artworkName: data.productName || (data.productType ? data.productType.replace(/_/g, ' ').toUpperCase() : 'ART'),
             format: data.productType || '-',
             price: data.unitPrice || 0,
             artistEarnings: data.feeAmount || 0,

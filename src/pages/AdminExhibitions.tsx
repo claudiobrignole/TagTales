@@ -670,8 +670,15 @@ export default function AdminExhibitions() {
                     />
                   )}
 
-                  <AdminExhibitionBlocksEditor 
+                  <AdminExhibitionBlocksEditor
                     blocks={formData.blocks}
+                    writers={writers
+                      .filter((writer) => formData.artistaIds.includes(writer.id) && writer.slug)
+                      .map((writer) => ({
+                        id: writer.id,
+                        slug: writer.slug,
+                        name: writer.nickname || writer.nomeDarte || writer.slug,
+                      }))}
                     onChange={blocks => setFormData({ ...formData, blocks })}
                   />
 

@@ -4,7 +4,7 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { Mail } from "lucide-react";
 import { getLocalizedField } from "../utils/localization";
 import VideoEmbed from "../components/VideoEmbed";
@@ -39,7 +39,8 @@ export default function PublicWriterDetail() {
 
   const [rawWriterData, setRawWriterData] = useState<any>(null);
   const [exhibitions, setExhibitions] = useState<any[]>([]);
-  const [ecwidProducts, setEcwidProducts] = useState<any[]>([]);
+  const [storeProducts, setStoreProducts] = useState<{ id: string; name: string; image: string; price: string; url: string }[]>([]);
+  const [storeCollectionUrl, setStoreCollectionUrl] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -56,7 +57,8 @@ export default function PublicWriterDetail() {
         if (result.accessDenied || !result.data) {
           setRawWriterData(null);
           setExhibitions([]);
-          setEcwidProducts([]);
+          setStoreProducts([]);
+          setStoreCollectionUrl(null);
           return;
         }
 
@@ -104,61 +106,22 @@ export default function PublicWriterDetail() {
         }
         setExhibitions(exhibitionsData);
 
-          // Fetch ecwid products if assigned
-          let userEcwidProductIds: any[] = data.ecwidProductIds || [];
-          
-          if (userEcwidProductIds.length === 0 && data.uid) {
-            try {
-              const userDoc = await getDoc(doc(db, "users", data.uid));
-              if (userDoc.exists()) {
-                userEcwidProductIds = userDoc.data().ecwidProductIds || [];
-              }
-            } catch (e: any) {
-              console.warn("Could not fetch user document for ecwidProductIds (missing permissions for public access, please resync products from Admin dashboard)");
-            }
-          }
-
-          // Fallback if uid is not set or not matching
-          if (userEcwidProductIds.length === 0) {
-            try {
-              const writersSnap = await getDocs(query(collection(db, "users"), where("role", "in", ["writer", "artist"])));
-              writersSnap.forEach(uDoc => {
-                const uData = uDoc.data();
-                if (
-                  (data.emailContatto && uData.email === data.emailContatto) ||
-                  (data.nickname && uData.artistName === data.nickname) ||
-                  (data.nomeDarte && uData.artistName === data.nomeDarte)
-                ) {
-                   if (uData.ecwidProductIds && uData.ecwidProductIds.length > 0) {
-                      userEcwidProductIds = uData.ecwidProductIds;
-                   }
-                }
-              });
-            } catch (e: any) {
-              // Ignore public access error
-            }
-          }
-
-          if (userEcwidProductIds.length > 0) {
-            try {
-              console.log("Fetching ecwid products for IDs:", userEcwidProductIds);
-              // Fetch by assigned IDs (order preserved) — avoids incomplete catalog pages
-              const idsParam = userEcwidProductIds.map(String).join(",");
-              const ecwidRes = await fetch(`/api/ecwid/products?ids=${encodeURIComponent(idsParam)}`);
-              if (ecwidRes.ok) {
-                const ecwidData = await ecwidRes.json();
-                const writerProducts = ecwidData.items || [];
-                console.log("Matched ecwid products:", writerProducts.length, "of", userEcwidProductIds.length);
-                setEcwidProducts(writerProducts);
-              } else {
-                console.error("Ecwid fetch failed with status:", ecwidRes.status);
-              }
-            } catch (e) {
-              console.error("Failed to fetch ecwid products", e);
-            }
+        const collectionSlug = data.slug || slug;
+        try {
+          const storeRes = await fetch(`/api/fourthwall/collections/${encodeURIComponent(collectionSlug)}/products`);
+          if (storeRes.ok) {
+            const storeData = await storeRes.json();
+            setStoreProducts(Array.isArray(storeData.items) ? storeData.items : []);
+            setStoreCollectionUrl(storeData.collectionUrl || null);
           } else {
-            console.log("No ecwid product IDs assigned to this writer.");
+            setStoreProducts([]);
+            setStoreCollectionUrl(null);
           }
+        } catch (e) {
+          console.error("Failed to fetch writer collection", e);
+          setStoreProducts([]);
+          setStoreCollectionUrl(null);
+        }
       } catch (error) {
         console.error("Error fetching writer details:", error);
         setRawWriterData(null);
@@ -403,21 +366,21 @@ export default function PublicWriterDetail() {
             </div>
           )}
 
-          {ecwidProducts.length > 0 && (
+          {storeProducts.length > 0 && (
              <div className="mt-16 pt-16 border-t border-[#121212]/10">
                <h2 className="text-4xl md:text-5xl font-['Shamgod'] uppercase tracking-tight text-[#121212] mb-8 leading-[0.8]">
                  {t('writer.products', 'Opere disponibili')}
                </h2>
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                 {ecwidProducts.map(product => (
+                 {storeProducts.map(product => (
                    <div
                      key={product.id}
                      className={`flex flex-col overflow-hidden border border-[#EAE3D9] bg-white hover:shadow-md transition-shadow ${IMAGE_RADIUS.MD}`}
                    >
                      <div className="aspect-square w-full overflow-hidden bg-[#F2EEE8]">
-                       {(product.thumbnailUrl || product.imageUrl) ? (
+                       {product.image ? (
                          <img
-                           src={product.thumbnailUrl || product.imageUrl}
+                           src={product.image}
                            alt={product.name}
                            className="w-full h-full object-cover"
                            loading="lazy"
@@ -432,24 +395,20 @@ export default function PublicWriterDetail() {
                        <p className="font-['Karla'] font-bold uppercase tracking-wider text-[#121212] text-sm leading-snug line-clamp-2">
                          {product.name}
                        </p>
-                       <p className="font-['Karla'] text-[#59554E] text-sm">
-                         {product.defaultDisplayedPriceFormatted || `${product.price?.toLocaleString()} Euro`}
-                       </p>
+                       {product.price && (
+                         <p className="font-['Karla'] text-[#59554E] text-sm">
+                           {product.price}
+                         </p>
+                       )}
                        <div className="mt-auto pt-1">
-                         {product.url ? (
-                           <a
-                             href={product.url}
-                             target="_blank"
-                             rel="noreferrer"
-                             className="inline-flex w-full items-center justify-center px-4 py-2.5 bg-[#121212] text-white text-xs font-['Karla'] font-bold uppercase tracking-wider rounded-full hover:bg-[#FF4F00] transition-colors"
-                           >
-                             {t('writer.goToStore', 'Vai allo store')}
-                           </a>
-                         ) : (
-                           <span className="text-xs font-bold uppercase tracking-wider text-[#59554E]">
-                             Non disponibile
-                           </span>
-                         )}
+                         <a
+                           href={product.url || storeCollectionUrl || "#"}
+                           target="_blank"
+                           rel="noreferrer"
+                           className="inline-flex w-full items-center justify-center px-4 py-2.5 bg-[#121212] text-white text-xs font-['Karla'] font-bold uppercase tracking-wider rounded-full hover:bg-[#FF4F00] transition-colors"
+                         >
+                           {t('writer.goToStore', 'Vai allo store')}
+                         </a>
                        </div>
                      </div>
                    </div>

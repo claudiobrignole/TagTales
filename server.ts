@@ -22,6 +22,10 @@ import {
   isAllowedWatermarkSrc,
   parseWatermarkBakeMode,
 } from "./src/utils/watermarkImageServer.ts";
+import { listWriterCollectionProducts } from "./src/utils/fourthwallCatalog.ts";
+import { ingestFourthwallEvent } from "./src/utils/fourthwallIngest.ts";
+import { writerCollectionUrl } from "./src/utils/fourthwallStore.ts";
+import { verifyFourthwallSignature } from "./src/utils/fourthwallWebhook.ts";
 
 const CANONICAL_ORIGIN = "https://tagtalesgallery.com";
 const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-default.jpg`;
@@ -567,7 +571,12 @@ async function startServer() {
   app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({
+    limit: '10mb',
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  }));
 
   // Canonical URL hygiene: strip trailing slash (except "/") and /artists → /writers
   app.use((req, res, next) => {
@@ -1250,6 +1259,42 @@ ${text}`,
     } catch (error: any) {
       console.error("Approval error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  app.post("/api/fourthwall/webhook", (req, res) => {
+    const secret = process.env.FOURTHWALL_WEBHOOK_SECRET || "";
+    if (!secret) {
+      return res.status(503).json({ error: "FOURTHWALL_WEBHOOK_SECRET is not set" });
+    }
+    const raw = (req as any).rawBody as Buffer | undefined;
+    const signature = req.header("x-fourthwall-hmac-sha256") || undefined;
+    if (!raw || !verifyFourthwallSignature(raw, signature, secret)) {
+      return res.status(401).json({ error: "Invalid signature" });
+    }
+    res.status(200).json({ ok: true });
+    void (async () => {
+      try {
+        await ingestFourthwallEvent(getPreviewFirestore(), req.body);
+      } catch (error) {
+        console.error("Fourthwall webhook processing failed:", error instanceof Error ? error.message : error);
+      }
+    })();
+  });
+
+  app.get("/api/fourthwall/collections/:slug/products", async (req, res) => {
+    try {
+      const slug = String(req.params.slug || "");
+      const collectionUrl = writerCollectionUrl(slug);
+      if (!collectionUrl) {
+        return res.status(404).json({ items: [], collectionUrl: null });
+      }
+      const items = await listWriterCollectionProducts(slug);
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.json({ items, collectionUrl });
+    } catch (error) {
+      console.error("Fourthwall collection error:", error instanceof Error ? error.message : error);
+      res.status(502).json({ error: "Fourthwall collection unavailable" });
     }
   });
 
