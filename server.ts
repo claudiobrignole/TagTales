@@ -1199,67 +1199,11 @@ ${text}`,
   });
 
   app.post("/api/artworks/:id/approve", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { title, price, description, imageUrl } = req.body;
-
-      const storeId = process.env.ECWID_STORE_ID;
-      const secretToken = process.env.ECWID_SECRET_TOKEN;
-
-      if (!storeId || !secretToken) {
-        return res.status(500).json({ error: "Ecwid credentials not configured" });
-      }
-
-      // 1. Create product in Ecwid
-      const ecwidResponse = await fetch(`https://app.ecwid.com/api/v3/${storeId}/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${secretToken}`
-        },
-        body: JSON.stringify({
-          name: title,
-          price: price,
-          description: description,
-          enabled: true,
-        })
-      });
-
-      if (!ecwidResponse.ok) {
-        const errorData = await ecwidResponse.text();
-        console.error("Ecwid API Error:", errorData);
-        return res.status(ecwidResponse.status).json({ error: "Failed to create product in Ecwid" });
-      }
-
-      const ecwidData = await ecwidResponse.json();
-      const productId = ecwidData.id;
-
-      // 2. Upload image to Ecwid product if imageUrl is provided
-      if (imageUrl && productId) {
-        try {
-          // Fetch the image to get a blob/buffer
-          const imageResponse = await fetch(imageUrl);
-          const imageBuffer = await imageResponse.arrayBuffer();
-
-          await fetch(`https://app.ecwid.com/api/v3/${storeId}/products/${productId}/image`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${secretToken}`,
-              'Content-Type': imageResponse.headers.get('content-type') || 'image/jpeg'
-            },
-            body: Buffer.from(imageBuffer)
-          });
-        } catch (imgErr) {
-          console.error("Failed to upload image to Ecwid:", imgErr);
-          // We don't fail the whole request if image upload fails, but we log it
-        }
-      }
-
-      res.json({ success: true, ecwidProductId: productId });
-    } catch (error: any) {
-      console.error("Approval error:", error);
-      res.status(500).json({ error: error.message || "Internal server error" });
-    }
+    res.json({
+      success: true,
+      shopProductCreated: false,
+      message: "I prodotti dello shop si creano su Fourthwall. TagTales non crea schede prodotto.",
+    });
   });
 
   app.post("/api/fourthwall/webhook", (req, res) => {

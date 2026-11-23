@@ -30,7 +30,7 @@ describe("artistFeeEur", () => {
       promo: false,
       currency: "USD",
       lineNet: 62,
-    })).toEqual({ feeAmount: 14, status: "pending", platformFeeEur: null });
+    })).toEqual({ feeAmount: 14, status: "pending", platformFeeEur: null, lineNetEur: null, fxRate: null });
   });
 
   it("uses the promo column when a promotion is on", () => {
@@ -43,17 +43,28 @@ describe("artistFeeEur", () => {
     }).feeAmount).toBe(5);
   });
 
-  it("keeps 90 EUR and gives the artist the rest only when the net is in EUR", () => {
+  it("keeps 90 EUR and gives the artist the rest of the euro net", () => {
     expect(artistFeeEur({
       kind: "stampa_limitata",
       quantity: 1,
       promo: false,
       currency: "EUR",
       lineNet: 150,
-    })).toMatchObject({ feeAmount: 60, status: "pending", platformFeeEur: 90 });
+    })).toMatchObject({ feeAmount: 60, status: "pending", platformFeeEur: 90, fxRate: 1 });
   });
 
-  it("does not subtract 90 EUR from a USD net", () => {
+  it("converts a USD net at the supplied rate, then subtracts 90 EUR", () => {
+    expect(artistFeeEur({
+      kind: "stampa_limitata",
+      quantity: 1,
+      promo: false,
+      currency: "USD",
+      lineNet: 180,
+      eurPerUnit: 0.92,
+    })).toMatchObject({ feeAmount: 75.6, status: "pending", lineNetEur: 165.6, fxRate: 0.92 });
+  });
+
+  it("does not invent a rate when the conversion is missing", () => {
     expect(artistFeeEur({
       kind: "stampa_limitata",
       quantity: 1,

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useI18n } from "../contexts/I18nContext";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
-import EcwidBuyButton from "../components/EcwidBuyButton";
+import { writerCollectionUrl } from "../utils/fourthwallStore";
 import { getLocalizedField } from "../utils/localization";
 import { trackViewArtwork } from "../utils/analytics";
 import { fetchPreviewableContent } from "../utils/fetchPreviewableContent";
@@ -333,7 +333,11 @@ export default function PublicExhibitionDetail() {
                 Opere in Mostra
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {artworks.map((artwork) => (
+                {artworks.map((artwork) => {
+                  const collectionHref = writerCollectionUrl(
+                    writers.find((w: any) => w.id === artwork.artistaId)?.slug,
+                  );
+                  return (
                   <div key={artwork.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EAE3D9] group">
                     <div className="aspect-[4/5] bg-[#F2EEE8] relative overflow-hidden">
                       {artwork.immagineHiRes && artwork.immagineHiRes.trim() !== '' ? (
@@ -358,8 +362,15 @@ export default function PublicExhibitionDetail() {
                         
                         {artwork.statoVendita === 'sold' || artwork.statoVendita === 'venduta' ? (
                           <span className="px-6 py-3 rounded-full font-bold uppercase tracking-widest bg-[#EAE3D9] text-[#59554E]">Sold</span>
-                        ) : artwork.ecwidId ? (
-                          <EcwidBuyButton productId={artwork.ecwidId} />
+                        ) : collectionHref ? (
+                          <a
+                            href={collectionHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-6 py-3 rounded-full font-bold uppercase tracking-widest text-white bg-[#121212] hover:bg-[#FF4F00] transition-colors"
+                          >
+                            {t('exhibition.buy', 'Acquista')}
+                          </a>
                         ) : (
                           <button className="px-6 py-3 rounded-full font-bold uppercase tracking-widest text-[#121212] border-2 border-[#121212] hover:bg-[#121212] hover:text-white transition-colors" disabled>
                             Non Disponibile
@@ -368,7 +379,8 @@ export default function PublicExhibitionDetail() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

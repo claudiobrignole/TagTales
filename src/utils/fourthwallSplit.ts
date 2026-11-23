@@ -52,7 +52,8 @@ export function roundMoney(value: number): number {
 /**
  * Artist credit in EUR.
  * POD: fixed Allegato B amount, independent of the sale currency.
- * Limited edition: net (after tax and discount) minus €90, only when that net is already in EUR.
+ * Limited edition: sale net converted to EUR at the given rate, minus €90 per print.
+ * `eurPerUnit` is how many euros one unit of `currency` buys. It is 1 when the sale is already in EUR.
  */
 export function artistFeeEur(input: {
   kind: FourthwallProductKind;
@@ -60,20 +61,25 @@ export function artistFeeEur(input: {
   promo: boolean;
   currency: string;
   lineNet: number;
-}): { feeAmount: number; status: "pending" | "needs_fx" | "unknown_product"; platformFeeEur: number | null } {
+  eurPerUnit?: number | null;
+}): { feeAmount: number; status: "pending" | "needs_fx" | "unknown_product"; platformFeeEur: number | null; lineNetEur: number | null; fxRate: number | null } {
   const quantity = Math.max(0, input.quantity || 0);
   if (input.kind === "unknown" || quantity === 0) {
-    return { feeAmount: 0, status: "unknown_product", platformFeeEur: null };
+    return { feeAmount: 0, status: "unknown_product", platformFeeEur: null, lineNetEur: null, fxRate: null };
   }
   if (input.kind === "stampa_limitata") {
     const platformFeeEur = LIMITED_PLATFORM_FEE_EUR * quantity;
-    if (input.currency.toUpperCase() !== "EUR") {
-      return { feeAmount: 0, status: "needs_fx", platformFeeEur };
+    const rate = input.currency.toUpperCase() === "EUR" ? 1 : input.eurPerUnit;
+    if (rate == null || !(rate > 0)) {
+      return { feeAmount: 0, status: "needs_fx", platformFeeEur, lineNetEur: null, fxRate: null };
     }
+    const lineNetEur = roundMoney(input.lineNet * rate);
     return {
-      feeAmount: roundMoney(Math.max(0, input.lineNet - platformFeeEur)),
+      feeAmount: roundMoney(Math.max(0, lineNetEur - platformFeeEur)),
       status: "pending",
       platformFeeEur,
+      lineNetEur,
+      fxRate: rate,
     };
   }
   const row = ARTIST_FEE_EUR[input.kind];
@@ -82,5 +88,7 @@ export function artistFeeEur(input: {
     feeAmount: roundMoney(perUnit * quantity),
     status: "pending",
     platformFeeEur: null,
+    lineNetEur: null,
+    fxRate: null,
   };
 }

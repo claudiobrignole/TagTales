@@ -2,6 +2,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { fetchFourthwallOrder, indexShopProducts, loadProductFacts } from "./fourthwallCatalog.ts";
 import { applyFourthwallPlan } from "./fourthwallApply.ts";
 import { planFourthwallOrder, type FourthwallOrder } from "./fourthwallOrderPlan.ts";
+import { eurRatesFor } from "./fourthwallFx.ts";
 import type { ShopProductIndex } from "./fourthwallCatalog.ts";
 
 export async function ingestFourthwallEvent(db: Firestore, event: {
@@ -39,7 +40,11 @@ export async function ingestFourthwallEvent(db: Firestore, event: {
     index[productId] = { ...index[productId], ...facts };
   }
 
-  const plan = planFourthwallOrder(order, index, writerUidBySlug);
+  const currencies = (order.offers || []).map((offer) =>
+    String(offer.variant?.price?.currency || offer.variant?.unitPrice?.currency || "USD"),
+  );
+  const eurPerUnitByCurrency = await eurRatesFor(currencies);
+  const plan = planFourthwallOrder(order, index, writerUidBySlug, eurPerUnitByCurrency);
   await applyFourthwallPlan(db, plan);
   return { orderId, lines: plan.lines.length, alerts: plan.alerts.length };
 }

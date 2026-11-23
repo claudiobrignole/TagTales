@@ -402,7 +402,7 @@ export default function PublicWriterDetail() {
                        )}
                        <div className="mt-auto pt-1">
                          <a
-                           href={product.url || storeCollectionUrl || "#"}
+                           href={storeCollectionUrl || product.url || "#"}
                            target="_blank"
                            rel="noreferrer"
                            className="inline-flex w-full items-center justify-center px-4 py-2.5 bg-[#121212] text-white text-xs font-['Karla'] font-bold uppercase tracking-wider rounded-full hover:bg-[#FF4F00] transition-colors"

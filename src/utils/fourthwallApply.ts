@@ -41,6 +41,8 @@ export async function applyFourthwallPlan(db: Firestore, plan: OrderPlan): Promi
         unitPrice: line.unitPrice,
         currency: line.currency,
         lineNet: line.lineNet,
+        lineNetEur: line.lineNetEur,
+        fxRate: line.fxRate,
         lineCost: line.lineCost,
         feeAmount: line.feeAmount,
         platformFeeEur: line.platformFeeEur,

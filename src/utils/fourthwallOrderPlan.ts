@@ -58,6 +58,8 @@ export type PlannedRoyalty = {
   lineCost: number;
   feeAmount: number;
   platformFeeEur: number | null;
+  lineNetEur: number | null;
+  fxRate: number | null;
   isPromo: boolean;
   status: "pending" | "needs_fx" | "unknown_product" | "conflict";
   source: "fourthwall";
@@ -100,6 +102,7 @@ export function planFourthwallOrder(
   order: FourthwallOrder,
   products: Record<string, IndexedProduct>,
   writerUidBySlug: Record<string, string>,
+  eurPerUnitByCurrency: Record<string, number> = {},
 ): OrderPlan {
   const orderId = order.id;
   const source = order.source?.type;
@@ -165,12 +168,14 @@ export function planFourthwallOrder(
       sizeName: variant.attributes?.size?.name || indexed.sizeName,
     });
     const promo = Boolean(order.promotionId) || Boolean(variant.compareAtPrice);
+    const net = lineNet(order, linePrice, currency);
     const fee = artistFeeEur({
       kind,
       quantity,
       promo,
       currency,
-      lineNet: lineNet(order, linePrice, currency),
+      lineNet: net,
+      eurPerUnit: eurPerUnitByCurrency[currency] ?? null,
     });
 
     lines.push({
@@ -185,7 +190,9 @@ export function planFourthwallOrder(
       quantity,
       unitPrice: quantity > 0 ? roundMoney(linePrice / quantity) : linePrice,
       currency,
-      lineNet: lineNet(order, linePrice, currency),
+      lineNet: net,
+      lineNetEur: fee.lineNetEur,
+      fxRate: fee.fxRate,
       lineCost,
       feeAmount: fee.feeAmount,
       platformFeeEur: fee.platformFeeEur,
