@@ -13,6 +13,8 @@ import SEO from "../components/SEO";
 import { getLocalizedField } from "../utils/localization";
 import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
+import CrawlableLinks from "../components/CrawlableLinks";
+import { localizedDetailPath } from "../utils/paths";
 
 export default function PublicWriters() {
   const { t, i18n } = useTranslation();
@@ -93,9 +95,9 @@ export default function PublicWriters() {
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
-          <h1 className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
+          <p className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
             {t("nav.writers", "WRITERS")}
-          </h1>
+          </p>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
@@ -160,7 +162,7 @@ export default function PublicWriters() {
                 return (
                   <Link
                     key={writer.id}
-                    to={`${langPrefix}/writers/${writer.slug || writer.id}`}
+                    to={localizedDetailPath(lang, "/writers", writer.slug || writer.id, writer.slug_en)}
                     className="group block"
                   >
                     <div
@@ -202,6 +204,17 @@ export default function PublicWriters() {
           )}
         </motion.div>
       </div>
+      <CrawlableLinks
+        label={lang === "EN" ? "ALL WRITERS" : "TUTTI I WRITERS"}
+        links={writers.map((writer) => ({
+          href: localizedDetailPath(lang, "/writers", writer.slug || writer.id, writer.slug_en),
+          text:
+            getLocalizedField(writer, "nickname", lang) ||
+            getLocalizedField(writer, "artistName", lang) ||
+            writer.nickname ||
+            "Writer",
+        }))}
+      />
     </PublicLayout>
   );
 }

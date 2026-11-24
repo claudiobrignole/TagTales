@@ -24,7 +24,7 @@ gerarchia heading corretta, meta IT/EN e link interni localizzati.
 | Origin | Sempre `https://tagtalesgallery.com` (no www in canonical) |
 | Trailing slash | Nessuno; Express fa 301 da `/path/` → `/path` |
 | Artists | `/artists` e `/en/artists` → 301 su `/writers` |
-| Home titles | IT: `Tag Tales Gallery - Galleria di graffiti internazionale` · EN: `… International Graffiti Gallery` |
+| Home titles | IT: `Tag Tales – Galleria di street art a Lugano` · EN: `Tag Tales – Street art gallery in Lugano` |
 | OG default | `/og-default.jpg` (1200×630) |
 
 ## Domini e file chiave
@@ -125,7 +125,7 @@ Nessun link pubblico dal sito principale verso `auth.*` (solo config Firebase).
 
 | | IT | EN |
 |---|----|----|
-| Title | `Tag Tales Gallery - Galleria di graffiti internazionale` | `Tag Tales Gallery - International Graffiti Gallery` |
+| Title | `Tag Tales – Galleria di street art a Lugano` | `Tag Tales – Street art gallery in Lugano` |
 | Description | `Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.` | `Tag Tales Gallery — international street art and graffiti gallery. Discover exhibitions, writers and original works: explore and visit the shows.` |
 
 ## UTM social (da usare a mano)

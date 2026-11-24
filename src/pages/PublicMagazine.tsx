@@ -13,6 +13,8 @@ import { IMAGE_RADIUS } from "../constants/theme";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import LazyImage from "../components/LazyImage";
+import CrawlableLinks from "../components/CrawlableLinks";
+import { localizedDetailPath } from "../utils/paths";
 
 export default function PublicMagazine() {
   const { t, i18n } = useTranslation();
@@ -83,9 +85,9 @@ export default function PublicMagazine() {
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
-          <h1 className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
+          <p className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
             {t("nav.magazine", "MAGAZINE")}
-          </h1>
+          </p>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
@@ -191,7 +193,7 @@ export default function PublicMagazine() {
                 return (
                   <Link
                     key={article.id}
-                    to={`${langPrefix}/magazine/${article.slug || article.id}`}
+                    to={localizedDetailPath(lang, "/magazine", article.slug || article.id, article.slug_en)}
                     className="group block transition-colors flex flex-col gap-4"
                   >
                     {articleContent}
@@ -202,6 +204,13 @@ export default function PublicMagazine() {
           )}
         </motion.div>
       </div>
+      <CrawlableLinks
+        label={lang === "EN" ? "ALL ARTICLES" : "TUTTI GLI ARTICOLI"}
+        links={articles.map((article) => ({
+          href: localizedDetailPath(lang, "/magazine", article.slug || article.id, article.slug_en),
+          text: getLocalizedField(article, "titolo", lang) || article.titolo || "Articolo",
+        }))}
+      />
     </PublicLayout>
   );
 }

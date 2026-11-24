@@ -38,19 +38,32 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const location = useLocation();
 
   useEffect(() => {
-    // Update HTML lang attribute for SEO
-    document.documentElement.lang = i18n.language || 'it';
-  }, [i18n.language]);
+    document.documentElement.lang = (location.pathname === "/en" || location.pathname.startsWith("/en/"))
+      ? "en"
+      : (i18n.language || "it");
+  }, [i18n.language, location.pathname]);
 
   useEffect(() => {
+    const path = location.pathname;
+    const isDashboard = path.startsWith("/app");
+    const onEnglish = path === "/en" || path.startsWith("/en/");
+
+    // Public URLs own the language. A stored "en" preference must not
+    // render the Italian homepage in English (that made Google prefer /en).
+    if (!isDashboard) {
+      const next = onEnglish ? "en" : "it";
+      setLanguageState(next.toUpperCase() as Language);
+      if (i18n.language !== next) i18n.changeLanguage(next);
+      return;
+    }
+
     const fetchUserLanguage = async () => {
-      let resolvedLang = 'it';
+      let resolvedLang = "it";
       let hasExplicitPreference = false;
 
-      // 1. Check user profile if logged in
       if (user) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists() && userDoc.data().language) {
             resolvedLang = userDoc.data().language.toLowerCase();
             hasExplicitPreference = true;
@@ -60,43 +73,20 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // 2. Check local storage
       if (!hasExplicitPreference) {
-        const storedLang = localStorage.getItem('app_language');
-        if (storedLang && ['en', 'it'].includes(storedLang)) {
-            resolvedLang = storedLang;
-            hasExplicitPreference = true;
-        }
-      }
-
-      // 3. Browser language
-      if (!hasExplicitPreference) {
-        const browserLangFull = navigator.language.split('-')[0].toLowerCase();
-        const supported = ['en', 'it'];
-        
-        let proposed = 'it';
-        if (supported.includes(browserLangFull)) {
-            proposed = browserLangFull;
-        } else {
-            proposed = 'en';
-        }
-        setProposedLang(proposed.toUpperCase());
-
-        if (browserLangFull !== 'it') {
-            resolvedLang = 'it'; // Default the UI to Italian first, and prompt them gracefully later
-        } else {
-            resolvedLang = 'it';
+        const storedLang = localStorage.getItem("app_language");
+        if (storedLang && ["en", "it"].includes(storedLang)) {
+          resolvedLang = storedLang;
         }
       }
 
       const langObj = String(resolvedLang).toUpperCase() as Language;
       setLanguageState(langObj);
       i18n.changeLanguage(resolvedLang);
-      localStorage.setItem('app_language', resolvedLang);
     };
-    
+
     fetchUserLanguage();
-  }, [user]);
+  }, [user, location.pathname, i18n]);
 
   // Handle staggered and coordinated LanguagePrompt orchestration
   useEffect(() => {
@@ -123,6 +113,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const browserLangFull = navigator.language.split('-')[0].toLowerCase();
+      setProposedLang(browserLangFull === 'it' ? 'IT' : 'EN');
       if (browserLangFull === 'it') {
         // Already Italian, skip prompt and dispatch event for PWA coordination
         window.dispatchEvent(new CustomEvent('language-prompt-closed', { detail: { action: 'skipped_italian' } }));
@@ -167,6 +158,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Pattern delle pagine di dettaglio con slug traducibile
         const slugPatterns = [
           { it: /^\/exhibitions\/([^/]+)$/, en: /^\/en\/exhibitions\/([^/]+)$/, collection: 'mostre', itPath: '/exhibitions/', enPath: '/en/exhibitions/' },
+          { it: /^\/writers\/([^/]+)$/, en: /^\/en\/writers\/([^/]+)$/, collection: 'scrittori', itPath: '/writers/', enPath: '/en/writers/' },
           { it: /^\/magazine\/([^/]+)$/, en: /^\/en\/magazine\/([^/]+)$/, collection: 'articoli', itPath: '/magazine/', enPath: '/en/magazine/' },
         ];
 

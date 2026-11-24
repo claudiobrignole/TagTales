@@ -97,7 +97,7 @@ export default function Header() {
               title: localizedTitle,
               type: t("common.exhibition", "Mostra"),
               image: data.bannerHero,
-              link: `${langPrefix}/exhibitions/${data.slug || doc.id}`,
+              link: `${langPrefix}/exhibitions/${currentLang === "EN" ? data.slug_en || data.slug || doc.id : data.slug || doc.id}`,
             });
           }
         });
@@ -127,7 +127,7 @@ export default function Header() {
               title: localizedNickname,
               type: t("common.writer", "Writer"),
               image: data.fotoProfilo,
-              link: `${langPrefix}/writers/${data.slug || doc.id}`,
+              link: `${langPrefix}/writers/${currentLang === "EN" ? data.slug_en || data.slug || doc.id : data.slug || doc.id}`,
             });
           }
         });
@@ -155,7 +155,7 @@ export default function Header() {
               title: localizedTitle,
               type: t("common.article", "Articolo"),
               image: data.immagineCopertina || data.coverImageUrl || data.coverImage,
-              link: `${langPrefix}/magazine/${data.slug || doc.id}`,
+              link: `${langPrefix}/magazine/${currentLang === "EN" ? data.slug_en || data.slug || doc.id : data.slug || doc.id}`,
             });
           }
         });

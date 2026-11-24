@@ -20,6 +20,8 @@ import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import FullPageHero from "../components/FullPageHero";
 import LazyImage from "../components/LazyImage";
+import CrawlableLinks from "../components/CrawlableLinks";
+import { localizedDetailPath } from "../utils/paths";
 
 interface Exhibition {
   id: string;
@@ -33,6 +35,7 @@ interface Exhibition {
   dataApertura?: string;
   artistaIds?: string[];
   slug?: string;
+  slug_en?: string;
   artistNames?: string[];
   year?: string;
   order?: number;
@@ -173,9 +176,9 @@ export default function PublicExhibitions() {
       >
         {/* Mobile toggle */}
         <div className="md:hidden flex justify-between items-center text-white">
-          <h1 className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
+          <p className="font-['Shamgod'] text-2xl uppercase tracking-widest text-white leading-none md:hidden">
             {t("nav.mostre", "MOSTRE")}
-          </h1>
+          </p>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="text-xs border border-white/30 px-4 py-1.5 rounded-full uppercase"
@@ -409,6 +412,13 @@ export default function PublicExhibitions() {
           )}
         </div>
       )}
+      <CrawlableLinks
+        label={lang === "EN" ? "ALL EXHIBITIONS" : "TUTTE LE MOSTRE"}
+        links={allExhibitions.map((ex) => ({
+          href: localizedDetailPath(lang, "/exhibitions", ex.slug || ex.id, ex.slug_en),
+          text: getLocalizedField(ex, "titolo", lang) || getLocalizedField(ex, "title", lang) || ex.titolo || "MOSTRA",
+        }))}
+      />
     </PublicLayout>
   );
 }

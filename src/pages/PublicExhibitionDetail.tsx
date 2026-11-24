@@ -14,6 +14,8 @@ import { PREVIEW_QUERY_PARAM, appendPreviewToLink } from "../utils/previewAccess
 
 import PublicLayout from "../components/PublicLayout";
 import SEO, { CANONICAL_ORIGIN } from "../components/SEO";
+import { exhibitionJsonLd, exhibitionMeta } from "../utils/seoDocument";
+import { localizedDetailPath } from "../utils/paths";
 import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
@@ -27,7 +29,7 @@ export default function PublicExhibitionDetail() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { t } = useTranslation();
   const { language: lang } = useI18n();
-  const { writers } = usePublicData();
+  const { writers, exhibitions: allExhibitions } = usePublicData();
   const langPrefix = lang === "EN" ? "/en" : "";
   const exhibitionsListPath = `${langPrefix}/exhibitions`;
 
@@ -153,46 +155,60 @@ export default function PublicExhibitionDetail() {
     lang === "EN"
       ? exhibition.slug_en || exhibition.slug || exhibition.id
       : exhibition.slug || exhibition.id;
+  const italianSlug = exhibition.slug || exhibition.id;
+  const englishSlug = exhibition.slug_en || exhibition.slug || exhibition.id;
   const canonicalUrl = `${CANONICAL_ORIGIN}${langPrefix}/exhibitions/${exhibitionSlug}`;
-
-  const exhibitionJsonLd: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "ExhibitionEvent",
-    name: getLocalizedField(exhibition, "titolo", lang) || exhibition.titolo,
-    description:
+  const showTitle = getLocalizedField(exhibition, "titolo", lang) || exhibition.titolo;
+  const showArtist =
+    linkedWriters
+      .map((w: any) => w.nickname || w.name || w.nomeDarte)
+      .filter(Boolean)
+      .join(", ") ||
+    exhibition.preTitolo ||
+    "";
+  const showMeta = exhibitionMeta(lang === "EN" ? "en" : "it", {
+    title: showTitle,
+    artist: showArtist,
+    city: exhibition.citta || exhibition.luogo || "Lugano",
+    start: isValidDate(exhibition.dataApertura) ? exhibition.dataApertura : "",
+    end: isValidDate(exhibition.dataChiusura) ? exhibition.dataChiusura : "",
+    intro:
       getLocalizedField(exhibition, "intro", lang) ||
       exhibition.intro ||
-      undefined,
+      getLocalizedField(exhibition, "testoCuratela", lang) ||
+      exhibition.testoCuratela,
+  });
+
+  const exhibitionSchema = exhibitionJsonLd({
+    name: showTitle,
+    description: showMeta.description,
     image: exhibition.bannerHero || undefined,
     url: canonicalUrl,
-  };
-  if (isValidDate(exhibition.dataApertura)) {
-    exhibitionJsonLd.startDate = exhibition.dataApertura;
-  }
-  if (isValidDate(exhibition.dataChiusura)) {
-    exhibitionJsonLd.endDate = exhibition.dataChiusura;
-  }
-  if (linkedWriters.length > 0) {
-    exhibitionJsonLd.performer = linkedWriters.map((w: any) => ({
-      "@type": "Person",
+    start: isValidDate(exhibition.dataApertura) ? exhibition.dataApertura : undefined,
+    end: isValidDate(exhibition.dataChiusura) ? exhibition.dataChiusura : undefined,
+    performers: linkedWriters.map((w: any) => ({
       name: w.nickname || w.name || w.nomeDarte,
-      url: `${CANONICAL_ORIGIN}${langPrefix}/writers/${w.slug || w.id}`,
-    }));
-  }
+      url: `${CANONICAL_ORIGIN}${localizedDetailPath(lang, "/writers", w.slug || w.id, w.slug_en)}`,
+    })),
+  });
+
+  const otherExhibitions = allExhibitions.filter((item: any) => item.id !== exhibition.id);
 
   return (
     <PublicLayout>
       {exhibition && (
         <SEO 
-          title={getLocalizedField(exhibition, 'titolo', lang) || exhibition.titolo} 
-          description={getLocalizedField(exhibition, 'intro', lang) || exhibition.intro || getLocalizedField(exhibition, 'testoCuratela', lang) || exhibition.testoCuratela} 
+          title={showMeta.title} 
+          description={showMeta.description} 
           image={exhibition.bannerHero}
           noIndex={isPreviewMode}
+          alternateIt={`${CANONICAL_ORIGIN}/exhibitions/${italianSlug}`}
+          alternateEn={`${CANONICAL_ORIGIN}/en/exhibitions/${englishSlug}`}
           keywords={t(
             "seo.exhibitionKeywords",
             "mostra graffiti, street art exhibition, tag tales gallery",
           )}
-          jsonLd={exhibitionJsonLd}
+          jsonLd={exhibitionSchema}
         />
       )}
       {isPreviewMode && <PreviewBanner />}
@@ -385,6 +401,61 @@ export default function PublicExhibitionDetail() {
             </div>
           )}
         </motion.div>
+
+        <section className="max-w-6xl mx-auto mt-16 border-t border-[#121212]/10 px-[25px] pb-16 pt-16 md:px-[50px]">
+          {linkedWriters.length > 0 && (
+            <div className="mb-12">
+              <h2 className="mb-6 font-['Shamgod'] text-[30px] uppercase leading-none text-[#121212] md:text-[40px]">
+                {lang === "EN" ? "WRITERS" : "WRITERS"}
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {linkedWriters.map((writer: any) => (
+                  <li key={writer.id}>
+                    <Link
+                      to={localizedDetailPath(lang, "/writers", writer.slug || writer.id, writer.slug_en)}
+                      className="font-['Karla'] text-lg font-bold uppercase tracking-wider text-[#121212] hover:text-[#FF4F00]"
+                    >
+                      {writer.nickname || writer.name || writer.nomeDarte}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <h2 className="mb-6 font-['Shamgod'] text-[30px] uppercase leading-none text-[#121212] md:text-[40px]">
+            {lang === "EN" ? "OTHER EXHIBITIONS" : "ALTRE MOSTRE"}
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {otherExhibitions.length === 0 ? (
+              <li>
+                <Link
+                  to={exhibitionsListPath}
+                  className="font-['Karla'] text-lg font-bold uppercase tracking-wider text-[#121212] hover:text-[#FF4F00]"
+                >
+                  {lang === "EN" ? "All exhibitions" : "Tutte le mostre"}
+                </Link>
+              </li>
+            ) : (
+              otherExhibitions.map((item: any) => {
+                const label =
+                  getLocalizedField(item, "titolo", lang) ||
+                  getLocalizedField(item, "title", lang) ||
+                  item.titolo ||
+                  item.title;
+                return (
+                  <li key={item.id}>
+                    <Link
+                      to={localizedDetailPath(lang, "/exhibitions", item.slug || item.id, item.slug_en)}
+                      className="font-['Karla'] text-lg font-bold uppercase tracking-wider text-[#121212] hover:text-[#FF4F00]"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </section>
       </div>
     </PublicLayout>
   );

@@ -39,6 +39,7 @@ import { IMAGE_RADIUS } from "../constants/theme";
 import PublicLayout from "../components/PublicLayout";
 import { sendEmailNotification } from "../utils/emailService";
 import SEO from "../components/SEO";
+import { HOME_TITLE, homeDescription } from "../utils/seoDocument";
 import VideoEmbed from "../components/VideoEmbed";
 import LazyImage from "../components/LazyImage";
 import {
@@ -1166,24 +1167,22 @@ export default function PublicHome() {
       <SEO
         pageId="home"
         artGallery
-        title={t(
-          "seo.homeTitle",
-          "Tag Tales Gallery - Galleria di graffiti internazionale",
-        )}
-        description={t(
-          "seo.defaultDescription",
-          "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.",
-        )}
+        title={HOME_TITLE[lang === "EN" ? "en" : "it"]}
+        description={homeDescription(lang === "EN" ? "en" : "it", {
+          title:
+            getLocalizedField(featuredExhibitions[0], "titolo", lang) ||
+            featuredExhibitions[0]?.title,
+          artist:
+            featuredExhibitions[0]?.owner ||
+            featuredExhibitions[0]?.preTitolo,
+        })}
         keywords={t(
           "seo.defaultKeywords",
           "tag tales, graffiti, street art, writers, mostre, magazine, urban art",
         )}
       />
       <h1 className="sr-only">
-        {t(
-          "seo.homeH1",
-          "Tag Tales Gallery - Galleria di graffiti internazionale",
-        )}
+        {HOME_TITLE[lang === "EN" ? "en" : "it"]}
       </h1>
       {loading ? (
         <div className="h-screen flex items-center justify-center font-['Shamgod'] text-4xl">

@@ -164,6 +164,19 @@ function RouteTracker() {
   return null;
 }
 
+function CanonicalPath() {
+  const location = useLocation();
+  if (location.pathname.length > 1 && location.pathname.endsWith("/")) {
+    return (
+      <Navigate
+        to={`${location.pathname.replace(/\/+$/, "")}${location.search}`}
+        replace
+      />
+    );
+  }
+  return null;
+}
+
 export default function App() {
   useEffect(() => {
     initCacheVersion();
@@ -183,6 +196,7 @@ export default function App() {
             <LanguagePrompt />
           <PWAInstallBanner />
           <RouteTracker />
+          <CanonicalPath />
           <Suspense fallback={
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#F2EEE8] font-['Karla'] p-6 text-center">
               <div className="w-8 h-8 border-4 border-[#FF4F00] border-t-transparent rounded-full animate-spin mb-3"></div>

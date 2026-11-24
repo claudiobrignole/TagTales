@@ -34,7 +34,10 @@ test.describe('Public routes', () => {
     expect(res.ok()).toBeTruthy();
     const body = await res.text();
     expect(body).toContain('<urlset');
-    expect(body).toContain('<loc>https://tagtalesgallery.com/</loc>');
+    expect(body).toContain('<loc>https://tagtalesgallery.com</loc>');
+    expect(body).toContain('<loc>https://tagtalesgallery.com/en</loc>');
+    expect(body).not.toContain('<loc>https://tagtalesgallery.com/</loc>');
+    expect(body).toContain('hreflang="x-default"');
   });
 
   test('robots.txt is served', async ({ request }) => {

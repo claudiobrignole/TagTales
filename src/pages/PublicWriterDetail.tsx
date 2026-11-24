@@ -22,6 +22,7 @@ import {
 
 import PublicLayout from "../components/PublicLayout";
 import SEO, { CANONICAL_ORIGIN } from "../components/SEO";
+import { personJsonLd, writerMeta } from "../utils/seoDocument";
 import PreviewBanner from "../components/PreviewBanner";
 import ModularExhibitionLayout from "../components/ModularExhibitionLayout";
 import LazyImage from "../components/LazyImage";
@@ -172,8 +173,16 @@ export default function PublicWriterDetail() {
     );
   }
 
-  const writerSlug = writer.slug || writer.id;
+  const writerSlug = lang === "EN"
+    ? writer.slug_en || writer.slug || writer.id
+    : writer.slug || writer.id;
   const writerCanonical = `${CANONICAL_ORIGIN}${langPrefix}/writers/${writerSlug}`;
+  const writerSeo = writerMeta(lang === "EN" ? "en" : "it", {
+    name: writer.nickname || getLocalizedField(writer, "nomeDarte", lang),
+    city: writer.citta,
+    country: writer.paese,
+    bio: getLocalizedField(writer, "bioBreve", lang) || writer.bioBreve || writer.bioStrada,
+  });
   const writerSameAs = [
     writer.linkInstagram,
     lang === "EN" ? writer.linkInstagram_en : undefined,
@@ -183,26 +192,23 @@ export default function PublicWriterDetail() {
     <PublicLayout>
       {writer && (
         <SEO 
-          title={writer.nickname || getLocalizedField(writer, 'nomeDarte', lang)} 
-          description={getLocalizedField(writer, 'bioBreve', lang) || writer.bioBreve || getLocalizedField(writer, 'bioStrada', lang) || writer.bioStrada} 
+          title={writerSeo.title} 
+          description={writerSeo.description} 
           image={writer.fotoProfilo || writer.fotoStrada}
           noIndex={isPreviewMode}
+          alternateIt={`${CANONICAL_ORIGIN}/writers/${writer.slug || writer.id}`}
+          alternateEn={`${CANONICAL_ORIGIN}/en/writers/${writer.slug_en || writer.slug || writer.id}`}
           keywords={t(
             "seo.writerKeywords",
             "writer graffiti, street artist, tag tales writers",
           )}
-          jsonLd={{
-            "@context": "https://schema.org",
-            "@type": "Person",
+          jsonLd={personJsonLd({
             name: writer.nickname || getLocalizedField(writer, "nomeDarte", lang),
-            description:
-              getLocalizedField(writer, "bioBreve", lang) ||
-              writer.bioBreve ||
-              undefined,
+            description: writerSeo.description,
             image: writer.fotoProfilo || writer.fotoStrada || undefined,
             url: writerCanonical,
-            ...(writerSameAs.length > 0 ? { sameAs: writerSameAs } : {}),
-          }}
+            sameAs: writerSameAs,
+          })}
         />
       )}
       {isPreviewMode && <PreviewBanner />}
@@ -314,7 +320,7 @@ export default function PublicWriterDetail() {
               </h2>
               <div className="flex flex-col gap-8">
                 {exhibitions.map((ex) => {
-                  const exSlug = ex.slug || ex.id;
+                  const exSlug = lang === "EN" ? ex.slug_en || ex.slug || ex.id : ex.slug || ex.id;
                   const exPreviewToken =
                     !isPublished(ex) && typeof ex.previewToken === "string"
                       ? ex.previewToken

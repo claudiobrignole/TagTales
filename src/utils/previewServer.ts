@@ -1,6 +1,7 @@
 import { getApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { canViewContent, isExhibitionLinkedToWriter, isPublished } from './previewAccess.ts';
+import type { SeoCatalog, SeoCatalogItem, SeoPageItem } from './seoDocument.ts';
 
 type CollectionName = 'mostre' | 'scrittori' | 'articoli';
 
@@ -126,4 +127,119 @@ export async function fetchPublishedSlugs(
       lastmod,
     };
   });
+}
+
+function lastmodFrom(data: Record<string, unknown>, updateTime?: { toDate?: () => Date }): string | undefined {
+  const updated =
+    (data.updatedAt as { toDate?: () => Date } | undefined)?.toDate?.() ||
+    data.updatedAt ||
+    (data.publishedAt as { toDate?: () => Date } | undefined)?.toDate?.() ||
+    data.publishedAt ||
+    updateTime?.toDate?.() ||
+    null;
+  if (updated instanceof Date && !isNaN(updated.getTime())) {
+    return updated.toISOString().split('T')[0];
+  }
+  if (typeof updated === 'string' && updated.trim()) {
+    const parsed = Date.parse(updated);
+    if (!isNaN(parsed)) return new Date(parsed).toISOString().split('T')[0];
+  }
+  return undefined;
+}
+
+function textOf(value: unknown): string {
+  return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Published public records used by the sitemap and the HTML snapshot. */
+export async function fetchSeoCatalog(db: Firestore): Promise<SeoCatalog> {
+  const [writersSnap, exhibitionsSnap, articlesSnap, pagesSnap] = await Promise.all([
+    db.collection('scrittori').where('published', '==', true).get(),
+    db.collection('mostre').where('published', '==', true).get(),
+    db.collection('articoli').where('published', '==', true).get(),
+    db.collection('pagine').where('published', '==', true).get(),
+  ]);
+
+  const writers: SeoCatalogItem[] = writersSnap.docs.map((doc) => {
+    const data = doc.data();
+    const name = String(data.nickname || data.nomeDarte || data.artistName || 'Writer');
+    return {
+      id: doc.id,
+      slug: String(data.slug || doc.id),
+      slugEn: String(data.slug_en || data.slug || doc.id),
+      titleIt: name,
+      titleEn: String(data.nickname_en || name),
+      introIt: textOf(data.bioBreve || data.bio).slice(0, 400),
+      introEn: textOf(data.bioBreve_en || data.bio_en || data.bioBreve || data.bio).slice(0, 400),
+      artist: name,
+      city: String(data.citta || data.city || ''),
+      start: '',
+      end: '',
+      author: '',
+      lastmod: lastmodFrom(data, doc.updateTime),
+      featured: false,
+    };
+  });
+
+  const writerName = new Map(writers.map((writer) => [writer.id, writer.titleIt]));
+
+  const exhibitions: SeoCatalogItem[] = exhibitionsSnap.docs.map((doc) => {
+    const data = doc.data();
+    const ids = [
+      ...(Array.isArray(data.artistaIds) ? data.artistaIds : []),
+      ...(Array.isArray(data.writerIds) ? data.writerIds : []),
+      data.artistaPrincipaleId,
+    ].filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const artist =
+      ids.map((id) => writerName.get(id)).filter(Boolean).join(', ') ||
+      String(data.preTitolo || '');
+    return {
+      id: doc.id,
+      slug: String(data.slug || doc.id),
+      slugEn: String(data.slug_en || data.slug || doc.id),
+      titleIt: String(data.titolo || data.title || 'Mostra'),
+      titleEn: String(data.titolo_en || data.title_en || data.titolo || data.title || 'Exhibition'),
+      introIt: textOf(data.intro || data.testoCuratela).slice(0, 400),
+      introEn: textOf(data.intro_en || data.intro || data.testoCuratela).slice(0, 400),
+      artist,
+      city: String(data.citta || data.luogo || data.location || 'Lugano'),
+      start: String(data.dataApertura || ''),
+      end: String(data.dataChiusura || ''),
+      author: '',
+      lastmod: lastmodFrom(data, doc.updateTime),
+      featured: data.featured === true || data.isFeatured === true,
+    };
+  });
+
+  const articles: SeoCatalogItem[] = articlesSnap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      slug: String(data.slug || doc.id),
+      slugEn: String(data.slug_en || data.slug || doc.id),
+      titleIt: String(data.titolo || data.title || 'Articolo'),
+      titleEn: String(data.titolo_en || data.title_en || data.titolo || data.title || 'Article'),
+      introIt: textOf(data.estratto || data.sottotitolo || data.contenuto).slice(0, 400),
+      introEn: textOf(data.estratto_en || data.sottotitolo_en || data.estratto || data.sottotitolo).slice(0, 400),
+      artist: '',
+      city: '',
+      start: '',
+      end: '',
+      author: String(data.autore || data.author || ''),
+      lastmod: lastmodFrom(data, doc.updateTime),
+      featured: false,
+    };
+  });
+
+  const pages: SeoPageItem[] = pagesSnap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      titleIt: String(data.titolo || data.title || doc.id),
+      titleEn: String(data.titolo_en || data.title_en || data.titolo || doc.id),
+      lastmod: lastmodFrom(data, doc.updateTime),
+    };
+  });
+
+  return { writers, exhibitions, articles, pages };
 }

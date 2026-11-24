@@ -11,6 +11,7 @@ import VideoEmbed from '../components/VideoEmbed';
 import { getLocalizedField } from '../utils/localization';
 import { cleanHtml } from '../utils/cleanHtml';
 import SEO from '../components/SEO';
+import { GALLERY } from '../utils/seoDocument';
 import LazyImage from '../components/LazyImage';
 
 interface PageData {
@@ -485,9 +486,35 @@ export default function PublicPage({ id: propId }: { id?: string }) {
                     </div>
                   </div>
                 )}
+                {id === 'contatti' && (
+                  <section className="bg-[#F2EEE8] px-[25px] py-16 text-[#121212] md:px-[50px]">
+                    <div className="mx-auto max-w-3xl min-w-0">
+                      <h2 className="mb-6 font-['Shamgod'] text-[40px] uppercase leading-none md:text-[60px]">
+                        {lang.toLowerCase().startsWith('en') ? 'VISIT' : 'VIENI A TROVARCI'}
+                      </h2>
+                      <p className="font-['Karla'] text-lg leading-relaxed md:text-xl">
+                        Tag Tales Gallery<br />
+                        {GALLERY.streetAddress}<br />
+                        {GALLERY.postalCode} {GALLERY.addressLocality}, {GALLERY.addressRegion}<br />
+                        {lang.toLowerCase().startsWith('en') ? GALLERY.visitNoteEn : GALLERY.visitNoteIt}
+                      </p>
+                      <p className="mt-6 font-['Karla'] text-lg">
+                        <a className="font-bold uppercase tracking-wider text-[#FF4F00]" href={`mailto:${GALLERY.email}`}>{GALLERY.email}</a>
+                      </p>
+                      <p className="mt-4 font-['Karla'] text-lg">
+                        <a className="font-bold uppercase tracking-wider hover:text-[#FF4F00]" href={GALLERY.sameAs[0]}>Instagram</a>
+                        {' · '}
+                        <a className="font-bold uppercase tracking-wider hover:text-[#FF4F00]" href={lang.toLowerCase().startsWith('en') ? '/en/support' : '/assistenza'}>
+                          {lang.toLowerCase().startsWith('en') ? 'Support' : 'Assistenza'}
+                        </a>
+                      </p>
+                    </div>
+                  </section>
+                )}
             </div>
          ) : (
              <div className="max-w-4xl mx-auto pt-32 pb-20 px-6 text-center">
+                 <SEO title="Pagina non trovata | Tag Tales" noIndex />
                  <h1 className="text-4xl font-['Shamgod'] uppercase mb-4 text-[#121212]">Pagina non trovata</h1>
                  <p className="font-['Karla'] text-lg">La risorsa richiesta non è disponibile.</p>
              </div>

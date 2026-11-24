@@ -2,6 +2,13 @@ import React, { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import { useSeoConfig } from "../hooks/useSeoConfig";
+import {
+  artGalleryJsonLd,
+  canonicalUrl,
+  CANONICAL_ORIGIN,
+  hreflangPair,
+  langFromPath,
+} from "../utils/seoDocument";
 
 export interface SEOProps {
   /** Page title without site suffix (suffix added automatically unless already present). */
@@ -20,17 +27,14 @@ export interface SEOProps {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   /** When true, emit ArtGallery schema (home). */
   artGallery?: boolean;
+  /** Absolute alternate URLs when the English slug differs from the Italian one. */
+  alternateIt?: string;
+  alternateEn?: string;
 }
 
 const SITE_NAME = "Tag Tales";
 const SITE_NAME_LONG = "Tag Tales Gallery";
-export const CANONICAL_ORIGIN = "https://tagtalesgallery.com";
-
-const SAME_AS = [
-  "https://aelle.hiphop",
-  "https://www.instagram.com/tagtales.gallery/",
-  "https://www.youtube.com/@aellehiphopmagazine",
-];
+export { CANONICAL_ORIGIN };
 
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -73,26 +77,21 @@ const SEO: React.FC<SEOProps> = ({
   pageId,
   jsonLd,
   artGallery,
+  alternateIt,
+  alternateEn,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { config } = useSeoConfig(pageId);
-  const lang = i18n.language?.toLowerCase().startsWith("en") ? "en" : "it";
-
-  const baseUrl = CANONICAL_ORIGIN;
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "/";
-  const defaultImage = `${baseUrl}/og-default.jpg`;
+  const lang = langFromPath(pathname);
 
-  const canonicalPath = pathname.startsWith("/en/")
-    ? pathname.substring(3)
-    : pathname === "/en"
-      ? "/"
-      : pathname;
-  const itPath = canonicalPath === "/" ? "" : canonicalPath.replace(/\/$/, "");
-  const itUrl = `${baseUrl}${itPath}` || baseUrl;
-  const enUrl = `${baseUrl}/en${itPath}`;
-  const pathNoSlash = pathname.replace(/\/$/, "") || "/";
-  const canonicalHref = `${baseUrl}${pathNoSlash === "/" ? "" : pathNoSlash}` || baseUrl;
+  const baseUrl = CANONICAL_ORIGIN;
+  const defaultImage = `${baseUrl}/og-default.jpg`;
+  const canonicalHref = canonicalUrl(pathname);
+  const alternates = hreflangPair(pathname);
+  const itUrl = alternateIt || alternates?.it || baseUrl;
+  const enUrl = alternateEn || alternates?.en || `${baseUrl}/en`;
 
   const resolved = useMemo(() => {
     const cfgTitle =
@@ -130,31 +129,20 @@ const SEO: React.FC<SEOProps> = ({
 
   const locale = lang === "en" ? "en_US" : "it_IT";
   const jsonLdPayload = useMemo(() => {
-    const orgOrGallery: Record<string, unknown> = {
-      "@context": "https://schema.org",
-      "@type": artGallery ? "ArtGallery" : "Organization",
-      name: SITE_NAME_LONG,
-      url: baseUrl,
-      logo: `${baseUrl}/pwa-512x512.png`,
-      image: `${baseUrl}/og-default.jpg`,
-      sameAs: SAME_AS,
-    };
-
-    const graph: Record<string, unknown>[] = [
-      orgOrGallery,
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: SITE_NAME_LONG,
-        url: baseUrl,
-        inLanguage: ["it", "en"],
-        potentialAction: {
-          "@type": "SearchAction",
-          target: `${baseUrl}/?q={search_term_string}`,
-          "query-input": "required name=search_term_string",
-        },
-      },
-    ];
+    const graph: Record<string, unknown>[] = artGallery
+      ? [artGalleryJsonLd()]
+      : [
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "@id": `${baseUrl}/#gallery`,
+            name: SITE_NAME_LONG,
+            url: baseUrl,
+            logo: `${baseUrl}/pwa-512x512.png`,
+            image: `${baseUrl}/og-default.jpg`,
+            sameAs: artGalleryJsonLd().sameAs,
+          },
+        ];
 
     if (jsonLd) {
       const extra = Array.isArray(jsonLd) ? jsonLd : [jsonLd];
@@ -179,9 +167,13 @@ const SEO: React.FC<SEOProps> = ({
         <meta name="robots" content="index, follow, max-image-preview:large" />
       )}
 
-      <link rel="alternate" hrefLang="it" href={itUrl || baseUrl} />
-      <link rel="alternate" hrefLang="en" href={enUrl} />
-      <link rel="alternate" hrefLang="x-default" href={itUrl || baseUrl} />
+      {!noIndex && (
+        <>
+          <link rel="alternate" hrefLang="it" href={itUrl || baseUrl} />
+          <link rel="alternate" hrefLang="en" href={enUrl} />
+          <link rel="alternate" hrefLang="x-default" href={itUrl || baseUrl} />
+        </>
+      )}
       <link rel="canonical" href={canonicalHref} />
 
       <meta property="og:site_name" content={SITE_NAME_LONG} />

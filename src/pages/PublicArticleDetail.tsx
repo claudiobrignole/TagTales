@@ -16,7 +16,8 @@ import { PREVIEW_QUERY_PARAM } from "../utils/previewAccess";
 
 import clsx from "clsx";
 import PublicLayout from "../components/PublicLayout";
-import SEO from "../components/SEO";
+import SEO, { CANONICAL_ORIGIN } from "../components/SEO";
+import { articleMeta } from "../utils/seoDocument";
 import PreviewBanner from "../components/PreviewBanner";
 import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
@@ -115,6 +116,7 @@ export default function PublicArticleDetail() {
   if (!article) {
     return (
       <PublicLayout>
+        <SEO title="Pagina non trovata | Tag Tales" noIndex />
         <div className="flex flex-col items-center justify-center px-4 py-32 text-center">
           <h1 className="text-4xl font-['Shamgod'] uppercase mb-4">
             Articolo non trovato
@@ -130,15 +132,29 @@ export default function PublicArticleDetail() {
     );
   }
 
+  const articleSeo = articleMeta(lang === "EN" ? "en" : "it", {
+    title: getLocalizedField(article, "titolo", lang) || article.titolo,
+    author: article.autore,
+    excerpt:
+      getLocalizedField(article, "sottotitolo", lang) ||
+      article.sottotitolo ||
+      getLocalizedField(article, "estratto", lang) ||
+      article.estratto,
+  });
+  const italianSlug = article.slug || article.id;
+  const englishSlug = article.slug_en || article.slug || article.id;
+
   return (
     <PublicLayout>
       {article && (
         <SEO 
-          title={getLocalizedField(article, 'titolo', lang) || article.titolo} 
-          description={getLocalizedField(article, 'sottotitolo', lang) || article.sottotitolo} 
+          title={articleSeo.title} 
+          description={articleSeo.description} 
           image={coverImage}
           article={true}
           noIndex={isPreviewMode}
+          alternateIt={`${CANONICAL_ORIGIN}/magazine/${italianSlug}`}
+          alternateEn={`${CANONICAL_ORIGIN}/en/magazine/${englishSlug}`}
           keywords={(article.tag || []).join(", ")}
           jsonLd={{
             "@context": "https://schema.org",

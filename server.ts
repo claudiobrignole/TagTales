@@ -13,10 +13,19 @@ import { isLocalDevRequest } from "./src/utils/isLocalDevRequest.ts";
 import {
   fetchPreviewDocument,
   fetchPublishedEntityForSeo,
-  fetchPublishedSlugs,
+  fetchSeoCatalog,
   fetchWriterRelatedExhibitions,
   getAdminFirestore,
 } from "./src/utils/previewServer.ts";
+import {
+  applySeoHtml,
+  composePublicSeo,
+  EMPTY_CATALOG,
+  resolvePublicRedirect,
+  SITEMAP_PAGE_SKIP,
+  sitemapLoc,
+  type SeoCatalog,
+} from "./src/utils/seoDocument.ts";
 import {
   createWatermarkedImage,
   isAllowedWatermarkSrc,
@@ -232,18 +241,6 @@ async function getSeoConfig(pageId: string) {
   return null;
 }
 
-function escapeHtmlAttr(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function stripHtmlText(value: string): string {
-  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-}
-
 function toAbsoluteUrl(url: string | undefined): string {
   if (!url?.trim()) return DEFAULT_OG_IMAGE;
   const trimmed = url.trim();
@@ -251,157 +248,6 @@ function toAbsoluteUrl(url: string | undefined): string {
     return trimmed;
   }
   return `${CANONICAL_ORIGIN}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
-}
-
-type InjectMetaOptions = {
-  seoData?: Record<string, any> | null;
-  lang: "it" | "en";
-  pathname: string;
-  entity?: Record<string, unknown> | null;
-  entityKind?: "exhibition" | "writer" | "article" | null;
-};
-
-function injectMetaTags(html: string, options: InjectMetaOptions): string {
-  const { seoData, lang, pathname, entity, entityKind } = options;
-  let title = "Tag Tales Gallery";
-  let description = "";
-  let keywords = "";
-  let ogImageUrl = DEFAULT_OG_IMAGE;
-  let ogImageAlt = "Tag Tales Gallery";
-
-  if (lang === "it") {
-    title = "Tag Tales Gallery - Galleria di graffiti internazionale";
-    description =
-      "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.";
-  } else {
-    title = "Tag Tales Gallery - International Graffiti Gallery";
-    description =
-      "Tag Tales Gallery — international street art and graffiti gallery. Discover exhibitions, writers and original works: explore and visit the shows.";
-  }
-
-  if (entity && entityKind === "exhibition") {
-    const entTitle =
-      (lang === "en"
-        ? (entity.titolo_en as string) || (entity.titolo as string)
-        : (entity.titolo as string)) || title;
-    title = String(entTitle);
-    const intro =
-      (lang === "en"
-        ? (entity.intro_en as string) || (entity.intro as string)
-        : (entity.intro as string)) ||
-      (entity.testoCuratela as string) ||
-      "";
-    if (intro) description = stripHtmlText(String(intro)).slice(0, 320);
-    const banner =
-      (entity.bannerHero as string) || (entity.coverImageUrl as string);
-    if (banner) ogImageUrl = toAbsoluteUrl(banner);
-    ogImageAlt = String(entTitle);
-  } else if (entity && entityKind === "writer") {
-    const name =
-      (entity.nickname as string) ||
-      (entity.nomeDarte as string) ||
-      (entity.artistName as string) ||
-      title;
-    title = String(name);
-    const bio =
-      (lang === "en"
-        ? (entity.bioBreve_en as string) || (entity.bioBreve as string)
-        : (entity.bioBreve as string)) ||
-      (entity.bioStrada as string) ||
-      "";
-    if (bio) description = stripHtmlText(String(bio)).slice(0, 320);
-    const photo =
-      (entity.fotoProfilo as string) ||
-      (entity.fotoStrada as string) ||
-      (entity.profileImageUrl as string);
-    if (photo) ogImageUrl = toAbsoluteUrl(photo);
-    ogImageAlt = String(name);
-  } else if (entity && entityKind === "article") {
-    const entTitle =
-      (lang === "en"
-        ? (entity.titolo_en as string) || (entity.titolo as string)
-        : (entity.titolo as string)) || title;
-    title = String(entTitle);
-    const excerpt =
-      (lang === "en"
-        ? (entity.estratto_en as string) || (entity.estratto as string)
-        : (entity.estratto as string)) || "";
-    if (excerpt) description = stripHtmlText(String(excerpt)).slice(0, 320);
-    const cover =
-      (entity.immagineCover as string) || (entity.coverImageUrl as string);
-    if (cover) ogImageUrl = toAbsoluteUrl(cover);
-    ogImageAlt = String(entTitle);
-  }
-
-  if (seoData) {
-    const cfgTitle =
-      (lang === "en" ? seoData.titleEN : seoData.titleIT) || "";
-    const cfgDesc =
-      (lang === "en" ? seoData.descriptionEN : seoData.descriptionIT) || "";
-    if (cfgTitle) title = cfgTitle;
-    if (cfgDesc) description = cfgDesc;
-    const kw =
-      (lang === "en" ? seoData.keywordsEN : seoData.keywordsIT) || [];
-    keywords = Array.isArray(kw) ? kw.join(", ") : String(kw || "");
-    if (seoData.ogImageUrl) ogImageUrl = toAbsoluteUrl(seoData.ogImageUrl);
-    if (seoData.ogImageAlt) ogImageAlt = seoData.ogImageAlt;
-  }
-
-  // Home: always use approved title/description (ignore stale seoConfig/home overrides).
-  const pathNorm = pathname.replace(/\/$/, "") || "/";
-  const isHome = pathNorm === "/" || pathNorm === "/en";
-  if (isHome) {
-    if (lang === "it") {
-      title = "Tag Tales Gallery - Galleria di graffiti internazionale";
-      description =
-        "Tag Tales Gallery — galleria internazionale di street art e graffiti. Scopri mostre, writers e opere originali: esplora e visita le esposizioni.";
-    } else {
-      title = "Tag Tales Gallery - International Graffiti Gallery";
-      description =
-        "Tag Tales Gallery — international street art and graffiti gallery. Discover exhibitions, writers and original works: explore and visit the shows.";
-    }
-    ogImageUrl = seoData?.ogImageUrl
-      ? toAbsoluteUrl(seoData.ogImageUrl)
-      : DEFAULT_OG_IMAGE;
-  }
-
-  const pathNoSlash = pathname.replace(/\/$/, "") || "/";
-  const canonicalHref =
-    pathNoSlash === "/"
-      ? CANONICAL_ORIGIN
-      : `${CANONICAL_ORIGIN}${pathNoSlash}`;
-  const canonicalPath = pathname.startsWith("/en/")
-    ? pathname.substring(3).replace(/\/$/, "")
-    : pathname === "/en"
-      ? ""
-      : pathNoSlash === "/"
-        ? ""
-        : pathNoSlash;
-  const itUrl =
-    canonicalPath === "" || canonicalPath === "/"
-      ? CANONICAL_ORIGIN
-      : `${CANONICAL_ORIGIN}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
-  const enUrl =
-    canonicalPath === "" || canonicalPath === "/"
-      ? `${CANONICAL_ORIGIN}/en`
-      : `${CANONICAL_ORIGIN}/en${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
-
-  const titleTag = `<title>${escapeHtmlAttr(title)}</title>\n    <meta property="og:title" content="${escapeHtmlAttr(title)}">\n    <link rel="canonical" href="${escapeHtmlAttr(canonicalHref)}">\n    <link rel="alternate" hreflang="it" href="${escapeHtmlAttr(itUrl)}">\n    <link rel="alternate" hreflang="en" href="${escapeHtmlAttr(enUrl)}">\n    <link rel="alternate" hreflang="x-default" href="${escapeHtmlAttr(itUrl)}">`;
-  const descTag = description
-    ? `<meta name="description" content="${escapeHtmlAttr(description)}">\n    <meta property="og:description" content="${escapeHtmlAttr(description)}">`
-    : "";
-  const keyTag = keywords
-    ? `<meta name="keywords" content="${escapeHtmlAttr(keywords)}">`
-    : "";
-  const ogImgTag = `<meta property="og:image" content="${escapeHtmlAttr(ogImageUrl)}">\n    <meta property="og:image:alt" content="${escapeHtmlAttr(ogImageAlt)}">\n    <meta property="og:image:width" content="1200">\n    <meta property="og:image:height" content="630">\n    <meta name="twitter:card" content="summary_large_image">\n    <meta name="twitter:image" content="${escapeHtmlAttr(ogImageUrl)}">`;
-
-  const htmlLang = lang === "en" ? "en" : "it";
-  return html
-    .replace(/<html\s+lang="[^"]*"/, `<html lang="${htmlLang}"`)
-    .replace("<!--META_TITLE-->", titleTag)
-    .replace("<!--META_DESCRIPTION-->", descTag)
-    .replace("<!--META_KEYWORDS-->", keyTag)
-    .replace("<!--META_OG_IMAGE-->", ogImgTag);
 }
 
 function resolveSeoPageId(reqPath: string): string | null {
@@ -598,6 +444,12 @@ async function startServer() {
       return res.redirect(301, rawPath.startsWith("/en") ? "/en" : "/");
     }
 
+    const legacyTarget = resolvePublicRedirect(rawPath);
+    if (legacyTarget) {
+      const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+      return res.redirect(301, `${legacyTarget}${qs}`);
+    }
+
     next();
   });
 
@@ -629,26 +481,11 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
   app.get(["/sitemap.xml", "/sitemap.xml/"], async (req, res) => {
     if (redirectWwwToCanonical(req, res)) return;
     try {
-      const baseUrl = "https://tagtalesgallery.com";
-
-      let writers: Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }> = [];
-      let exhibitions: Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }> = [];
-      let articles: Array<{ id: string; slug?: string; slug_en?: string; lastmod?: string }> = [];
-      let pages: string[] = [];
+      let catalog: SeoCatalog = EMPTY_CATALOG;
       const today = new Date().toISOString().split("T")[0];
 
       try {
-        const db = getPreviewFirestore();
-        [writers, exhibitions, articles] = await Promise.all([
-          fetchPublishedSlugs(db, "scrittori"),
-          fetchPublishedSlugs(db, "mostre"),
-          fetchPublishedSlugs(db, "articoli"),
-        ]);
-        const pagesSnap = await db
-          .collection("pagine")
-          .where("published", "==", true)
-          .get();
-        pages = pagesSnap.docs.map((docSnap) => docSnap.id);
+        catalog = await fetchSeoCatalog(getPreviewFirestore());
       } catch (err) {
         console.warn(
           "Sitemap: Firebase Admin unavailable, dynamic URLs omitted.",
@@ -665,24 +502,22 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
         changefreq: string = "weekly",
         lastmod: string = today,
       ) => {
-        xml += `  <url>\n`;
-        xml += `    <loc>${baseUrl}${pathIt === "/" ? "/" : pathIt}</loc>\n`;
-        xml += `    <lastmod>${lastmod}</lastmod>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
-        xml += `    <changefreq>${changefreq}</changefreq>\n`;
-        xml += `    <priority>${priority}</priority>\n`;
-        xml += `  </url>\n`;
-        xml += `  <url>\n`;
-        xml += `    <loc>${baseUrl}${pathEn}</loc>\n`;
-        xml += `    <lastmod>${lastmod}</lastmod>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="it" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}${pathEn}"/>\n`;
-        xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}${pathIt === "/" ? "/" : pathIt}"/>\n`;
-        xml += `    <changefreq>${changefreq}</changefreq>\n`;
-        xml += `    <priority>${priority}</priority>\n`;
-        xml += `  </url>\n`;
+        const it = sitemapLoc(pathIt);
+        const en = sitemapLoc(pathEn);
+        const alternates = { it, en };
+        const write = (loc: string) => {
+          xml += `  <url>\n`;
+          xml += `    <loc>${loc}</loc>\n`;
+          xml += `    <lastmod>${lastmod}</lastmod>\n`;
+          xml += `    <xhtml:link rel="alternate" hreflang="it" href="${alternates.it}"/>\n`;
+          xml += `    <xhtml:link rel="alternate" hreflang="en" href="${alternates.en}"/>\n`;
+          xml += `    <xhtml:link rel="alternate" hreflang="x-default" href="${alternates.it}"/>\n`;
+          xml += `    <changefreq>${changefreq}</changefreq>\n`;
+          xml += `    <priority>${priority}</priority>\n`;
+          xml += `  </url>\n`;
+        };
+        write(it);
+        write(en);
       };
 
       addUrl("/", "/en", "1.0", "weekly", today);
@@ -692,24 +527,20 @@ Sitemap: https://tagtalesgallery.com/sitemap.xml
       addUrl("/assistenza", "/en/support", "0.5", "monthly", today);
       addUrl("/su-di-noi", "/en/about", "0.6", "monthly", today);
 
-      writers.forEach((item) => {
-        const slug = item.slug || item.id;
-        const slugEn = item.slug_en || slug;
-        addUrl(`/writers/${slug}`, `/en/writers/${slugEn}`, "0.8", "weekly", item.lastmod || today);
+      catalog.writers.forEach((item) => {
+        addUrl(`/writers/${item.slug}`, `/en/writers/${item.slugEn}`, "0.8", "weekly", item.lastmod || today);
       });
-      exhibitions.forEach((item) => {
-        const slug = item.slug || item.id;
-        const slugEn = item.slug_en || slug;
-        addUrl(`/exhibitions/${slug}`, `/en/exhibitions/${slugEn}`, "0.8", "weekly", item.lastmod || today);
+      catalog.exhibitions.forEach((item) => {
+        addUrl(`/exhibitions/${item.slug}`, `/en/exhibitions/${item.slugEn}`, "0.8", "weekly", item.lastmod || today);
       });
-      articles.forEach((item) => {
-        const slug = item.slug || item.id;
-        const slugEn = item.slug_en || slug;
-        addUrl(`/magazine/${slug}`, `/en/magazine/${slugEn}`, "0.8", "weekly", item.lastmod || today);
+      catalog.articles.forEach((item) => {
+        addUrl(`/magazine/${item.slug}`, `/en/magazine/${item.slugEn}`, "0.8", "weekly", item.lastmod || today);
       });
-      pages.forEach((id: string) =>
-        addUrl(`/info/${id}`, `/en/info/${id}`, "0.7", "monthly", today),
-      );
+      catalog.pages
+        .filter((page) => !SITEMAP_PAGE_SKIP.has(page.id))
+        .forEach((page) =>
+          addUrl(`/info/${page.id}`, `/en/info/${page.id}`, "0.7", "monthly", page.lastmod || today),
+        );
 
       xml += `</urlset>`;
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
@@ -1557,34 +1388,51 @@ systemInstruction += "\n\n=== KNOWLEDGE BASE ===\nUse EXACTLY and ONLY this info
         const lang: "it" | "en" =
           req.path.startsWith('/en/') || req.path === '/en' ? 'en' : 'it';
         const resolved = await resolvePublicRoute(req.path);
-
-        if (resolved.kind === "not_found") {
-          const pageId = resolveSeoPageId(req.path);
-          const seoData = pageId ? await getSeoConfig(pageId) : null;
-          html = injectMetaTags(html, {
-            seoData,
-            lang,
-            pathname: req.path,
-          });
-          // Soft-inject noindex for unknown URLs
-          html = html.replace(
-            "</head>",
-            '<meta name="robots" content="noindex, nofollow">\n</head>',
-          );
-          res.status(404);
-          res.setHeader('Content-Type', 'text/html; charset=utf-8');
-          return res.send(html);
+        let catalog: SeoCatalog = EMPTY_CATALOG;
+        try {
+          catalog = await fetchSeoCatalog(getPreviewFirestore());
+        } catch (err) {
+          console.warn("SEO catalog unavailable", err);
         }
 
-        const pageId = resolveSeoPageId(req.path);
+        const entity = resolved.kind === "ok" ? resolved.entity : null;
+        const banner =
+          (entity?.bannerHero as string) ||
+          (entity?.coverImageUrl as string) ||
+          (entity?.fotoProfilo as string) ||
+          (entity?.immagineCover as string) ||
+          (entity?.immagineCopertina as string) ||
+          "";
+        const pageId = resolved.kind === "ok" && !entity ? resolveSeoPageId(req.path) : null;
         const seoData = pageId ? await getSeoConfig(pageId) : null;
-        html = injectMetaTags(html, {
-          seoData,
-          lang,
+        const listingTitle = seoData
+          ? String((lang === "en" ? seoData.titleEN : seoData.titleIT) || "")
+          : "";
+        const listingDescription = seoData
+          ? String((lang === "en" ? seoData.descriptionEN : seoData.descriptionIT) || "")
+          : "";
+        const keywordsRaw = seoData
+          ? (lang === "en" ? seoData.keywordsEN : seoData.keywordsIT)
+          : "";
+        const keywords = Array.isArray(keywordsRaw)
+          ? keywordsRaw.join(", ")
+          : String(keywordsRaw || "");
+
+        const seo = composePublicSeo({
           pathname: req.path,
-          entity: resolved.kind === "ok" ? resolved.entity : null,
-          entityKind: resolved.kind === "ok" ? resolved.entityKind : null,
+          catalog,
+          notFound: resolved.kind === "not_found",
+          keywords,
+          ogImage: banner ? toAbsoluteUrl(banner) : undefined,
+          ogImageAlt: listingTitle || undefined,
+          listingTitle: listingTitle || undefined,
+          listingDescription: listingDescription || undefined,
         });
+        html = applySeoHtml(html, seo);
+        if (seo.status === 404) {
+          res.status(404);
+          res.setHeader("X-Robots-Tag", "noindex, nofollow");
+        }
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
       } catch (e) {
