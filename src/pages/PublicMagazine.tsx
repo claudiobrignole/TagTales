@@ -15,6 +15,8 @@ import SEO from "../components/SEO";
 import LazyImage from "../components/LazyImage";
 import CrawlableLinks from "../components/CrawlableLinks";
 import { localizedDetailPath } from "../utils/paths";
+import CatalogSortControl from "../components/CatalogSortControl";
+import { articleDate, sortCatalog, type CatalogSort } from "../utils/catalogSort";
 
 export default function PublicMagazine() {
   const { t, i18n } = useTranslation();
@@ -27,6 +29,7 @@ export default function PublicMagazine() {
   const [hiddenFilterBar, setHiddenFilterBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<CatalogSort>("manual");
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() || 0;
@@ -47,17 +50,18 @@ export default function PublicMagazine() {
   }, [cachedPublicLoading, cachedArticles]);
 
   const filteredArticles = useMemo(() => {
-    return articles.filter(
+    const matches = articles.filter(
       (a) =>
         (getLocalizedField(a, "titolo", lang) || a.titolo || "")
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
         (a.autore || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.tag?.some((t: string) =>
-          t.toLowerCase().includes(searchQuery.toLowerCase()),
+        a.tag?.some((tag: string) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase()),
         ),
     );
-  }, [articles, searchQuery, lang]);
+    return sortCatalog(matches, sortMode, articleDate);
+  }, [articles, searchQuery, lang, sortMode]);
 
   return (
     <PublicLayout>
@@ -119,6 +123,13 @@ export default function PublicMagazine() {
               className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm w-full md:max-w-[300px]"
             />
           </div>
+          <CatalogSortControl
+            variant="dark"
+            value={sortMode}
+            onChange={setSortMode}
+            manualLabel={t("sort.gallery", "Ordine galleria")}
+            newestLabel={t("sort.newest", "Più recenti")}
+          />
         </div>
       </motion.div>
 

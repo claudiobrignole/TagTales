@@ -10,7 +10,6 @@ import {
   doc,
   query,
   orderBy,
-  writeBatch,
   where,
   getDoc
 } from "firebase/firestore";
@@ -27,12 +26,23 @@ import { generatePreviewToken } from "../utils/previewAccess";
 import PreviewLinkPanel from "../components/PreviewLinkPanel";
 import { useI18n } from '../contexts/I18nContext';
 import { ADMIN_MODAL } from "../constants/theme";
+import CatalogSortControl from "../components/CatalogSortControl";
+import {
+  planManualOrder,
+  planNewestOrder,
+  sameCatalogOrder,
+  sortCatalog,
+  writerDate,
+  type CatalogSort,
+} from "../utils/catalogSort";
+import { commitCatalogOrder } from "../utils/commitCatalogOrder";
 
 export default function AdminWriters() {
   const { t } = useI18n();
   const { user } = useAuth();
   const [writers, setWriters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortMode, setSortMode] = useState<CatalogSort>("manual");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -77,10 +87,13 @@ export default function AdminWriters() {
       }
       
       const snapshot = await getDocs(q);
-      const data = snapshot.docs
-        .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as any) }))
-        .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
+      const data = sortCatalog(
+        snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as any) })),
+        "manual",
+        writerDate,
+      );
       setWriters(data);
+      setSortMode(sameCatalogOrder(data, sortCatalog(data, "newest", writerDate)) ? "newest" : "manual");
     } catch (error) {
       console.error("Error fetching writers:", error);
     } finally {
@@ -89,14 +102,34 @@ export default function AdminWriters() {
   };
 
   const updateWritersOrder = async (newWriters: any[]) => {
-    setWriters(newWriters);
+    const stamped = newWriters.map((writer, index) => ({
+      ...writer,
+      order: index,
+      manualOrder: index,
+    }));
+    setWriters(stamped);
+    setSortMode("manual");
     try {
-      const batch = writeBatch(db);
-      newWriters.forEach((writer, index) => {
-        const docRef = doc(db, "scrittori", writer.id);
-        batch.update(docRef, { order: index });
-      });
-      await batch.commit();
+      await commitCatalogOrder(
+        "scrittori",
+        stamped.map((writer) => ({
+          id: writer.id,
+          order: writer.order,
+          manualOrder: writer.manualOrder,
+        })),
+      );
+    } catch (error) {
+      console.error("Error updating writers order:", error);
+    }
+  };
+
+  const handleWriterSort = async (mode: CatalogSort) => {
+    if (!isAdmin) return;
+    const plan = mode === "newest" ? planNewestOrder(writers, writerDate) : planManualOrder(writers);
+    setWriters(plan.items);
+    setSortMode(mode);
+    try {
+      await commitCatalogOrder("scrittori", plan.patches);
     } catch (error) {
       console.error("Error updating writers order:", error);
     }
@@ -330,12 +363,17 @@ export default function AdminWriters() {
             {t('adminWriters.subtitle', 'Gestisci i profili pubblici dei writer graffiti.')}
           </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
-        >
-          <Plus size={20} /> {t('adminWriters.addWriter', 'Aggiungi Writer')}
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {isAdmin && (
+            <CatalogSortControl value={sortMode} onChange={(mode) => void handleWriterSort(mode)} />
+          )}
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
+          >
+            <Plus size={20} /> {t('adminWriters.addWriter', 'Aggiungi Writer')}
+          </button>
+        </div>
       </motion.div>
 
       {loading ? (
@@ -357,8 +395,10 @@ export default function AdminWriters() {
             <Reorder.Item
               key={writer.id}
               value={writer}
+              dragListener={sortMode === "manual"}
               className="bg-white rounded-2xl shadow-sm border border-[#EAE3D9] overflow-hidden flex flex-col md:flex-row group p-4 gap-6 items-center"
             >
+              {sortMode === "manual" && (
               <div className="flex items-center gap-4">
                 <div className="cursor-grab active:cursor-grabbing text-[#59554E] hover:text-[#FF4F00] transition-colors">
                   <GripVertical size={24} />
@@ -380,6 +420,7 @@ export default function AdminWriters() {
                   </button>
                 </div>
               </div>
+              )}
 
               <div className="w-16 h-16 rounded-full overflow-hidden bg-[#F2EEE8] flex items-center justify-center border-2 border-[#EAE3D9] shrink-0">
                 {writer.fotoProfilo ? (

@@ -89,6 +89,12 @@
     "allYears": "Tutti gli anni",
     "resultsCount": "{{count}} risultati"
   },
+  "sort": {
+    "label": "Ordina",
+    "manual": "Manuale",
+    "gallery": "Ordine galleria",
+    "newest": "Più recenti"
+  },
   "status": {
     "success": "Successo",
     "error": "Errore",

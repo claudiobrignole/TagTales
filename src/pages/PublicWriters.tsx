@@ -15,6 +15,8 @@ import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
 import CrawlableLinks from "../components/CrawlableLinks";
 import { localizedDetailPath } from "../utils/paths";
+import CatalogSortControl from "../components/CatalogSortControl";
+import { sortCatalog, writerDate, type CatalogSort } from "../utils/catalogSort";
 
 export default function PublicWriters() {
   const { t, i18n } = useTranslation();
@@ -28,6 +30,7 @@ export default function PublicWriters() {
   const [hiddenFilterBar, setHiddenFilterBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<CatalogSort>("manual");
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() || 0;
@@ -48,7 +51,7 @@ export default function PublicWriters() {
   }, [cachedPublicLoading, cachedWriters]);
 
   const filteredWriters = useMemo(() => {
-    return writers.filter((w) => {
+    const matches = writers.filter((w) => {
       const nickname =
         getLocalizedField(w, "nickname", lang) ||
         getLocalizedField(w, "artistName", lang) ||
@@ -67,7 +70,8 @@ export default function PublicWriters() {
         paese.toLowerCase().includes(searchQuery.toLowerCase())
       );
     });
-  }, [writers, searchQuery, lang]);
+    return sortCatalog(matches, sortMode, writerDate);
+  }, [writers, searchQuery, lang, sortMode]);
 
   return (
     <PublicLayout>
@@ -126,6 +130,13 @@ export default function PublicWriters() {
               className="bg-white/10 text-white placeholder-white/50 px-4 py-2.5 rounded-full border-none outline-none focus:ring-2 focus:ring-[#FF4F00] text-sm w-full md:max-w-[300px]"
             />
           </div>
+          <CatalogSortControl
+            variant="dark"
+            value={sortMode}
+            onChange={setSortMode}
+            manualLabel={t("sort.gallery", "Ordine galleria")}
+            newestLabel={t("sort.newest", "Più recenti")}
+          />
         </div>
       </motion.div>
 

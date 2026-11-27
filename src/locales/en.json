@@ -154,6 +154,12 @@
     "allYears": "All years",
     "resultsCount": "{{count}} results"
   },
+  "sort": {
+    "label": "Sort",
+    "manual": "Manual",
+    "gallery": "Gallery order",
+    "newest": "Newest"
+  },
   "status": {
     "success": "Success",
     "error": "Error",

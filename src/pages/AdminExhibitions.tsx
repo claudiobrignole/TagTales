@@ -10,7 +10,6 @@ import {
   doc,
   query,
   orderBy,
-  writeBatch,
   getDoc
 } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
@@ -38,6 +37,16 @@ import PreviewLinkPanel from "../components/PreviewLinkPanel";
 
 import { useTranslation } from "react-i18next";
 import { ADMIN_MODAL } from "../constants/theme";
+import CatalogSortControl from "../components/CatalogSortControl";
+import {
+  exhibitionDate,
+  planManualOrder,
+  planNewestOrder,
+  sameCatalogOrder,
+  sortCatalog,
+  type CatalogSort,
+} from "../utils/catalogSort";
+import { commitCatalogOrder } from "../utils/commitCatalogOrder";
 
 export default function AdminExhibitions() {
   const { t } = useTranslation();
@@ -45,6 +54,7 @@ export default function AdminExhibitions() {
   const [exhibitions, setExhibitions] = useState<any[]>([]);
   const [writers, setWriters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortMode, setSortMode] = useState<CatalogSort>("manual");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -74,11 +84,13 @@ export default function AdminExhibitions() {
         getDocs(collection(db, "scrittori")),
       ]);
 
-      setExhibitions(
-        exhibitionsSnap.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999)),
+      const ordered = sortCatalog(
+        exhibitionsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })),
+        "manual",
+        exhibitionDate,
       );
+      setExhibitions(ordered);
+      setSortMode(sameCatalogOrder(ordered, sortCatalog(ordered, "newest", exhibitionDate)) ? "newest" : "manual");
       setWriters(
         writersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
       );
@@ -90,14 +102,35 @@ export default function AdminExhibitions() {
   };
 
   const updateExhibitionsOrder = async (newExhibitions: any[]) => {
-    setExhibitions(newExhibitions);
+    const stamped = newExhibitions.map((exhibition, index) => ({
+      ...exhibition,
+      order: index,
+      manualOrder: index,
+    }));
+    setExhibitions(stamped);
+    setSortMode("manual");
     try {
-      const batch = writeBatch(db);
-      newExhibitions.forEach((exhibition, index) => {
-        const docRef = doc(db, "mostre", exhibition.id);
-        batch.update(docRef, { order: index });
-      });
-      await batch.commit();
+      await commitCatalogOrder(
+        "mostre",
+        stamped.map((exhibition) => ({
+          id: exhibition.id,
+          order: exhibition.order,
+          manualOrder: exhibition.manualOrder,
+        })),
+      );
+    } catch (error) {
+      console.error("Error updating exhibitions order:", error);
+    }
+  };
+
+  const handleExhibitionSort = async (mode: CatalogSort) => {
+    const plan = mode === "newest"
+      ? planNewestOrder(exhibitions, exhibitionDate)
+      : planManualOrder(exhibitions);
+    setExhibitions(plan.items);
+    setSortMode(mode);
+    try {
+      await commitCatalogOrder("mostre", plan.patches);
     } catch (error) {
       console.error("Error updating exhibitions order:", error);
     }
@@ -345,12 +378,15 @@ export default function AdminExhibitions() {
             Crea e gestisci le mini-mostre presentate sulla piattaforma.
           </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
-        >
-          <Plus size={20} /> {t('adminExhibitions.addExhibition', 'Aggiungi Mostra')}
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <CatalogSortControl value={sortMode} onChange={(mode) => void handleExhibitionSort(mode)} />
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
+          >
+            <Plus size={20} /> {t('adminExhibitions.addExhibition', 'Aggiungi Mostra')}
+          </button>
+        </div>
       </motion.div>
 
       {loading ? (
@@ -372,8 +408,10 @@ export default function AdminExhibitions() {
             <Reorder.Item
               key={exhibition.id}
               value={exhibition}
+              dragListener={sortMode === "manual"}
               className="bg-white rounded-2xl shadow-sm border border-[#EAE3D9] overflow-hidden flex flex-col md:flex-row group p-4 gap-6 items-center"
             >
+              {sortMode === "manual" && (
               <div className="flex items-center gap-4">
                 <div className="cursor-grab active:cursor-grabbing text-[#59554E] hover:text-[#FF4F00] transition-colors">
                   <GripVertical size={24} />
@@ -395,6 +433,7 @@ export default function AdminExhibitions() {
                   </button>
                 </div>
               </div>
+              )}
 
               <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-[#F2EEE8] flex items-center justify-center border border-[#EAE3D9]">
                 {exhibition.bannerHero ? (

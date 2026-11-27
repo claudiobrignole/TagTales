@@ -15,7 +15,6 @@ import {
   getDoc,
   query,
   orderBy,
-  writeBatch,
 } from "firebase/firestore";
 import { Plus, Edit2, Trash2, X, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { Reorder } from "motion/react";
@@ -35,12 +34,23 @@ import { generateSlug } from "../utils/slugify";
 import { generatePreviewToken } from "../utils/previewAccess";
 import PreviewLinkPanel from "../components/PreviewLinkPanel";
 import { ADMIN_MODAL } from "../constants/theme";
+import CatalogSortControl from "../components/CatalogSortControl";
+import {
+  articleDate,
+  planManualOrder,
+  planNewestOrder,
+  sameCatalogOrder,
+  sortCatalog,
+  type CatalogSort,
+} from "../utils/catalogSort";
+import { commitCatalogOrder } from "../utils/commitCatalogOrder";
 
 export default function AdminArticles() {
   const { t } = useI18n();
   const { user } = useAuth();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortMode, setSortMode] = useState<CatalogSort>("manual");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
@@ -65,10 +75,13 @@ export default function AdminArticles() {
     try {
       const q = query(collection(db, "articoli"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
-      const data = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
+      const data = sortCatalog(
+        snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })),
+        "manual",
+        articleDate,
+      );
       setArticles(data);
+      setSortMode(sameCatalogOrder(data, sortCatalog(data, "newest", articleDate)) ? "newest" : "manual");
     } catch (error) {
       console.error("Error fetching articles:", error);
     } finally {
@@ -77,14 +90,35 @@ export default function AdminArticles() {
   };
 
   const updateArticlesOrder = async (newArticles: any[]) => {
-    setArticles(newArticles);
+    const stamped = newArticles.map((article, index) => ({
+      ...article,
+      order: index,
+      manualOrder: index,
+    }));
+    setArticles(stamped);
+    setSortMode("manual");
     try {
-      const batch = writeBatch(db);
-      newArticles.forEach((article, index) => {
-        const docRef = doc(db, "articoli", article.id);
-        batch.update(docRef, { order: index });
-      });
-      await batch.commit();
+      await commitCatalogOrder(
+        "articoli",
+        stamped.map((article) => ({
+          id: article.id,
+          order: article.order,
+          manualOrder: article.manualOrder,
+        })),
+      );
+    } catch (error) {
+      console.error("Error updating articles order:", error);
+    }
+  };
+
+  const handleArticleSort = async (mode: CatalogSort) => {
+    const plan = mode === "newest"
+      ? planNewestOrder(articles, articleDate)
+      : planManualOrder(articles);
+    setArticles(plan.items);
+    setSortMode(mode);
+    try {
+      await commitCatalogOrder("articoli", plan.patches);
     } catch (error) {
       console.error("Error updating articles order:", error);
     }
@@ -411,12 +445,15 @@ export default function AdminArticles() {
             {t('adminArticles.subtitle', 'Gestisci articoli e notizie per la sezione magazine pubblica.')}
           </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
-        >
-          <Plus size={20} /> {t('adminArticles.addArticle', 'Aggiungi Articolo')}
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <CatalogSortControl value={sortMode} onChange={(mode) => void handleArticleSort(mode)} />
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-[#FF4F00] flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-[#121212] transition-colors"
+          >
+            <Plus size={20} /> {t('adminArticles.addArticle', 'Aggiungi Articolo')}
+          </button>
+        </div>
       </motion.div>
 
       {loading ? (
@@ -440,8 +477,10 @@ export default function AdminArticles() {
             <Reorder.Item
               key={article.id}
               value={article}
+              dragListener={sortMode === "manual"}
               className="bg-white rounded-2xl shadow-sm border border-[#EAE3D9] overflow-hidden flex flex-col md:flex-row group p-4 gap-6 items-center"
             >
+              {sortMode === "manual" && (
               <div className="flex items-center gap-4">
                 <div className="cursor-grab active:cursor-grabbing text-[#59554E] hover:text-[#FF4F00] transition-colors">
                   <GripVertical size={24} />
@@ -463,6 +502,7 @@ export default function AdminArticles() {
                   </button>
                 </div>
               </div>
+              )}
 
               <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-[#F2EEE8] flex items-center justify-center border border-[#EAE3D9]">
                 {article.immagineCopertina ? (

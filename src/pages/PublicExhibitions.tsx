@@ -22,6 +22,8 @@ import FullPageHero from "../components/FullPageHero";
 import LazyImage from "../components/LazyImage";
 import CrawlableLinks from "../components/CrawlableLinks";
 import { localizedDetailPath } from "../utils/paths";
+import CatalogSortControl from "../components/CatalogSortControl";
+import { exhibitionDate, sortCatalog, type CatalogSort } from "../utils/catalogSort";
 
 interface Exhibition {
   id: string;
@@ -74,6 +76,7 @@ export default function PublicExhibitions() {
   const [yearFilter, setYearFilter] = useState("");
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<CatalogSort>("manual");
 
   // Infinite Scroll
   const { ref: loadMoreRef, inView } = useInView();
@@ -123,10 +126,12 @@ export default function PublicExhibitions() {
       result = result.filter((ex) => ex.year === yearFilter);
     }
 
+    result = sortCatalog(result, sortMode, exhibitionDate);
+
     setFilteredExhibitions(result);
     // Reset infinite scroll pagination when filters change
     setVisibleExhibitions(result.slice(0, ITEMS_PER_PAGE));
-  }, [writerFilter, titleFilter, yearFilter, allExhibitions, lang]);
+  }, [writerFilter, titleFilter, yearFilter, allExhibitions, lang, sortMode]);
 
   // Handle infinite scroll load more
   useEffect(() => {
@@ -233,6 +238,13 @@ export default function PublicExhibitions() {
           </div>
 
           <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-4 shrink-0">
+            <CatalogSortControl
+              variant="dark"
+              value={sortMode}
+              onChange={setSortMode}
+              manualLabel={t("sort.gallery", "Ordine galleria")}
+              newestLabel={t("sort.newest", "Più recenti")}
+            />
             <button
               onClick={() =>
                 setViewMode((prev) =>

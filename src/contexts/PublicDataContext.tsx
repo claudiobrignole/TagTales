@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
+import { articleDate, exhibitionDate, sortCatalog, writerDate } from "../utils/catalogSort";
 
 interface PublicDataContextType {
   writers: any[];
@@ -52,7 +53,7 @@ export const PublicDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Process writers
       const writersMap: Record<string, string> = {};
       const writersMapClean: Record<string, string> = {};
-      const processedWriters = writersSnap.docs.map((doc) => {
+      const processedWriters = sortCatalog(writersSnap.docs.map((doc) => {
         const data = doc.data();
         const nickname = data.nickname || data.artistName || "Writer";
         writersMap[doc.id] = nickname;
@@ -65,10 +66,10 @@ export const PublicDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           nation: data.paese || data.country || "",
           img: data.fotoProfilo || data.profileImageUrl,
         };
-      }).sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
+      }), "manual", writerDate);
 
       // Process exhibitions
-      const processedExhibitions = exhibitionsSnap.docs.map((doc) => {
+      const processedExhibitions = sortCatalog(exhibitionsSnap.docs.map((doc) => {
         const data = doc.data();
         const year = data.dataApertura ? data.dataApertura.substring(0, 4) : "";
         const artistaId = data.artistaIds?.[0] || data.artistaPrincipaleId || data.writerIds?.[0];
@@ -101,17 +102,10 @@ export const PublicDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           year,
           artistNames,
         };
-      }).sort((a: any, b: any) => {
-        if (a.order !== undefined || b.order !== undefined) {
-          return (a.order ?? 999) - (b.order ?? 999);
-        }
-        const dateA = a.dataApertura || "0";
-        const dateB = b.dataApertura || "0";
-        return dateB.localeCompare(dateA);
-      });
+      }), "manual", exhibitionDate);
 
       // Process articles
-      const processedArticles = articlesSnap.docs.map((doc) => {
+      const processedArticles = sortCatalog(articlesSnap.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -122,12 +116,7 @@ export const PublicDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           img: data.immagineCopertina || data.coverImageUrl,
           tag: data.tag?.[0] || data.tags?.[0] || "ARTICOLO",
         };
-      }).sort((a: any, b: any) => {
-        if (a.order !== undefined || b.order !== undefined) {
-          return (a.order ?? 999) - (b.order ?? 999);
-        }
-        return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
-      });
+      }), "manual", articleDate);
 
       setWriters(processedWriters);
       setExhibitions(processedExhibitions);
