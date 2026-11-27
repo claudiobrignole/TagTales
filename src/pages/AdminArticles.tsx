@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { db, storage, handleFirestoreError, OperationType } from "../firebase";
 import {
@@ -26,6 +26,9 @@ import MultiImageUpload from "../components/MultiImageUpload";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { translateDirtyFields } from "../utils/translate";
+import { shieldArticleImages, unshieldArticleImages } from "../utils/articleBodyImages";
+import { replaceEmbeddedDataImages, uploadImageFile } from "../utils/uploadStorageImage";
+import { compressImage } from "../utils/imageCompressor";
 import { useI18n } from '../contexts/I18nContext';
 
 import { generateSlug } from "../utils/slugify";
@@ -181,20 +184,109 @@ export default function AdminArticles() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
   const [saveStatus, setSaveStatus] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [inlineImageStatus, setInlineImageStatus] = useState("");
+  const quillRef = useRef<ReactQuill>(null);
+  const imageQueueRef = useRef(Promise.resolve());
+  const enqueueBodyImageRef = useRef<(file: File, index?: number) => Promise<void>>(async () => {});
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, 4, false] }],
+          ["bold", "italic", "underline", "strike", "blockquote"],
+          [{ list: "ordered" }, { list: "bullet" }, { indent: "-1" }, { indent: "+1" }],
+          ["link", "image", "video"],
+          ["clean"],
+        ],
+        handlers: {
+          image() {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/png,image/jpeg,image/webp,image/gif";
+            input.style.display = "none";
+            document.body.appendChild(input);
+            input.addEventListener(
+              "change",
+              () => {
+                const file = input.files?.[0];
+                input.remove();
+                if (file) void enqueueBodyImageRef.current(file);
+              },
+              { once: true },
+            );
+            input.addEventListener("cancel", () => input.remove(), { once: true });
+            input.click();
+          },
+        },
+      },
+      uploader: {
+        mimetypes: ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"],
+        handler(range: { index: number }, files: File[]) {
+          files.forEach((file, offset) => {
+            void enqueueBodyImageRef.current(file, range.index + offset);
+          });
+        },
+      },
+    }),
+    [],
+  );
+
+  enqueueBodyImageRef.current = (file, index) => {
+    const job = imageQueueRef.current.then(async () => {
+      setInlineImageStatus("Caricamento immagine...");
+      try {
+        const prepared = file.type.startsWith("image/") ? await compressImage(file) : file;
+        const url = await uploadImageFile(prepared, "articles");
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+        const range = quill.getSelection(true);
+        const length = quill.getLength();
+        const at = Math.max(0, Math.min(index ?? range?.index ?? length - 1, Math.max(0, length - 1)));
+        quill.insertEmbed(at, "image", url, "user");
+        quill.setSelection(at + 1, 0, "user");
+      } catch (error) {
+        console.error("Inline image upload failed:", error);
+        setInlineImageStatus(
+          error instanceof Error ? error.message : "Errore nel caricamento dell'immagine.",
+        );
+        return;
+      }
+      setInlineImageStatus("");
+    });
+    imageQueueRef.current = job.then(
+      () => undefined,
+      () => undefined,
+    );
+    return job;
+  };
 
   const handleSubmit = async (e: React.FormEvent | null, forceTranslate = false) => {
     if (e) e.preventDefault();
     if (isSaving) return;
     setIsSaving(true);
+    setSaveError("");
     setSaveProgress(10);
-    setSaveStatus("Traduzione...");
+    setSaveStatus("Caricamento immagini...");
 
     try {
       const originalArticle = (editingId && !forceTranslate) ? articles.find(a => a.id === editingId) : null;
-      
+      const contenutoWithUrls = await replaceEmbeddedDataImages(formData.contenuto || "");
+      const shieldedCurrent = shieldArticleImages(contenutoWithUrls);
+      const originalForTranslate = originalArticle
+        ? {
+            ...originalArticle,
+            contenuto: shieldArticleImages(originalArticle.contenuto || "").html,
+          }
+        : null;
+
+      setSaveProgress(40);
+      setSaveStatus("Traduzione...");
+
       const translatedData = await translateDirtyFields(
-        formData,
-        originalArticle,
+        { ...formData, contenuto: shieldedCurrent.html },
+        originalForTranslate,
         ['preTitolo', 'titolo', 'sottotitolo', 'contenuto'],
         'en'
       );
@@ -204,6 +296,8 @@ export default function AdminArticles() {
 
       const payload = {
         ...translatedData,
+        contenuto: contenutoWithUrls,
+        contenuto_en: unshieldArticleImages(translatedData.contenuto_en || "", shieldedCurrent.images),
         slug_en: formData.slug_en || formData.slug,
         previewToken: formData.previewToken || generatePreviewToken(),
         updatedAt: new Date().toISOString(),
@@ -229,7 +323,12 @@ export default function AdminArticles() {
       }, 1000);
     } catch (error) {
       console.error("Error saving article:", error);
-      alert(t('adminArticles.saveError', "Errore durante il salvataggio dell'articolo."));
+      const detail = error instanceof Error ? error.message : String(error);
+      setSaveError(
+        /longer than|too large|maximum size/i.test(detail)
+          ? "L'articolo è troppo pesante: le immagini nel testo non sono state caricate."
+          : `${t('adminArticles.saveError', "Errore durante il salvataggio dell'articolo.")} ${detail}`,
+      );
       setIsSaving(false);
       setSaveProgress(0);
       setSaveStatus("");
@@ -574,34 +673,19 @@ export default function AdminArticles() {
                   </label>
                 <div className="bg-white border border-[#EAE3D9] rounded-xl relative quill-wrapper-override">
                   <ReactQuill
+                    ref={quillRef}
                     theme="snow"
                     value={formData.contenuto}
                     onChange={(content) =>
                       setFormData({ ...formData, contenuto: content })
                     }
-                    modules={{
-                      toolbar: [
-                        [{ header: [1, 2, 3, 4, false] }],
-                        [
-                          "bold",
-                          "italic",
-                          "underline",
-                          "strike",
-                          "blockquote",
-                        ],
-                        [
-                          { list: "ordered" },
-                          { list: "bullet" },
-                          { indent: "-1" },
-                          { indent: "+1" },
-                        ],
-                        ["link", "image", "video"],
-                        ["clean"],
-                      ],
-                    }}
+                    modules={quillModules}
                     className="min-h-[300px]"
                   />
                 </div>
+                {inlineImageStatus && (
+                  <p className="mt-2 text-sm font-bold text-[#FF4F00]">{inlineImageStatus}</p>
+                )}
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-[#EAE3D9]">
@@ -764,7 +848,11 @@ export default function AdminArticles() {
                 </div>
                 </div>
 
-                <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-[#F2EEE8] pb-6">
+                <div className="pt-6 sticky bottom-0 bg-[#F2EEE8] pb-6">
+                  {saveError && (
+                    <p className="mb-3 text-sm font-bold text-red-600">{saveError}</p>
+                  )}
+                  <div className="flex justify-end gap-3">
                   {isSaving && (
                       <div className="w-full mr-4">
                           <div className="w-full bg-[#EAE3D9] h-2 rounded-full overflow-hidden">
@@ -795,6 +883,7 @@ export default function AdminArticles() {
                   >
                     {isSaving ? t('adminArticles.saving', "Salvataggio...") : editingId ? t('adminArticles.saveChanges', "Salva Modifiche") : t('adminArticles.publishArticle', "Pubblica Articolo")}
                   </button>
+                  </div>
                 </div>
               </form>
             </motion.div>

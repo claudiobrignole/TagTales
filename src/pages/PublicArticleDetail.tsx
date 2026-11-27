@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ import PreviewBanner from "../components/PreviewBanner";
 import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
 import FullPageHero from "../components/FullPageHero";
+import ImageSlideshow from "../components/ImageSlideshow";
 
 export default function PublicArticleDetail() {
   const { slug } = useParams();
@@ -38,6 +39,8 @@ export default function PublicArticleDetail() {
   const [loading, setLoading] = useState(true);
 
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -102,6 +105,9 @@ export default function PublicArticleDetail() {
   } : null;
 
   const coverImage = article ? (article.immagineCopertina || article.coverImageUrl) : null;
+  const galleryImages: string[] = article
+    ? (article.galleria || []).filter((url: string) => typeof url === "string" && url.trim() !== "")
+    : [];
 
   if (loading || adminLoading) {
     return (
@@ -274,32 +280,40 @@ export default function PublicArticleDetail() {
             />
           </div>
 
-          {article.galleria && article.galleria.length > 0 && (
+          {galleryImages.length > 0 && (
             <div className="mt-12 mb-16">
               <h2 className="text-2xl font-['Shamgod'] uppercase tracking-widest mb-8 text-[#121212]">
                 Galleria
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {article.galleria
-                  .filter((url: string) => url && url.trim() !== "")
-                  .map((url: string, index: number) => (
-                    <div
-                      key={index}
-                      className="rounded-3xl overflow-hidden border border-[#EAE3D9] shadow-md aspect-square md:aspect-video"
+                {galleryImages.map((url: string, index: number) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setLightboxIndex(index)}
+                      aria-label={`Apri immagine ${index + 1} di ${galleryImages.length}`}
+                      className="block w-full cursor-zoom-in overflow-hidden rounded-3xl border border-[#EAE3D9] bg-transparent p-0 text-left shadow-md aspect-square md:aspect-video"
                     >
                       <LazyImage
                         src={url}
-                        alt={`${article.titolo} - ${index}`}
+                        alt={`${article.titolo} - ${index + 1}`}
                         loading="lazy"
                         width={800}
                         height={450}
                         style={{ objectFit: "cover" }}
                       />
-                    </div>
+                    </button>
                   ))}
               </div>
             </div>
           )}
+          <ImageSlideshow
+            images={galleryImages}
+            index={lightboxIndex}
+            onClose={closeLightbox}
+            onChange={setLightboxIndex}
+            altPrefix={article.titolo || "Immagine"}
+          />
 
           {relatedArticles.length > 0 && (
             <div className="mt-12 md:mt-16">
