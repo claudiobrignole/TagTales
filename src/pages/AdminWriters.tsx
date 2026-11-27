@@ -280,7 +280,7 @@ export default function AdminWriters() {
       fetchWriters();
     } catch (error) {
       console.error("Error saving writer:", error);
-      alert(t('adminWriters.saveError', "Errore durante il salvataggio del writer."));
+      alert(`${t('adminWriters.saveError', "Errore durante il salvataggio del writer.")} ${error instanceof Error ? error.message : ""}`.trim());
     } finally {
       setIsSaving(false);
     }

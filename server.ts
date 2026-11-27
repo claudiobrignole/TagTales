@@ -35,6 +35,7 @@ import { listWriterCollectionProducts } from "./src/utils/fourthwallCatalog.ts";
 import { ingestFourthwallEvent } from "./src/utils/fourthwallIngest.ts";
 import { writerCollectionUrl } from "./src/utils/fourthwallStore.ts";
 import { verifyFourthwallSignature } from "./src/utils/fourthwallWebhook.ts";
+import { translateFieldMap, translateToEnglish } from "./src/utils/geminiTranslate.ts";
 
 const CANONICAL_ORIGIN = "https://tagtalesgallery.com";
 const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-default.jpg`;
@@ -999,29 +1000,29 @@ Ritorna SOLO il testo Markdown strutturato con titoli ed elenchi puntati.`;
 
   app.post("/api/translate", async (req, res) => {
     try {
-      const { text, targetLanguages, context } = req.body;
       const ai = getAi();
-      
-      const results: Record<string, string> = {};
-
-      for (const lang of targetLanguages) {
-        const response = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          config: {
-              temperature: 0.2
-          },
-          contents: `Translate the following text into the language with language code: ${lang}. 
-Return exactly the translated text and nothing else. Do not use markdown blocks unless they were in the original text.
-Preserve all formatting, line breaks, and HTML tags in the translated text.
-${context ? `Context: ${context}` : ""}
-
-Text to translate:
-${text}`,
-        });
-
-        results[lang] = response.text || "";
+      const fields = req.body?.fields;
+      if (fields && typeof fields === "object" && !Array.isArray(fields)) {
+        const stringFields: Record<string, string> = {};
+        for (const [key, value] of Object.entries(fields)) {
+          if (typeof value === "string") stringFields[key] = value;
+        }
+        const translated = await translateFieldMap(ai, stringFields);
+        return res.json({ fields: translated });
       }
 
+      const { text, targetLanguages } = req.body || {};
+      if (typeof text !== "string" || !Array.isArray(targetLanguages) || targetLanguages.length === 0) {
+        return res.status(400).json({ error: "Missing text or fields to translate" });
+      }
+
+      const results: Record<string, string> = {};
+      for (const lang of targetLanguages) {
+        if (lang !== "en") {
+          return res.status(400).json({ error: "Only English translation is supported" });
+        }
+        results[lang] = await translateToEnglish(ai, text);
+      }
       res.json(results);
     } catch (error: any) {
       console.error("Translation error:", error);

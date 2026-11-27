@@ -280,7 +280,7 @@ export default function AdminExhibitions() {
       }, 1500);
     } catch (error) {
       console.error("Error saving exhibition:", error);
-      alert(t('adminExhibitions.saveError', "Errore durante il salvataggio della mostra."));
+      alert(`${t('adminExhibitions.saveError', "Errore durante il salvataggio della mostra.")} ${error instanceof Error ? error.message : ""}`.trim());
       setIsSaving(false);
       setSaveProgress(0);
       setSaveStatus("");

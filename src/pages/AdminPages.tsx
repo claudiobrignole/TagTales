@@ -185,7 +185,7 @@ export default function AdminPages() {
       await fetchPages();
     } catch(err) {
       console.error(err);
-      alert(t('adminPages.saveError', 'Errore al salvataggio'));
+      alert(`${t('adminPages.saveError', 'Errore al salvataggio')} ${err instanceof Error ? err.message : ""}`.trim());
     } finally {
       setSaving(false);
     }
