@@ -20,7 +20,6 @@ import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import FullPageHero from "../components/FullPageHero";
 import LazyImage from "../components/LazyImage";
-import CrawlableLinks from "../components/CrawlableLinks";
 import { localizedDetailPath } from "../utils/paths";
 import CatalogSortControl from "../components/CatalogSortControl";
 import { exhibitionDate, sortCatalog, type CatalogSort } from "../utils/catalogSort";
@@ -424,13 +423,6 @@ export default function PublicExhibitions() {
           )}
         </div>
       )}
-      <CrawlableLinks
-        label={lang === "EN" ? "ALL EXHIBITIONS" : "TUTTE LE MOSTRE"}
-        links={allExhibitions.map((ex) => ({
-          href: localizedDetailPath(lang, "/exhibitions", ex.slug || ex.id, ex.slug_en),
-          text: getLocalizedField(ex, "titolo", lang) || getLocalizedField(ex, "title", lang) || ex.titolo || "MOSTRA",
-        }))}
-      />
     </PublicLayout>
   );
 }

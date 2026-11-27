@@ -13,7 +13,6 @@ import SEO from "../components/SEO";
 import { getLocalizedField } from "../utils/localization";
 import { IMAGE_RADIUS } from "../constants/theme";
 import LazyImage from "../components/LazyImage";
-import CrawlableLinks from "../components/CrawlableLinks";
 import { localizedDetailPath } from "../utils/paths";
 import CatalogSortControl from "../components/CatalogSortControl";
 import { sortCatalog, writerDate, type CatalogSort } from "../utils/catalogSort";
@@ -215,17 +214,6 @@ export default function PublicWriters() {
           )}
         </motion.div>
       </div>
-      <CrawlableLinks
-        label={lang === "EN" ? "ALL WRITERS" : "TUTTI I WRITERS"}
-        links={writers.map((writer) => ({
-          href: localizedDetailPath(lang, "/writers", writer.slug || writer.id, writer.slug_en),
-          text:
-            getLocalizedField(writer, "nickname", lang) ||
-            getLocalizedField(writer, "artistName", lang) ||
-            writer.nickname ||
-            "Writer",
-        }))}
-      />
     </PublicLayout>
   );
 }

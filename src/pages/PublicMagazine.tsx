@@ -13,7 +13,6 @@ import { IMAGE_RADIUS } from "../constants/theme";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import LazyImage from "../components/LazyImage";
-import CrawlableLinks from "../components/CrawlableLinks";
 import { localizedDetailPath } from "../utils/paths";
 import CatalogSortControl from "../components/CatalogSortControl";
 import { articleDate, sortCatalog, type CatalogSort } from "../utils/catalogSort";
@@ -215,13 +214,6 @@ export default function PublicMagazine() {
           )}
         </motion.div>
       </div>
-      <CrawlableLinks
-        label={lang === "EN" ? "ALL ARTICLES" : "TUTTI GLI ARTICOLI"}
-        links={articles.map((article) => ({
-          href: localizedDetailPath(lang, "/magazine", article.slug || article.id, article.slug_en),
-          text: getLocalizedField(article, "titolo", lang) || article.titolo || "Articolo",
-        }))}
-      />
     </PublicLayout>
   );
 }
